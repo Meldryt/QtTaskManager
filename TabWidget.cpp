@@ -2,8 +2,9 @@
 
 TabWidget::TabWidget(QWidget* parent) : QTabWidget(parent)
 {
-    tabProcesses = new TabProcesses(parent);
+    processData = new ProcessDatabase();
+    tabProcesses = new TabProcesses(processData, parent);
     addTab(tabProcesses, QString("Processes"));
-    tabApps = new TabApps(parent);
-    addTab(tabApps, QString("Apps"));
+    tabPerformance = new TabPerformance(processData, parent);
+    addTab(tabPerformance, QString("Performance"));
 }

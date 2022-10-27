@@ -1,22 +1,22 @@
 #pragma once
+
+#include "ProcessDatabase.h"
+
 #include <QWidget>
 #include <QTableWidget>
-#include <QThread>
-#include "WorkerProcess.h"
+#include <QTimer>
 
 class TabProcesses : public QWidget
 {
 public:
-    TabProcesses(QWidget *parent = nullptr);
+    TabProcesses(ProcessDatabase* database, QWidget *parent = nullptr);
 
 private:
+    void process();
+    void updateTable();
+    void updateTotalInfo();
 
-    QTableWidget* tableProcesses;
-    QThread* threadProcesses;
-    WorkerProcess* workerProcess;
-
-private slots:
-    void updateList();
-
-    std::map<QString, int> processItems;
+    ProcessDatabase* processDatabase{nullptr};
+    QTableWidget* tableProcesses{nullptr};
+    QTimer* timer{nullptr};
 };

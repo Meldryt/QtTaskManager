@@ -16,6 +16,6 @@ public:
     ~MainWindow();
 
 private:
-    Ui::MainWindow *ui;
-    TabWidget* tabWidget;
+    Ui::MainWindow *ui{nullptr};
+    TabWidget* tabWidget{nullptr};
 };

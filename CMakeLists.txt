@@ -11,17 +11,21 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets)
-find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets)
+find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets Charts)
+find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets Charts)
 
 set(PROJECT_SOURCES
     main.cpp
     MainWindow.cpp
     MainWindow.h
+    ProcessDatabase.cpp
+    ProcessDatabase.h
     TabApps.cpp
     TabApps.h
     TabProcesses.cpp
     TabProcesses.h
+    TabPerformance.cpp
+    TabPerformance.h
     TabWidget.cpp
     TabWidget.h
     WorkerProcess.cpp
@@ -52,7 +56,7 @@ else()
     endif()
 endif()
 
-target_link_libraries(QtTaskManager PRIVATE Qt${QT_VERSION_MAJOR}::Widgets)
+target_link_libraries(QtTaskManager PRIVATE Qt${QT_VERSION_MAJOR}::Widgets Qt${QT_VERSION_MAJOR}::Charts -lPdh)
 
 set_target_properties(QtTaskManager PROPERTIES
     MACOSX_BUNDLE_GUI_IDENTIFIER my.example.com
