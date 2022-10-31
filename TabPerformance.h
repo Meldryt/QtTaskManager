@@ -9,6 +9,7 @@
 #include <QtCharts/QLineSeries>
 #include <QtCharts/QChartView>
 #include <QTimer>
+#include <QLabel>
 
 class TabPerformance : public QWidget
 {
@@ -17,15 +18,27 @@ public:
 
 private:
     void process();
+    void processCPU();
+    void processGPU();
 
     ProcessDatabase* processDatabase{nullptr};
     QListWidget* listWidget{nullptr};
-    QWidget* graphWidget{nullptr};
-    QLineSeries* lineSeries{nullptr};
-    QChart* chart{nullptr};
-    QChartView*
-    chartView{nullptr};
+
+    QWidget* cpuWidget{nullptr};
+    QChartView* cpuChartView{nullptr};
+    QChart* cpuChart{nullptr};
+    QLineSeries* cpuLineSeries{nullptr};
+
+    QWidget* gpuWidget{nullptr};
+    QChartView* gpuChartView{nullptr};
+    QChart* gpuChart{nullptr};
+    QLineSeries* gpuLineSeries{nullptr};
+    QLabel* gpuTempLabel{nullptr};
+
     QTimer* timer{nullptr};
     uint8_t count{60};
+
+private slots:
+    void showSelectionWidget();
 };
 

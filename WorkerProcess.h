@@ -22,6 +22,9 @@ public:
 
         double totalCPULoad;
         std::vector<double> singleCoreLoads;
+
+        uint8_t totalGPULoad;
+        uint8_t gpuTemperature;
     };
 
     struct ProcessInfo
