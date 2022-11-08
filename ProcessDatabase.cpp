@@ -23,43 +23,32 @@ const std::vector<WorkerProcess::ProcessInfo>& ProcessDatabase::getProcessList()
     return processList;
 }
 
-const WorkerProcess::TotalInfo& ProcessDatabase::getTotalInfo()
+const WorkerProcess::DynamicSystemInfo& ProcessDatabase::getDynamicSystemInfo()
 {
-    return totalInfo;
+    return dynamicSystemInfo;
+}
+
+const WorkerProcess::StaticSystemInfo& ProcessDatabase::getStaticSystemInfo()
+{
+    return staticSystemInfo;
 }
 
 void ProcessDatabase::updateProcessList()
 {
-    bool listChanged = workerProcess->fillProcessList(processList);
+    /*bool listChanged = */workerProcess->fillProcessList(processList);
 
+    /*
     if(!listChanged)
     {
-    }
+    }*/
 
     sortTable();
 }
 
 void ProcessDatabase::updateTotalInfo()
 {
-    bool listChanged = workerProcess->fillTotalInfo(totalInfo);
-
-//    uint64_t usedPhysicalMemory = (totalInfo.usedPhysicalMemory)/(1024*1024);
-//    uint64_t totalPhysicalMemory = (totalInfo.totalPhysicalMemory)/(1024*1024);
-//    //tableProcesses->item(0, 3)->setText(QString::number(usedPhysicalMemory) + " / " +
-//    //                                    QString::number(totalPhysicalMemory) + " MB");
-
-//    QString text = QString::number(int(totalInfo.totalCPULoad)) + " (";
-//    for(uint8_t i = 0;i<totalInfo.singleCoreLoads.size();++i)
-//    {
-//        text += QString::number(int(totalInfo.singleCoreLoads[i])) + " | ";
-//    }
-//    text+=")";
-//    //tableProcesses->item(0, 4)->setText(text);
-
-//    uint64_t usedVirtualMemory = (totalInfo.usedVirtualMemory)/(1024*1024);
-//    uint64_t totalVirtualMemory = (totalInfo.totalVirtualMemory)/(1024*1024);
-//    //tableProcesses->setItem(0, 4, new QTableWidgetItem(QString::number(usedVirtualMemory) + " / " +
-//    //                                                   QString::number(totalVirtualMemory) + " MB"));
+    /*bool listChanged = */workerProcess->fillDynamicSystemInfo(dynamicSystemInfo);
+    workerProcess->fillStaticSystemInfo(staticSystemInfo); //todo: do this only once at the start
 }
 
 void ProcessDatabase::sortTable()

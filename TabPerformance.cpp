@@ -104,7 +104,7 @@ void TabPerformance::processCPU()
     }
 
     double x = 60;
-    double y = processDatabase->getTotalInfo().totalCPULoad;
+    double y = processDatabase->getDynamicSystemInfo().totalCPULoad;
     cpuLineSeries->append(x,y);
     cpuChartView->repaint();
 }
@@ -127,11 +127,11 @@ void TabPerformance::processGPU()
     }
 
     double x = 60;
-    uint8_t y = processDatabase->getTotalInfo().totalGPULoad;
+    uint8_t y = processDatabase->getDynamicSystemInfo().totalGPULoad;
     gpuLineSeries->append(x,y);
     gpuChartView->repaint();
 
-    uint8_t gpuTemperature = processDatabase->getTotalInfo().gpuTemperature;
+    uint8_t gpuTemperature = processDatabase->getDynamicSystemInfo().gpuTemperature;
     gpuTempLabel->setText("Temperature: " + QString::number(gpuTemperature) + " °C");
 }
 

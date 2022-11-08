@@ -1,9 +1,11 @@
 #pragma once
 
 #include <QObject>
+#include <QTimer>
+#include <QMutex>
+
 #include <vector>
 #include <map>
-#include <QTimer>
 #include <windows.h>
 #include <pdh.h>
 
@@ -13,18 +15,27 @@ class WorkerProcess : public QObject
 public:
     explicit WorkerProcess(QObject *parent = nullptr);
 
-    struct TotalInfo
+    struct StaticSystemInfo
     {
-        uint64_t totalPhysicalMemory;
-        uint64_t usedPhysicalMemory;
-        uint64_t totalVirtualMemory;
-        uint64_t usedVirtualMemory;
+        uint64_t totalPhysicalMemory{0};
+        uint64_t totalVirtualMemory{0};
 
-        double totalCPULoad;
+        std::string cpuBrand;
+        uint8_t processorCount{0};
+
+        std::string gpuBrand;
+    };
+
+    struct DynamicSystemInfo
+    {
+        uint64_t usedPhysicalMemory{0};
+        uint64_t usedVirtualMemory{0};
+
+        double totalCPULoad{0.0};
         std::vector<double> singleCoreLoads;
 
-        uint8_t totalGPULoad;
-        uint8_t gpuTemperature;
+        uint8_t totalGPULoad{0};
+        uint8_t gpuTemperature{0};
     };
 
     struct ProcessInfo
@@ -46,7 +57,8 @@ public:
     };
 
     bool fillProcessList(std::vector<WorkerProcess::ProcessInfo>& processList);
-    bool fillTotalInfo(TotalInfo& t);
+    bool fillStaticSystemInfo(StaticSystemInfo& info);
+    bool fillDynamicSystemInfo(DynamicSystemInfo& info);
 
     BOOL EnumWindowsProc(HWND hwnd);
     static BOOL CALLBACK StaticEnumWindowsProc(HWND hwnd, LPARAM lParam);
@@ -56,6 +68,13 @@ public slots:
     void start();
 
 private:
+    void collectStaticSystemInfo();
+    void collectDynamicSystemInfo();
+    void collectCpuInfo();
+    bool detectNvidiaGPU();
+    void collectNvidiaGpuInfo();
+    void collectMemoryInfo();
+
     void updateRunningProcesses();
     void updateTotalUsage();
     void updateProcessesUsage();
@@ -66,8 +85,8 @@ private:
 
     std::map<uint32_t, ProcessInfo> processMap;
     std::vector<ProcessInfo> removedProcesses;
-    TotalInfo totalInfo;
-    QTimer* timer{nullptr};
+    StaticSystemInfo staticSystemInfo;
+    DynamicSystemInfo dynamicSystemInfo;
 
     PDH_HQUERY totalCPUQuery;
     PDH_HCOUNTER totalCPUCounter;
@@ -76,8 +95,10 @@ private:
 //    ULARGE_INTEGER lastCPU{0};
 //    ULARGE_INTEGER lastSysCPU{0};
 //    ULARGE_INTEGER lastUserCPU{0};
-    int numProcessors{0};
 
+    bool gpuDetected{false};
+    QMutex mutex;
+    QTimer* timer{nullptr};
 
 signals:
     void finished();

@@ -6,7 +6,7 @@
 #include <QTreeWidget>
 #include <QScrollBar>
 
-TabProcesses::TabProcesses(ProcessDatabase* database, QWidget *parent) : processDatabase(database), QWidget(parent)
+TabProcesses::TabProcesses(ProcessDatabase* database, QWidget *parent) : QWidget(parent), processDatabase(database)
 {
     tableProcesses = new QTableWidget(this);
     tableProcesses->setColumnCount(5);
@@ -110,17 +110,17 @@ void TabProcesses::updateTotalInfo()
         return;
     }
 
-    const WorkerProcess::TotalInfo& totalInfo = processDatabase->getTotalInfo();
-
-    uint64_t usedPhysicalMemory = (totalInfo.usedPhysicalMemory)/(1024*1024);
-    uint64_t totalPhysicalMemory = (totalInfo.totalPhysicalMemory)/(1024*1024);
+    const WorkerProcess::DynamicSystemInfo& dynamicSystemInfo = processDatabase->getDynamicSystemInfo();
+    const WorkerProcess::StaticSystemInfo& staticSystemInfo = processDatabase->getStaticSystemInfo();
+    uint64_t usedPhysicalMemory = (dynamicSystemInfo.usedPhysicalMemory)/(1024*1024);
+    uint64_t totalPhysicalMemory = (staticSystemInfo.totalPhysicalMemory)/(1024*1024);
     tableProcesses->item(0, 3)->setText(QString::number(usedPhysicalMemory) + " / " +
                                         QString::number(totalPhysicalMemory) + " MB");
 
-    QString text = QString::number(int(totalInfo.totalCPULoad)) + " (";
-    for(uint8_t i = 0;i<totalInfo.singleCoreLoads.size();++i)
+    QString text = QString::number(int(dynamicSystemInfo.totalCPULoad)) + " (";
+    for(uint8_t i = 0;i<dynamicSystemInfo.singleCoreLoads.size();++i)
     {
-        text += QString::number(int(totalInfo.singleCoreLoads[i])) + " | ";
+        text += QString::number(int(dynamicSystemInfo.singleCoreLoads[i])) + " | ";
     }
     text+=")";
     tableProcesses->item(0, 4)->setText(text);

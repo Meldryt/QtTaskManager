@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QTabWidget>
+#include "TabHardware.h"
 #include "TabPerformance.h"
 #include "TabProcesses.h"
 #include "ProcessDatabase.h"
@@ -12,6 +13,7 @@ public:
 
 private:
     ProcessDatabase* processData{nullptr};
+    TabHardware* tabHardware{nullptr};
     TabProcesses* tabProcesses{nullptr};
     TabPerformance* tabPerformance{nullptr};
 };

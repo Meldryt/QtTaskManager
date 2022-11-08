@@ -22,6 +22,8 @@ set(PROJECT_SOURCES
     ProcessDatabase.h
     TabApps.cpp
     TabApps.h
+    TabHardware.cpp
+    TabHardware.h
     TabProcesses.cpp
     TabProcesses.h
     TabPerformance.cpp

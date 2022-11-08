@@ -9,7 +9,8 @@ class ProcessDatabase : public QObject
 public:
     ProcessDatabase();
     const std::vector<WorkerProcess::ProcessInfo>& getProcessList();
-    const WorkerProcess::TotalInfo& getTotalInfo();
+    const WorkerProcess::DynamicSystemInfo& getDynamicSystemInfo();
+    const WorkerProcess::StaticSystemInfo& getStaticSystemInfo();
 
     void setSortMode(int headerIndex);
 
@@ -39,7 +40,8 @@ private:
 
     std::map<QString, int> processMap;
     std::vector<WorkerProcess::ProcessInfo> processList;
-    WorkerProcess::TotalInfo totalInfo;
+    WorkerProcess::DynamicSystemInfo dynamicSystemInfo;
+    WorkerProcess::StaticSystemInfo staticSystemInfo;
 
     SortMode sortMode{SortMode::NoSort};
 

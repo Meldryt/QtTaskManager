@@ -26,6 +26,7 @@
 //typedef NTSTATUS (APIENTRY *PD3DKMTOpenAdapterFromDeviceName)(_Inout_ D3DKMT_OPENADAPTERFROMDEVICENAME*);
 //D3DKMT_OPENADAPTERFROMDEVICENAME openAdapterFromDeviceName;
 //D3DKMT_QUERYSTATISTICS queryStatistics;
+//#include <cpuid.h>
 
 #ifndef NV_H
 #define NV_H
@@ -63,33 +64,7 @@ typedef struct
 
 //#include <nvapi.h>
 
-
-/*
- * Name: NvGpuDetected
- * Desc: Returns true if an NVIDIA Gpu has been detected on this system.
- * NOTE: This function depends on whether a valid NVIDIA driver is installed
- *       on the target machine.  Since the Surface Hub does not include an
- *		 nvapi[64].dll in it's strippified driver, we need to load it directly
- *		 in order for the required APIs to work.
- */
-BOOL NvGpuDetected();
-
-/*
- * Name: NvGetGpuLoad
- * Desc: Returns the NVIDIA Gpu's current load percentage.
- */
-int  NvGetGpuLoad();
-
-/*
- * Name: NvGetGpuTemperature
- * Desc: Returns the current temperature of an NVIDIA Gpu.
- */
-int  NvGetGpuTemperature();
-
 #endif // NV_H
-
-
-//#include "nvidia.h"
 
 #if defined(_M_X64) || defined(__amd64__)
 #define NVAPI_DLL "nvapi64.dll"
@@ -109,154 +84,15 @@ typedef int (*NvAPI_EnumPhysicalGPUs_t)(int **handles, int *count);
 typedef int (*NvAPI_GPU_GetUsages_t)(int *handle, unsigned int *usages);
 typedef int (*NvAPI_GPU_GetThermalSettings_t)(int *handle, int sensorIndex, NV_GPU_THERMAL_SETTINGS *temp);
 
+typedef int(*NvAPI_GPU_GetFullName_t)(int *handle , char* name);
+
 // nvapi.dll internal function pointers
 NvAPI_QueryInterface_t      NvAPI_QueryInterface     = NULL;
 NvAPI_Initialize_t          NvAPI_Initialize         = NULL;
 NvAPI_EnumPhysicalGPUs_t    NvAPI_EnumPhysicalGPUs   = NULL;
 NvAPI_GPU_GetUsages_t       NvAPI_GPU_GetUsages      = NULL;
 NvAPI_GPU_GetThermalSettings_t	NvAPI_GPU_GetThermalSettings = NULL;
-
-
-/*
- * Name: NvGpuDetected
- * Desc: Returns true if an NVIDIA Gpu has been detected on this system.
- * NOTE: This function depends on whether a valid NVIDIA driver is installed
- *       on the target machine.  Since the Surface Hub does not include an
- *		 nvapi[64].dll in it's strippified driver, we need to load it directly
- *		 in order for the required APIs to work.
- */
-BOOL NvGpuDetected()
-{
-    HMODULE hmod = LoadLibraryA( NVAPI_DLL );
-
-    if( hmod == NULL )
-    {
-        std::cerr << "Couldn't find " << NVAPI_DLL << std::endl;
-        return FALSE;
-    }
-
-    // nvapi_QueryInterface is a function used to retrieve other internal functions in nvapi.dll
-    NvAPI_QueryInterface = (NvAPI_QueryInterface_t) GetProcAddress( hmod, "nvapi_QueryInterface" );
-
-    // some useful internal functions that aren't exported by nvapi.dll
-    NvAPI_Initialize = (NvAPI_Initialize_t) (*NvAPI_QueryInterface)(0x0150E828);
-    NvAPI_EnumPhysicalGPUs = (NvAPI_EnumPhysicalGPUs_t) (*NvAPI_QueryInterface)(0xE5AC921F);
-    NvAPI_GPU_GetUsages = (NvAPI_GPU_GetUsages_t) (*NvAPI_QueryInterface)(0x189A1FDF);
-    NvAPI_GPU_GetThermalSettings = (NvAPI_GPU_GetThermalSettings_t) (*NvAPI_QueryInterface)(0xE3640A56);
-
-    if( NvAPI_Initialize == NULL || NvAPI_EnumPhysicalGPUs == NULL ||
-        NvAPI_EnumPhysicalGPUs == NULL || NvAPI_GPU_GetUsages == NULL )
-    {
-        std::cerr << "Couldn't get functions in nvapi.dll" << std::endl;
-        return FALSE;
-    }
-
-    // initialize NvAPI library, call it once before calling any other NvAPI functions
-    if( (*NvAPI_Initialize)() != 0 )
-    {
-        std::cerr << "Could not initialize nvapi!" << std::endl;
-    }
-
-    return TRUE;
-}
-
-/*
- * Name: NvGetGpuInfo
- * Desc: Returns the NVIDIA Gpu's current load percentage.
- */
-void NvGetGpuInfo(WorkerProcess::TotalInfo& totalInfo)
-{
-    (*NvAPI_Initialize)();
-    NV_GPU_THERMAL_SETTINGS 		 nvgts;
-    int          gpuCount = 0;
-    int         *gpuHandles[NVAPI_MAX_PHYSICAL_GPUS] = { NULL };
-    unsigned int gpuUsages[NVAPI_MAX_USAGES_PER_GPU] = { 0 };
-
-    // gpuUsages[0] must be this value, otherwise NvAPI_GPU_GetUsages won't work
-    gpuUsages[0] = (NVAPI_MAX_USAGES_PER_GPU * 4) | 0x10000;
-
-    (*NvAPI_EnumPhysicalGPUs)( gpuHandles, &gpuCount );
-    nvgts.version = sizeof(NV_GPU_THERMAL_SETTINGS) | (1<<16);
-    nvgts.count = 0;
-    nvgts.sensor[0].controller = -1;
-    nvgts.sensor[0].target = NVAPI_THERMAL_TARGET_GPU;
-
-    (*NvAPI_GPU_GetThermalSettings)(gpuHandles[0], 0 ,&nvgts);
-    totalInfo.gpuTemperature = nvgts.sensor[0].currentTemp;
-
-    (*NvAPI_GPU_GetUsages)( gpuHandles[0], gpuUsages );
-    totalInfo.totalGPULoad = gpuUsages[3];
-}
-
-/*
- * Name: NvGetGpuTemperature
- * Desc: Returns the current temperature of an NVIDIA Gpu.
- */
-int  NvGetGpuTemperature()
-{
-    return 0;	// TODO
-}
-
-
-#if 0
-int main()
-{
-#if defined(_M_X64) || defined(__amd64__)
-    HMODULE hmod = LoadLibraryA("nvapi64.dll");
-#else
-    HMODULE hmod = LoadLibraryA("nvapi.dll");
-#endif
-    if (hmod == NULL)
-    {
-        std::cerr << "Couldn't find nvapi.dll" << std::endl;
-        return 1;
-    }
-
-    // nvapi.dll internal function pointers
-    NvAPI_QueryInterface_t      NvAPI_QueryInterface     = NULL;
-    NvAPI_Initialize_t          NvAPI_Initialize         = NULL;
-    NvAPI_EnumPhysicalGPUs_t    NvAPI_EnumPhysicalGPUs   = NULL;
-    NvAPI_GPU_GetUsages_t       NvAPI_GPU_GetUsages      = NULL;
-
-    // nvapi_QueryInterface is a function used to retrieve other internal functions in nvapi.dll
-    NvAPI_QueryInterface = (NvAPI_QueryInterface_t) GetProcAddress(hmod, "nvapi_QueryInterface");
-
-    // some useful internal functions that aren't exported by nvapi.dll
-    NvAPI_Initialize = (NvAPI_Initialize_t) (*NvAPI_QueryInterface)(0x0150E828);
-    NvAPI_EnumPhysicalGPUs = (NvAPI_EnumPhysicalGPUs_t) (*NvAPI_QueryInterface)(0xE5AC921F);
-    NvAPI_GPU_GetUsages = (NvAPI_GPU_GetUsages_t) (*NvAPI_QueryInterface)(0x189A1FDF);
-
-    if (NvAPI_Initialize == NULL || NvAPI_EnumPhysicalGPUs == NULL ||
-        NvAPI_EnumPhysicalGPUs == NULL || NvAPI_GPU_GetUsages == NULL)
-    {
-        std::cerr << "Couldn't get functions in nvapi.dll" << std::endl;
-        return 2;
-    }
-
-    // initialize NvAPI library, call it once before calling any other NvAPI functions
-    (*NvAPI_Initialize)();
-
-    int          gpuCount = 0;
-    int         *gpuHandles[NVAPI_MAX_PHYSICAL_GPUS] = { NULL };
-    unsigned int gpuUsages[NVAPI_MAX_USAGES_PER_GPU] = { 0 };
-
-    // gpuUsages[0] must be this value, otherwise NvAPI_GPU_GetUsages won't work
-    gpuUsages[0] = (NVAPI_MAX_USAGES_PER_GPU * 4) | 0x10000;
-
-    (*NvAPI_EnumPhysicalGPUs)(gpuHandles, &gpuCount);
-
-    // print GPU usage every second
-    for (int i = 0; i < 100; i++)
-    {
-        (*NvAPI_GPU_GetUsages)(gpuHandles[0], gpuUsages);
-        int usage = gpuUsages[3];
-        std::cout << "GPU Usage: " << usage << std::endl;
-        Sleep(1000);
-    }
-
-    return 0;
-}
-#endif
+NvAPI_GPU_GetFullName_t     NvAPI_GPU_GetFullName = NULL;
 
 WorkerProcess::WorkerProcess(QObject *parent)
     : QObject{parent}
@@ -273,7 +109,15 @@ WorkerProcess::WorkerProcess(QObject *parent)
 //    memcpy(&lastSysCPU, &fsys, sizeof(FILETIME));
 //    memcpy(&lastUserCPU, &fuser, sizeof(FILETIME));
 
-    qDebug() << "GPU Detected: " << NvGpuDetected();
+
+    timer = new QTimer(this);
+    timer->setInterval(500);
+    connect(timer, &QTimer::timeout, this, &WorkerProcess::process);
+}
+
+void WorkerProcess::start()
+{   
+    collectStaticSystemInfo();
 
     PdhOpenQuery(NULL, 0, &totalCPUQuery);
     std::string text = "\\Processor(_Total)\\% Processor Time";
@@ -283,12 +127,7 @@ WorkerProcess::WorkerProcess(QObject *parent)
     PdhAddEnglishCounter(totalCPUQuery, sw, 0, &totalCPUCounter);
     PdhCollectQueryData(totalCPUQuery);
 
-    SYSTEM_INFO sysInfo;
-
-    GetSystemInfo(&sysInfo);
-    numProcessors = sysInfo.dwNumberOfProcessors;
-
-    for(uint8_t i=0;i<numProcessors;++i)
+    for(uint8_t i=0;i<staticSystemInfo.processorCount;++i)
     {
         PDH_HQUERY singleCPUQuery;
         PDH_HCOUNTER singleCPUCounter;
@@ -303,16 +142,9 @@ WorkerProcess::WorkerProcess(QObject *parent)
 
         singleCPUQueries.push_back(singleCPUQuery);
         singleCPUCounters.push_back(singleCPUCounter);
-        totalInfo.singleCoreLoads.push_back(0.0);
+        dynamicSystemInfo.singleCoreLoads.push_back(0.0);
     }
 
-    timer = new QTimer(this);
-    timer->setInterval(500);
-    connect(timer, &QTimer::timeout, this, &WorkerProcess::process);
-}
-
-void WorkerProcess::start()
-{
     timer->start();
 }
 
@@ -324,9 +156,168 @@ void WorkerProcess::process()
     EnumWindows(StaticEnumWindowsProc, reinterpret_cast<LPARAM>(this));
     updateRunningProcesses();
 
+    if(gpuDetected)
+    {
+        collectNvidiaGpuInfo();
+    }
+
     emit receivedProcessList();
     emit receivedTotalInfo();
     //emit finished();
+}
+
+void WorkerProcess::collectStaticSystemInfo()
+{
+    collectCpuInfo();
+    collectMemoryInfo();
+    gpuDetected = detectNvidiaGPU();
+}
+
+void WorkerProcess::collectCpuInfo()
+{
+    int cpuInfo[4] = {-1};
+    unsigned nExIds, i =  0;
+    char CPUBrandString[0x40];
+    // Get the information associated with each extended ID.
+    __cpuid(cpuInfo, 0x80000000);
+    nExIds = cpuInfo[0];
+    for (i=0x80000000; i<=nExIds; ++i)
+    {
+        __cpuid(cpuInfo, i);
+        // Interpret CPU brand string
+        if  (i == 0x80000002)
+        {
+            memcpy(CPUBrandString, cpuInfo, sizeof(cpuInfo));
+        }
+        else if  (i == 0x80000003)
+        {
+            memcpy(CPUBrandString + 16, cpuInfo, sizeof(cpuInfo));
+        }
+        else if  (i == 0x80000004)
+        {
+            memcpy(CPUBrandString + 32, cpuInfo, sizeof(cpuInfo));
+        }
+    }
+
+    cpuInfo[0] = 0;
+    cpuInfo[1] = 0;
+    cpuInfo[2] = 0;
+    cpuInfo[3] = 0;
+
+    __cpuid(cpuInfo, 0);
+    if (cpuInfo[0] >= 0x16)
+    {
+        __cpuid(cpuInfo, 0x16);
+        qDebug() << "EAX: 0x%08x EBX: 0x%08x ECX: %08x\r" << cpuInfo[0] << cpuInfo[1] << cpuInfo[2];
+        qDebug() << "Processor Base Frequency:  %04d MHz\r" << cpuInfo[0];
+        qDebug() << "Maximum Frequency:         %04d MHz\r" << cpuInfo[1];
+        qDebug() << "Bus (Reference) Frequency: %04d MHz\r" << cpuInfo[2];
+    }
+
+    //string includes manufacturer, model and clockspeed
+    staticSystemInfo.cpuBrand = CPUBrandString;
+    //qDebug() << "CPU Type: " << staticSystemInfo.cpuBrand.c_str();
+
+    SYSTEM_INFO sysInfo;
+    GetSystemInfo(&sysInfo);
+    staticSystemInfo.processorCount = sysInfo.dwNumberOfProcessors;
+    //qDebug() << "Number of Cores: " << staticSystemInfo.processorCount;
+
+}
+
+/*
+ * Name: NvGpuDetected
+ * Desc: Returns true if an NVIDIA Gpu has been detected on this system.
+ * NOTE: This function depends on whether a valid NVIDIA driver is installed
+ *       on the target machine.  Since the Surface Hub does not include an
+ *		 nvapi[64].dll in it's strippified driver, we need to load it directly
+ *		 in order for the required APIs to work.
+ */
+bool WorkerProcess::detectNvidiaGPU()
+{
+    HMODULE hmod = LoadLibraryA( NVAPI_DLL );
+
+    if( hmod == NULL )
+    {
+        qDebug() << "Couldn't find " << NVAPI_DLL;
+        return false;
+    }
+    else
+    {
+        //qDebug() << "GPU Detected";
+    }
+
+    // nvapi_QueryInterface is a function used to retrieve other internal functions in nvapi.dll
+    NvAPI_QueryInterface = (NvAPI_QueryInterface_t) GetProcAddress( hmod, "nvapi_QueryInterface" );
+
+    // some useful internal functions that aren't exported by nvapi.dll
+    NvAPI_Initialize = (NvAPI_Initialize_t) (*NvAPI_QueryInterface)(0x0150E828);
+    NvAPI_EnumPhysicalGPUs = (NvAPI_EnumPhysicalGPUs_t) (*NvAPI_QueryInterface)(0xE5AC921F);
+    NvAPI_GPU_GetUsages = (NvAPI_GPU_GetUsages_t) (*NvAPI_QueryInterface)(0x189A1FDF);
+    NvAPI_GPU_GetThermalSettings = (NvAPI_GPU_GetThermalSettings_t) (*NvAPI_QueryInterface)(0xE3640A56);
+
+    NvAPI_GPU_GetFullName=(NvAPI_GPU_GetFullName_t)(*NvAPI_QueryInterface)(0xCEEE8e9FUL);
+
+    if( NvAPI_Initialize == NULL || NvAPI_EnumPhysicalGPUs == NULL ||
+        NvAPI_EnumPhysicalGPUs == NULL || NvAPI_GPU_GetUsages == NULL )
+    {
+        qDebug() << "Couldn't get functions in nvapi.dll";
+        return false;
+    }
+
+    // initialize NvAPI library, call it once before calling any other NvAPI functions
+    if( (*NvAPI_Initialize)() != 0 )
+    {
+        qDebug() << "Could not initialize nvapi!";
+    }
+
+    return true;
+}
+
+/*
+ * Name: NvGetGpuInfo
+ * Desc: Returns the NVIDIA Gpu's current load percentage.
+ */
+void WorkerProcess::collectNvidiaGpuInfo()
+{
+    (*NvAPI_Initialize)();
+    NV_GPU_THERMAL_SETTINGS 		 nvgts;
+    int          gpuCount = 0;
+    int         *gpuHandles[NVAPI_MAX_PHYSICAL_GPUS] = { NULL };
+    unsigned int gpuUsages[NVAPI_MAX_USAGES_PER_GPU] = { 0 };
+    char gpuName[256] = { 0 };
+
+    // gpuUsages[0] must be this value, otherwise NvAPI_GPU_GetUsages won't work
+    gpuUsages[0] = (NVAPI_MAX_USAGES_PER_GPU * 4) | 0x10000;
+
+    (*NvAPI_EnumPhysicalGPUs)( gpuHandles, &gpuCount );
+    nvgts.version = sizeof(NV_GPU_THERMAL_SETTINGS) | (1<<16);
+    nvgts.count = 0;
+    nvgts.sensor[0].controller = -1;
+    nvgts.sensor[0].target = NVAPI_THERMAL_TARGET_GPU;
+
+    (*NvAPI_GPU_GetThermalSettings)(gpuHandles[0], 0 ,&nvgts);
+    dynamicSystemInfo.gpuTemperature = nvgts.sensor[0].currentTemp;
+
+    (*NvAPI_GPU_GetUsages)( gpuHandles[0], gpuUsages );
+    dynamicSystemInfo.totalGPULoad = gpuUsages[3];
+
+    //todo: move this to static info
+    (*NvAPI_GPU_GetFullName)( gpuHandles[0], gpuName );
+    staticSystemInfo.gpuBrand = gpuName;
+}
+
+void WorkerProcess::collectMemoryInfo()
+{
+    MEMORYSTATUSEX memInfo;
+    memInfo.dwLength = sizeof(MEMORYSTATUSEX);
+    GlobalMemoryStatusEx(&memInfo);
+
+    DWORDLONG totalVirtualMem = memInfo.ullTotalPageFile;
+    staticSystemInfo.totalVirtualMemory = totalVirtualMem;
+
+    DWORDLONG totalPhysMem = memInfo.ullTotalPhys;
+    staticSystemInfo.totalPhysicalMemory = totalPhysMem;
 }
 
 void WorkerProcess::updateRunningProcesses()
@@ -360,15 +351,11 @@ void WorkerProcess::updateTotalUsage()
     memInfo.dwLength = sizeof(MEMORYSTATUSEX);
     GlobalMemoryStatusEx(&memInfo);
 
-    DWORDLONG totalVirtualMem = memInfo.ullTotalPageFile;
     DWORDLONG virtualMemUsed = memInfo.ullTotalPageFile - memInfo.ullAvailPageFile;
-    totalInfo.totalVirtualMemory = totalVirtualMem;
-    totalInfo.usedVirtualMemory = virtualMemUsed;
+    dynamicSystemInfo.usedVirtualMemory = virtualMemUsed;
 
-    DWORDLONG totalPhysMem = memInfo.ullTotalPhys;
     DWORDLONG physMemUsed = memInfo.ullTotalPhys - memInfo.ullAvailPhys;
-    totalInfo.totalPhysicalMemory = totalPhysMem;
-    totalInfo.usedPhysicalMemory = physMemUsed;
+    dynamicSystemInfo.usedPhysicalMemory = physMemUsed;
 
 //    PdhOpenQuery(NULL, NULL, &cpuQuery);
 //    // You can also use L"\\Processor(*)\\% Processor Time" and get individual CPU values with PdhGetFormattedCounterArray()
@@ -378,19 +365,14 @@ void WorkerProcess::updateTotalUsage()
     PDH_FMT_COUNTERVALUE counterVal;
     PdhCollectQueryData(totalCPUQuery);
     PdhGetFormattedCounterValue(totalCPUCounter, PDH_FMT_DOUBLE, NULL, &counterVal);
-    totalInfo.totalCPULoad = counterVal.doubleValue;
+    dynamicSystemInfo.totalCPULoad = counterVal.doubleValue;
 
-    for(uint8_t i=0;i<numProcessors;++i)
+    for(uint8_t i=0;i<staticSystemInfo.processorCount;++i)
     {
         PdhCollectQueryData(singleCPUQueries[i]);
         PdhGetFormattedCounterValue(singleCPUCounters[i], PDH_FMT_DOUBLE, NULL, &counterVal);
-        totalInfo.singleCoreLoads[i] = counterVal.doubleValue;
+        dynamicSystemInfo.singleCoreLoads[i] = counterVal.doubleValue;
     }
-
-    NvGetGpuInfo(totalInfo);
-    //qDebug() << "GPU Detected: " << NvGpuDetected();
-    //qDebug() << "GPU Load: " << NvGetGpuLoad();
-
 }
 
 void WorkerProcess::updateProcessesUsage()
@@ -433,7 +415,7 @@ void WorkerProcess::updateProcessUsage(const HANDLE& processHandle, ProcessInfo&
     percent = (sys.QuadPart - processInfo.lastSysCPU.QuadPart) +
         (user.QuadPart - processInfo.lastUserCPU.QuadPart);
     percent /= (now.QuadPart - processInfo.lastCPU.QuadPart);
-    percent /= numProcessors;
+    percent /= staticSystemInfo.processorCount;
     processInfo.lastCPU = now;
     processInfo.lastUserCPU = user;
     processInfo.lastSysCPU = sys;
@@ -452,6 +434,8 @@ void WorkerProcess::updateProcessUsage(const HANDLE& processHandle, ProcessInfo&
 
 bool WorkerProcess::fillProcessList(std::vector<WorkerProcess::ProcessInfo>& processList)
 {
+    QMutexLocker locker(&mutex);
+
     bool changed{false};
     if(!processList.empty())
     {
@@ -465,7 +449,7 @@ bool WorkerProcess::fillProcessList(std::vector<WorkerProcess::ProcessInfo>& pro
 
             if(it != processList.end())
             {
-                qDebug() << "erase " << it->description;
+                //qDebug() << "erase " << it->description;
                 processList.erase(it);
                 changed = true;
             }
@@ -501,9 +485,17 @@ bool WorkerProcess::fillProcessList(std::vector<WorkerProcess::ProcessInfo>& pro
     return changed;
 }
 
-bool WorkerProcess::fillTotalInfo(TotalInfo& t)
+bool WorkerProcess::fillStaticSystemInfo(StaticSystemInfo& info)
 {
-    t = totalInfo;
+    QMutexLocker locker(&mutex);
+    info = staticSystemInfo;
+    return true;
+}
+
+bool WorkerProcess::fillDynamicSystemInfo(DynamicSystemInfo& info)
+{
+    QMutexLocker locker(&mutex);
+    info = dynamicSystemInfo;
     return true;
 }
 
