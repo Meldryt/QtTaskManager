@@ -1,7 +1,7 @@
 #pragma once
 
 #include <QMainWindow>
-#include "TabWidget.h"
+#include "SystemManager.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -17,5 +17,5 @@ public:
 
 private:
     Ui::MainWindow *ui{nullptr};
-    TabWidget* tabWidget{nullptr};
+    SystemManager* systemManager{nullptr};
 };

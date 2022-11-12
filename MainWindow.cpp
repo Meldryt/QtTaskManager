@@ -7,8 +7,8 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
 
-    tabWidget = new TabWidget(this);
-    setCentralWidget(tabWidget);
+    systemManager = new SystemManager(this);
+    setCentralWidget(systemManager);
 }
 
 MainWindow::~MainWindow()

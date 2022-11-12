@@ -1,22 +1,46 @@
 #pragma once
 
-#include "ProcessDatabase.h"
-
 #include <QWidget>
 #include <QTableWidget>
 #include <QTimer>
 
+#include "ProcessInfo.h"
+
 class TabProcesses : public QWidget
 {
 public:
-    TabProcesses(ProcessDatabase* database, QWidget *parent = nullptr);
+    TabProcesses(QWidget *parent = nullptr);
+
+    enum class SortMode : uint8_t
+    {
+        SortProcessName = 0,
+        SortFileName,
+        SortMemoryUsageHigh,
+        SortMemoryUsageLow,
+        SortCPUUsageHigh,
+        SortCPUUsageLow,
+        NoSort
+    };
 
 private:
     void process();
     void updateTable();
     void updateTotalInfo();
 
-    ProcessDatabase* processDatabase{nullptr};
+    void sortTable();
+    void sortNames();
+    void sortFileNames();
+    void sortMemoryUsage();
+    void sortCPUUsage();
+    void setSortMode(int headerIndex);
+
     QTableWidget* tableProcesses{nullptr};
     QTimer* timer{nullptr};
+
+    std::vector<ProcessInfo::Process> processList;
+
+    SortMode sortMode{SortMode::NoSort};
+
+public slots:
+    void slotProcesses(const std::map<uint32_t, ProcessInfo::Process>& processMap);
 };

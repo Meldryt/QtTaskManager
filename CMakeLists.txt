@@ -15,11 +15,21 @@ find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets Charts)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets Charts)
 
 set(PROJECT_SOURCES
+    CPUInfo.h
+    CPUInfo.cpp
+    DevicesInfo.h
+    DevicesInfo.cpp
+    GPUInfo.h
+    GPUInfo.cpp
+    MemoryInfo.h
+    MemoryInfo.cpp
+    ProcessInfo.h
+    ProcessInfo.cpp
+    SystemManager.cpp
+    SystemManager.h
     main.cpp
     MainWindow.cpp
     MainWindow.h
-    ProcessDatabase.cpp
-    ProcessDatabase.h
     TabApps.cpp
     TabApps.h
     TabHardware.cpp
@@ -28,8 +38,6 @@ set(PROJECT_SOURCES
     TabProcesses.h
     TabPerformance.cpp
     TabPerformance.h
-    TabWidget.cpp
-    TabWidget.h
     WorkerProcess.cpp
     WorkerProcess.h
     MainWindow.ui
@@ -64,6 +72,8 @@ target_link_libraries(QtTaskManager
     #d3d11
     #d3dcompiler
     pdh
+    Setupapi
+    #PortableDeviceGuids
     #-lPdh
 )
 

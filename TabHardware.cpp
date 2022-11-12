@@ -4,15 +4,15 @@
 #include <QPainter>
 #include <QPoint>
 
-TabHardware::TabHardware(ProcessDatabase* database, QWidget *parent)
-    : QWidget{parent}, processDatabase(database)
+TabHardware::TabHardware(QWidget *parent) : QWidget{parent}
 {
     listWidget = new QListWidget(this);
     listWidget->addItem("CPU");
     listWidget->addItem("GPU");
     listWidget->addItem("RAM");
-    listWidget->addItem("Disk");
-    listWidget->addItem("Network");
+    listWidget->addItem("Devices");
+    //listWidget->addItem("Disk");
+    //listWidget->addItem("Network");
     listWidget->setFixedWidth(100);
 
     QGridLayout *layout = new QGridLayout(this);
@@ -46,9 +46,19 @@ TabHardware::TabHardware(ProcessDatabase* database, QWidget *parent)
         ramWidget->setLayout(layout);
     }
 
+    {
+        devicesWidget = new QWidget(this);
+        devicesInfoTable= new QTableWidget(devicesWidget);
+
+        QGridLayout *layout = new QGridLayout(devicesWidget);
+        layout->addWidget(devicesInfoTable,0,0);
+        devicesWidget->setLayout(layout);
+    }
+
     layout->addWidget(cpuWidget,0,1);
     layout->addWidget(gpuWidget,0,2);
     layout->addWidget(ramWidget,0,3);
+    layout->addWidget(devicesWidget,0,4);
 
     connect(listWidget,&QListWidget::itemSelectionChanged, this, &TabHardware::showSelectionWidget);
     listWidget->setCurrentRow(0);
@@ -64,33 +74,80 @@ void TabHardware::process()
     processCPU();
     processGPU();
     processRAM();
+    processDevices();
 }
 
 void TabHardware::processCPU()
 {
-    const WorkerProcess::StaticSystemInfo& staticSystemInfo = processDatabase->getStaticSystemInfo();
     QString text;
-    text += "CPU Brand : " + QString(staticSystemInfo.cpuBrand.c_str()) + "\n";
-    text += "Number of Cores: " + QString::number(staticSystemInfo.processorCount) + "\n";
+    text += "CPU Brand : " + cpuBrand + "\n";
+    text += "Number of Cores: " + processorCount + "\n";
+    text += "Number of Threads: " + threadCount + "\n";
+    text += "L1 Cache Size: " + l1CacheSize + " KB" + "\n";
+    text += "L2 Cache Size: " + l2CacheSize + " KB" + "\n";
+    text += "L3 Cache Size: " + l3CacheSize + " KB" + "\n";
     cpuInfoLabel->setText(text);
 }
 
 void TabHardware::processGPU()
 {
-    const WorkerProcess::StaticSystemInfo& staticSystemInfo = processDatabase->getStaticSystemInfo();
     QString text;
-    text += "GPU Brand : " + QString(staticSystemInfo.gpuBrand.c_str()) + "\n";
+    text += "GPU Brand : " + gpuBrand + "\n";
     //text += "Number of Cores: " + QString::number(staticSystemInfo.processorCount) + "\n";
     gpuInfoLabel->setText(text);
 }
 
 void TabHardware::processRAM()
 {
-    const WorkerProcess::StaticSystemInfo& staticSystemInfo = processDatabase->getStaticSystemInfo();
     QString text;
     text += "RAM Brand : " + QString("") + "\n";
-    text += "Total Physical Memory: " + QString::number((staticSystemInfo.totalPhysicalMemory/1024)/1024) + "MB \n";
+    text += "Total Physical Memory: " + totalPhysicalMemory + "MB \n";
     ramInfoLabel->setText(text);
+}
+
+void TabHardware::processDevices()
+{
+
+}
+
+void TabHardware::slotCPUBrand(const std::string& val)
+{
+    cpuBrand = QString(val.c_str());
+}
+
+void TabHardware::slotProcessorCount(const uint8_t& val)
+{
+    processorCount = QString::number(val);
+}
+
+void TabHardware::slotThreadCount(const uint8_t& val)
+{
+    threadCount = QString::number(val);
+}
+
+void TabHardware::slotL1CacheSize(const uint32_t& val)
+{
+    l1CacheSize = QString::number(val);
+}
+
+void TabHardware::slotL2CacheSize(const uint32_t& val)
+{
+    l2CacheSize = QString::number(val);
+}
+
+void TabHardware::slotL3CacheSize(const uint32_t& val)
+{
+    l3CacheSize = QString::number(val);
+}
+
+void TabHardware::slotGPUBrand(const std::string& val)
+{
+    gpuBrand = QString(val.c_str());
+}
+
+void TabHardware::slotTotalPhysicalMemory(const uint32_t& val)
+{
+    totalPhysicalMemory = QString::number((val/1024)/1024);
 }
 
 void TabHardware::showSelectionWidget()
@@ -98,6 +155,7 @@ void TabHardware::showSelectionWidget()
     cpuWidget->hide();
     gpuWidget->hide();
     ramWidget->hide();
+    devicesWidget->hide();
 
     switch(listWidget->currentRow())
     {

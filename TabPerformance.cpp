@@ -4,8 +4,7 @@
 #include <QPainter>
 #include <QPoint>
 
-TabPerformance::TabPerformance(ProcessDatabase* database, QWidget *parent)
-    : QWidget{parent}, processDatabase(database)
+TabPerformance::TabPerformance(QWidget *parent) : QWidget{parent}
 {
     listWidget = new QListWidget(this);
     listWidget->addItem("CPU");
@@ -77,11 +76,6 @@ TabPerformance::TabPerformance(ProcessDatabase* database, QWidget *parent)
 
 void TabPerformance::process()
 {
-    if(!processDatabase)
-    {
-        return;
-    }
-
     processCPU();
     processGPU();
 }
@@ -104,7 +98,7 @@ void TabPerformance::processCPU()
     }
 
     double x = 60;
-    double y = processDatabase->getDynamicSystemInfo().totalCPULoad;
+    double y = cpuTotalLoad;
     cpuLineSeries->append(x,y);
     cpuChartView->repaint();
 }
@@ -127,12 +121,26 @@ void TabPerformance::processGPU()
     }
 
     double x = 60;
-    uint8_t y = processDatabase->getDynamicSystemInfo().totalGPULoad;
+    uint8_t y = gpuTotalLoad;
     gpuLineSeries->append(x,y);
     gpuChartView->repaint();
 
-    uint8_t gpuTemperature = processDatabase->getDynamicSystemInfo().gpuTemperature;
     gpuTempLabel->setText("Temperature: " + QString::number(gpuTemperature) + " °C");
+}
+
+void TabPerformance::slotCPUTotalLoad(const double& val)
+{
+    cpuTotalLoad = val;
+}
+
+void TabPerformance::slotGPUTotalLoad(const uint8_t& val)
+{
+    gpuTotalLoad = val;
+}
+
+void TabPerformance::slotGPUTemperature(const uint8_t& val)
+{
+    gpuTemperature = val;
 }
 
 void TabPerformance::showSelectionWidget()
