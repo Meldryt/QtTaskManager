@@ -11,24 +11,97 @@
 #include <intsafe.h>
 #include <string>
 #include <iostream>
+#include <map>
+
+#include <stddef.h>
+
 
 typedef unsigned __int64 QWORD;
 
+//System Management BIOS (SMBIOS) Reference Specification, DSO0134 3.6.0, 20 Jun 2022
+static const std::map<uint32_t,std::string> SMBIOS_PROCESSOR_UPGRADE_SPECS = {
+    {0x08, "Slot 1"},
+    {0x09, "Slot 2"},
+    {0x0A, "370-pin socket"},
+    {0x0B, "Slot A"},
+    {0x0C, "Slot M"},
+    {0x0D, "Socket 423"},
+    {0x0E, "Socket A (Socket 462)"},
+    {0x0F, "Socket 478"},
+    {0x10, "Socket 754"},
+    {0x11, "Socket 940"},
+    {0x12, "Socket 939"},
+    {0x13, "Socket mPGA604"},
+    {0x14, "Socket LGA771"},
+    {0x15, "Socket LGA775"},
+    {0x16, "Socket S1"},
+    {0x17, "Socket AM2"},
+    {0x18, "Socket F (1207)"},
+    {0x19, "Socket LGA1366"},
+    {0x1A, "Socket G34"},
+    {0x1B, "Socket AM3"},
+    {0x1C, "Socket C32"},
+    {0x1D, "Socket LGA1156"},
+    {0x1E, "Socket LGA1567"},
+    {0x1F, "Socket PGA988A"},
+    {0x20, "Socket BGA1288"},
+    {0x21, "Socket rPGA988B"},
+    {0x22, "Socket BGA1023"},
+    {0x23, "Socket BGA1224"},
+    {0x24, "Socket LGA1155"},
+    {0x25, "Socket LGA1356"},
+    {0x26, "Socket LGA2011"},
+    {0x27, "Socket FS1"},
+    {0x28, "Socket FS2"},
+    {0x29, "Socket FM1"},
+    {0x2A, "Socket FM2"},
+    {0x2B, "Socket LGA2011-3"},
+    {0x2C, "Socket LGA1356-3"},
+    {0x2D, "Socket LGA1150"},
+    {0x2E, "Socket BGA1168"},
+    {0x2F, "Socket BGA1234"},
+    {0x30, "Socket BGA1364"},
+    {0x31, "Socket AM4"},
+    {0x32, "Socket LGA1151"},
+    {0x33, "Socket BGA1356"},
+    {0x34, "Socket BGA1440"},
+    {0x35, "Socket BGA1515"},
+    {0x36, "Socket LGA3647-1"},
+    {0x37, "Socket SP3"},
+    {0x38, "Socket SP3r2"},
+    {0x39, "Socket LGA2066"},
+    {0x3A, "Socket BGA1392"},
+    {0x3B, "Socket BGA1510"},
+    {0x3C, "Socket BGA1528"},
+    {0x3D, "Socket LGA4189"},
+    {0x3E, "Socket LGA1200"},
+    {0x3F, "Socket LGA4677"},
+    {0x40, "Socket LGA1700"},
+    {0x41, "Socket BGA1744"},
+    {0x42, "Socket BGA1781"},
+    {0x43, "Socket BGA1211"},
+    {0x44, "Socket BGA2422"},
+    {0x45, "Socket LGA1211"},
+    {0x46, "Socket LGA2422"},
+    {0x47, "Socket LGA5773"},
+    {0x48, "Socket BGA5773"},
+};
+
 struct RawSMBIOSData
 {
-    BYTE    Used20CallingMethod;
-    BYTE    SMBIOSMajorVersion;
-    BYTE    SMBIOSMinorVersion;
-    BYTE    DmiRevision;
-    DWORD   Length;
-    BYTE    SMBIOSTableData[ANYSIZE_ARRAY];
+    uint8_t    Used20CallingMethod;
+    uint8_t    SMBIOSMajorVersion;
+    uint8_t    SMBIOSMinorVersion;
+    uint8_t    DmiRevision;
+    uint32_t   Length;
+    uint8_t    SMBIOSTableData[ANYSIZE_ARRAY];
 };
 
 struct RawSMBIOSTable
 {
-    BYTE    Type;
-    BYTE    Length;
-    WORD    Handle;
+    uint8_t    Type;
+    uint8_t    Length;
+    uint16_t   Handle;
 };
 
 BYTE RawSMBIOSInfoType = 0;
@@ -215,6 +288,97 @@ FindSmBiosTable(
 }
 
 DWORD
+GetSmBiosByte(
+    _In_ const RawSMBIOSTable* SmBiosTable,
+    _In_ size_t Offset,
+    _Out_ PBYTE* ResultByte
+    )
+{
+    DWORD error = ERROR_SUCCESS;
+    PSTR currentByte = NULL;
+    BYTE currentByteIndex = 1;
+    ULONG stringLen = 0;
+    ULONG bufferLen = 0;
+    HRESULT hr = S_OK;
+
+    *ResultByte = NULL;
+
+    currentByte = (PSTR)(((BYTE*)SmBiosTable) + SmBiosTable->Length);
+
+    // find the string in the multisz string
+    while (currentByteIndex < Offset)
+    {
+        ++currentByte;
+        ++currentByteIndex;
+    }
+
+    if (!*currentByte)
+    {
+        // String was not found in the string table.
+        error = ERROR_INVALID_DATA;
+        goto exit;
+    }
+
+    // Convert the string to UNICODE
+//    stringLen = MultiByteToWideChar(
+//                    CP_ACP,
+//                    MB_PRECOMPOSED | MB_ERR_INVALID_CHARS,
+//                    currentByte,
+//                    -1,
+//                    NULL,
+//                    0);
+
+    if (0 == stringLen)
+    {
+        error = GetLastError();
+        goto exit;
+    }
+
+    // SMBIOS strings are limited to 64 characters
+    if (stringLen > 65)
+    {
+        error = ERROR_INVALID_DATA;
+        goto exit;
+    }
+
+    hr = ULongMult(stringLen, sizeof(WCHAR), &bufferLen);
+    if (hr != S_OK)
+    {
+        error = ERROR_INVALID_DATA;
+        goto exit;
+    }
+
+    //*ResultString = (PBYTE) HeapAlloc(GetProcessHeap(), 0, bufferLen);
+    if (!*ResultByte)
+    {
+        error = ERROR_OUTOFMEMORY;
+        goto exit;
+    }
+
+//    stringLen = MultiByteToWideChar(
+//                   CP_ACP,
+//                   MB_PRECOMPOSED | MB_ERR_INVALID_CHARS,
+//                   currentString,
+//                   -1,
+//                   *ResultString,
+//                   stringLen);
+
+    if (0 == stringLen)
+    {
+        error = GetLastError();
+    }
+
+exit:
+    if (error != ERROR_SUCCESS)
+    {
+        //HeapFree(GetProcessHeap(),  0, *ResultString);
+        *ResultByte = NULL;
+    }
+
+    return error;
+}
+
+DWORD
 GetSmBiosString(
     _In_ const RawSMBIOSTable* SmBiosTable,
     _In_ BYTE StringIndex,
@@ -227,8 +391,9 @@ GetSmBiosString(
     ULONG stringLen = 0;
     ULONG bufferLen = 0;
     HRESULT hr = S_OK;
-
+    PBYTE currentByte = NULL;
     *ResultString = NULL;
+    uint32_t offset = 0;
 
     // 0 index implies the empty string
     if (StringIndex <= 0)
@@ -237,6 +402,7 @@ GetSmBiosString(
     }
 
     currentString = (PSTR)(((BYTE*)SmBiosTable) + SmBiosTable->Length);
+    currentByte = (PBYTE)(((BYTE*)SmBiosTable) + SmBiosTable->Length + 25);
 
     // find the string in the multisz string
     while (*currentString)
@@ -247,12 +413,15 @@ GetSmBiosString(
         }
 
         ++currentString;
+        ++currentByte;
 
         if (!*currentString)
         {
             ++currentString;
+            ++currentByte;
             ++CurrentStringIndex;
         }
+        ++offset;
     }
 
     if (!*currentString)
@@ -376,20 +545,39 @@ void DevicesInfo::updateBIOSInfo()
         return;
     }
 
+    auto smb = reinterpret_cast<RawSMBIOSData*>(HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, bytesWritten));
+
     error = FindSmBiosTable(smBiosData, RawSMBIOSInfoType, (RawSMBIOSTable**)&biosInfo);
     if (error == ERROR_SUCCESS)
     {
         PWSTR vendor = NULL;
         PWSTR biosVersion = NULL;
+        PWSTR biosStartingAddressSegment = NULL;
         PWSTR biosReleaseDate = NULL;
+        PWSTR biosROMSize = NULL;
         PWSTR systemBIOSMajorRelease = NULL;
         PWSTR systemBIOSMinorRelease = NULL;
 
         error = GetSmBiosString(biosInfo, biosInfo->Vendor, &vendor);
         error = GetSmBiosString(biosInfo, biosInfo->BIOSVersion, &biosVersion);
+        error = GetSmBiosString(biosInfo, biosInfo->BIOSStartingAddressSegment, &biosStartingAddressSegment);
         error = GetSmBiosString(biosInfo, biosInfo->BIOSReleaseDate, &biosReleaseDate);
+        error = GetSmBiosString(biosInfo, biosInfo->BIOSROMSize, &biosROMSize);
         error = GetSmBiosString(biosInfo, biosInfo->SystemBIOSMajorRelease, &systemBIOSMajorRelease);
         error = GetSmBiosString(biosInfo, biosInfo->SystemBIOSMinorRelease, &systemBIOSMinorRelease);
+
+
+//        BYTE    Vendor;
+//        BYTE    BIOSVersion;
+//        WORD    BIOSStartingAddressSegment;
+//        BYTE    BIOSReleaseDate;
+//        BYTE    BIOSROMSize;
+//        QWORD   BIOSCharacteristics;
+//        BYTE    BIOSCharaczeristicsExtensionBytes[ANYSIZE_ARRAY];
+//        BYTE    SystemBIOSMajorRelease;
+//        BYTE    SystemBIOSMinorRelease;
+//        BYTE    EmbeddedControllerFirmwareMajorRelease;
+//        BYTE    EmbeddedControllerFirmwareMinorRelease;
     }
 
     error = FindSmBiosTable(smBiosData, RawSMBIOSSystemInfoType, (RawSMBIOSTable**)&systemInfo);
@@ -419,6 +607,7 @@ void DevicesInfo::updateBIOSInfo()
         PWSTR threadCount = NULL;
         PWSTR maxSpeed = NULL;
         PWSTR currentSpeed = NULL;
+        PWSTR processorUpgrade;
 
         error = GetSmBiosString(processorInfo, processorInfo->ProcessorManufacturer, &manufacturerName);
         error = GetSmBiosString(processorInfo, processorInfo->ProcessorVersion, &versionName);
@@ -428,7 +617,11 @@ void DevicesInfo::updateBIOSInfo()
         error = GetSmBiosString(processorInfo, processorInfo->ThreadCount, &threadCount);
         error = GetSmBiosString(processorInfo, processorInfo->MaxSpeed, &maxSpeed);
         error = GetSmBiosString(processorInfo, processorInfo->CurrentSpeed, &currentSpeed);
+        error = GetSmBiosString(processorInfo, processorInfo->ProcessorUpgrade, &processorUpgrade);
+        std::cout<< std::endl;
     }
+
+    std::cout<< std::endl;
 
 //    struct RawSMBIOSSystemInfo : public RawSMBIOSTable
 //    {
