@@ -3,51 +3,57 @@
 #include <QObject>
 #include <string>
 
-class GPUInfo
+class GpuInfoNVidia;
+class GpuInfoAmd;
+
+class GpuInfo
 {
 public:
 
-    enum GPUManufacturer
+    enum GpuManufacturer
     {
         NVIDIA = 0,
-        AMD
+        AMD,
+        UNKNOWN
     };
 
-    struct GPU_StaticInfo
+    struct GpuStaticInfo
     {
         std::string gpuBrand{""};
     };
 
-    struct GPU_DynamicInfo
+    struct GpuDynamicInfo
     {
         uint8_t gpuTotalLoad{0};
         uint8_t gpuTemperature{0};
     };
 
-    GPUInfo();
+    GpuInfo();
 
     void init();
     void update();
 
-    const GPU_StaticInfo &getStaticInfo() const;
-    const GPU_DynamicInfo &getDynamicInfo() const;
+    const GpuStaticInfo& getStaticInfo() const
+    {
+        return m_staticInfo;
+    }
+
+    const GpuDynamicInfo& getDynamicInfo() const
+    {
+        return m_dynamicInfo;
+    }
 
 private:
-    void detectGPU();
-    void detectGPU_NVidia();
-    void detectGPU_AMD(); //todo: implement
-
+    void detectGpu();
     void fetchStaticInfo();
-    void fetchStaticInfo_NVidia();
-    void fetchStaticInfo_AMD();
-
     void fetchDynamicInfo();
-    void fetchDynamicInfo_NVidia();
-    void fetchDynamicInfo_AMD();
 
-    bool gpuDetected{false};
-    GPUManufacturer gpuManufacturer{NVIDIA};
+    bool m_gpuDetected{false};
+    GpuManufacturer m_gpuManufacturer{AMD};
 
-    GPU_StaticInfo staticInfo;
-    GPU_DynamicInfo dynamicInfo;
+    GpuInfoNVidia* m_gpuInfoNVidia{ nullptr };
+    GpuInfoAmd* m_gpuInfoAmd{ nullptr };
+
+    GpuStaticInfo m_staticInfo;
+    GpuDynamicInfo m_dynamicInfo;
 };

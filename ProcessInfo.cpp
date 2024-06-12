@@ -8,6 +8,8 @@
 #include <psapi.h>
 //#include <strsafe.h>
 
+#include <QDebug>
+
 ProcessInfo::ProcessInfo()
 {
     elapsedTimer = new QElapsedTimer();
@@ -201,7 +203,7 @@ bool ProcessInfo::addProcess(const Process& processInfo)
 
         processMap.insert({processInfo.processID,process});
 
-        //qDebug() << "WorkerProcess::receivedProcess new process " << info.description;
+        qDebug() << "WorkerProcess::receivedProcess new process " << process.description.c_str();
         return true;
     }
     else

@@ -6,11 +6,11 @@
 //#include <windows.h>
 #include <pdh.h>
 
-class CPUInfo
+class CpuInfo
 {
 public:
 
-    struct CPU_StaticInfo
+    struct CpuStaticInfo
     {
         std::string cpuBrand{""};
         uint8_t processorCount{0};
@@ -22,7 +22,7 @@ public:
         uint32_t l3CacheSize{0}; //size in KB
     };
 
-    struct CPU_DynamicInfo
+    struct CpuDynamicInfo
     {
         double cpuTotalLoad{0};
         std::vector<double> singleCoreLoads;
@@ -30,20 +30,20 @@ public:
         uint32_t currentFrequency{0};
     };
 
-    CPUInfo();
+    CpuInfo();
 
     void init();
     void update();
 
-    const CPU_StaticInfo &getStaticInfo() const;
-    const CPU_DynamicInfo &getDynamicInfo() const;
+    const CpuStaticInfo &getStaticInfo() const;
+    const CpuDynamicInfo &getDynamicInfo() const;
 
 private:
     void fetchStaticInfo();
     void fetchDynamicInfo();
 
-    CPU_StaticInfo staticInfo;
-    CPU_DynamicInfo dynamicInfo;
+    CpuStaticInfo staticInfo;
+    CpuDynamicInfo dynamicInfo;
 
     PDH_HQUERY totalCPUQuery;
     PDH_HCOUNTER totalCPUCounter;

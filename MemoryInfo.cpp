@@ -44,12 +44,12 @@ void MemoryInfo::fetchDynamicInfo()
     dynamicInfo.usedPhysicalMemory = physMemUsed;
 }
 
-const MemoryInfo::Memory_StaticInfo &MemoryInfo::getStaticInfo() const
+const MemoryInfo::MemoryStaticInfo &MemoryInfo::getStaticInfo() const
 {
     return staticInfo;
 }
 
-const MemoryInfo::Memory_DynamicInfo &MemoryInfo::getDynamicInfo() const
+const MemoryInfo::MemoryDynamicInfo &MemoryInfo::getDynamicInfo() const
 {
     return dynamicInfo;
 }

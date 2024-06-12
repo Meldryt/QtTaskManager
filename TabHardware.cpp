@@ -21,19 +21,19 @@ TabHardware::TabHardware(QWidget *parent) : QWidget{parent}
 
     {
         cpuWidget = new QWidget(this);
-        cpuInfoLabel= new QLabel(cpuWidget);
+        CpuInfoLabel= new QLabel(cpuWidget);
 
         QGridLayout *layout = new QGridLayout(cpuWidget);
-        layout->addWidget(cpuInfoLabel,0,0);
+        layout->addWidget(CpuInfoLabel,0,0);
         cpuWidget->setLayout(layout);
     }
 
     {
         gpuWidget = new QWidget(this);
-        gpuInfoLabel= new QLabel(gpuWidget);
+        GpuInfoLabel= new QLabel(gpuWidget);
 
         QGridLayout *layout = new QGridLayout(gpuWidget);
-        layout->addWidget(gpuInfoLabel,0,0);
+        layout->addWidget(GpuInfoLabel,0,0);
         gpuWidget->setLayout(layout);
     }
 
@@ -86,7 +86,7 @@ void TabHardware::processCPU()
     text += "L1 Cache Size: " + l1CacheSize + " KB" + "\n";
     text += "L2 Cache Size: " + l2CacheSize + " KB" + "\n";
     text += "L3 Cache Size: " + l3CacheSize + " KB" + "\n";
-    cpuInfoLabel->setText(text);
+    CpuInfoLabel->setText(text);
 }
 
 void TabHardware::processGPU()
@@ -94,7 +94,7 @@ void TabHardware::processGPU()
     QString text;
     text += "GPU Brand : " + gpuBrand + "\n";
     //text += "Number of Cores: " + QString::number(staticSystemInfo.processorCount) + "\n";
-    gpuInfoLabel->setText(text);
+    GpuInfoLabel->setText(text);
 }
 
 void TabHardware::processRAM()

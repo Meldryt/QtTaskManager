@@ -21,10 +21,10 @@ private:
     QListWidget* listWidget{nullptr};
 
     QWidget* cpuWidget{nullptr};
-    QLabel* cpuInfoLabel{nullptr};
+    QLabel* CpuInfoLabel{nullptr};
 
     QWidget* gpuWidget{nullptr};
-    QLabel* gpuInfoLabel{nullptr};
+    QLabel* GpuInfoLabel{nullptr};
 
     QWidget* ramWidget{nullptr};
     QLabel* ramInfoLabel{nullptr};

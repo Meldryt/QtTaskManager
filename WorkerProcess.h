@@ -6,8 +6,8 @@
 
 #include <vector>
 
-#include "GPUInfo.h"
-#include "CPUInfo.h"
+#include "GpuInfo.h"
+#include "CpuInfo.h"
 #include "MemoryInfo.h"
 #include "ProcessInfo.h"
 #include "DevicesInfo.h"
@@ -24,8 +24,8 @@ public slots:
 
 private:
 
-    std::unique_ptr<GPUInfo> gpuInfo{nullptr};
-    std::unique_ptr<CPUInfo> cpuInfo{nullptr};
+    std::unique_ptr<GpuInfo> m_gpuInfo{nullptr};
+    std::unique_ptr<CpuInfo> m_cpuInfo{nullptr};
     std::unique_ptr<MemoryInfo> memoryInfo{nullptr};
     std::unique_ptr<ProcessInfo> processInfo{nullptr};
     std::unique_ptr<DevicesInfo> devicesInfo{nullptr};
@@ -34,13 +34,13 @@ private:
     QTimer* timer{nullptr};
 
 signals:
-    void signalStaticInfo_CPU(const CPUInfo::CPU_StaticInfo&);
-    void signalStaticInfo_GPU(const GPUInfo::GPU_StaticInfo&);
-    void signalStaticInfo_Memory(const MemoryInfo::Memory_StaticInfo&);
-    void signalDynamicInfo_CPU(const CPUInfo::CPU_DynamicInfo&);
-    void signalDynamicInfo_GPU(const GPUInfo::GPU_DynamicInfo&);
-    void signalDynamicInfo_Memory(const MemoryInfo::Memory_DynamicInfo&);
-    void signalDynamicInfo_Processes(const std::map<uint32_t, ProcessInfo::Process>&);
+    void signalStaticInfoCpu(const CpuInfo::CpuStaticInfo&);
+    void signalStaticInfoGpu(const GpuInfo::GpuStaticInfo&);
+    void signalStaticInfoMemory(const MemoryInfo::MemoryStaticInfo&);
+    void signalDynamicInfoCpu(const CpuInfo::CpuDynamicInfo&);
+    void signalDynamicInfoGpu(const GpuInfo::GpuDynamicInfo&);
+    void signalDynamicInfoMemory(const MemoryInfo::MemoryDynamicInfo&);
+    void signalDynamicInfoProcesses(const std::map<uint32_t, ProcessInfo::Process>&);
 
     void finished();
 };

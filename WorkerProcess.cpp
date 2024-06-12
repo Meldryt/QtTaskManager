@@ -38,8 +38,8 @@ WorkerProcess::WorkerProcess(QObject *parent)
 //    memcpy(&lastSysCPU, &fsys, sizeof(FILETIME));
 //    memcpy(&lastUserCPU, &fuser, sizeof(FILETIME));
 
-    gpuInfo = std::make_unique<GPUInfo>();
-    cpuInfo = std::make_unique<CPUInfo>();
+    m_gpuInfo = std::make_unique<GpuInfo>();
+    m_cpuInfo = std::make_unique<CpuInfo>();
     memoryInfo = std::make_unique<MemoryInfo>();
     processInfo = std::make_unique<ProcessInfo>();
     devicesInfo = std::make_unique<DevicesInfo>();
@@ -51,34 +51,34 @@ WorkerProcess::WorkerProcess(QObject *parent)
 
 void WorkerProcess::start()
 {   
-    gpuInfo->init();
-    cpuInfo->init();
+    m_gpuInfo->init();
+    m_cpuInfo->init();
     memoryInfo->init();
-    processInfo->setProcessorCount(cpuInfo->getStaticInfo().processorCount);
+    processInfo->setProcessorCount(m_cpuInfo->getStaticInfo().processorCount);
     //processInfo->init();
     //devicesInfo->init();
 
-    emit signalStaticInfo_CPU(cpuInfo->getStaticInfo());
-    emit signalStaticInfo_GPU(gpuInfo->getStaticInfo());
-    emit signalStaticInfo_Memory(memoryInfo->getStaticInfo());
+    emit signalStaticInfoCpu(m_cpuInfo->getStaticInfo());
+    emit signalStaticInfoGpu(m_gpuInfo->getStaticInfo());
+    emit signalStaticInfoMemory(memoryInfo->getStaticInfo());
 
     timer->start();
 }
 
 void WorkerProcess::process()
 { 
-    gpuInfo->update();
-    cpuInfo->update();
+    m_gpuInfo->update();
+    m_cpuInfo->update();
     memoryInfo->update();
     processInfo->update();
     devicesInfo->update();
 
-    emit signalDynamicInfo_CPU(cpuInfo->getDynamicInfo());
-    emit signalDynamicInfo_GPU(gpuInfo->getDynamicInfo());
-    emit signalDynamicInfo_Memory(memoryInfo->getDynamicInfo());
-    emit signalDynamicInfo_Processes(processInfo->getProcessMap());
-    //init gpuInfo
-    //init cpuInfo
+    emit signalDynamicInfoCpu(m_cpuInfo->getDynamicInfo());
+    emit signalDynamicInfoGpu(m_gpuInfo->getDynamicInfo());
+    emit signalDynamicInfoMemory(memoryInfo->getDynamicInfo());
+    emit signalDynamicInfoProcesses(processInfo->getProcessMap());
+    //init GpuInfo
+    //init CpuInfo
 
     //emit finished();
 }

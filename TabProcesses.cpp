@@ -124,11 +124,16 @@ void TabProcesses::updateTotalInfo()
 
 void TabProcesses::slotProcesses(const std::map<uint32_t, ProcessInfo::Process>& processMap)
 {
-    bool changed{false};
+    if (processMap.empty())
+    {
+        return;
+    }
 
+    bool changed{false};
     uint8_t index = 0;
     auto process = std::begin(processMap);
     int64_t currTime = process->second.timestamp;
+
     while (process != std::end(processMap))
     {
         auto it = std::find_if(processList.begin(), processList.end(), [process](const ProcessInfo::Process& processInfo)

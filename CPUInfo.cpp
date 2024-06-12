@@ -1,12 +1,12 @@
-#include "CPUInfo.h"
+#include "CpuInfo.h"
 
 #include <intrin.h>
 
-CPUInfo::CPUInfo()
+CpuInfo::CpuInfo()
 {
 }
 
-void CPUInfo::init()
+void CpuInfo::init()
 {
     fetchStaticInfo();
 
@@ -37,7 +37,7 @@ void CPUInfo::init()
     }
 }
 
-void CPUInfo::update()
+void CpuInfo::update()
 {
     fetchDynamicInfo();
 }
@@ -59,45 +59,45 @@ DWORD CountSetBits(ULONG_PTR bitMask)
     return bitSetCount;
 }
 
-void CPUInfo::fetchStaticInfo()
+void CpuInfo::fetchStaticInfo()
 {
-    int cpuInfo[4] = {-1};
+    int CpuInfo[4] = {-1};
     unsigned nExIds, i =  0;
     char CPUBrandString[0x40];
     // Get the information associated with each extended ID.
-    __cpuid(cpuInfo, 0x80000000);
-    nExIds = cpuInfo[0];
+    __cpuid(CpuInfo, 0x80000000);
+    nExIds = CpuInfo[0];
     for (i=0x80000000; i<=nExIds; ++i)
     {
-        __cpuid(cpuInfo, i);
+        __cpuid(CpuInfo, i);
         // Interpret CPU brand string
         if  (i == 0x80000002)
         {
-            memcpy(CPUBrandString, cpuInfo, sizeof(cpuInfo));
+            memcpy(CPUBrandString, CpuInfo, sizeof(CpuInfo));
         }
         else if  (i == 0x80000003)
         {
-            memcpy(CPUBrandString + 16, cpuInfo, sizeof(cpuInfo));
+            memcpy(CPUBrandString + 16, CpuInfo, sizeof(CpuInfo));
         }
         else if  (i == 0x80000004)
         {
-            memcpy(CPUBrandString + 32, cpuInfo, sizeof(cpuInfo));
+            memcpy(CPUBrandString + 32, CpuInfo, sizeof(CpuInfo));
         }
     }
 
-    cpuInfo[0] = 0;
-    cpuInfo[1] = 0;
-    cpuInfo[2] = 0;
-    cpuInfo[3] = 0;
+    CpuInfo[0] = 0;
+    CpuInfo[1] = 0;
+    CpuInfo[2] = 0;
+    CpuInfo[3] = 0;
 
-    __cpuid(cpuInfo, 0);
-    if (cpuInfo[0] >= 0x16)
+    __cpuid(CpuInfo, 0);
+    if (CpuInfo[0] >= 0x16)
     {
-        __cpuid(cpuInfo, 0x16);
-        //qDebug() << "EAX: 0x%08x EBX: 0x%08x ECX: %08x\r" << cpuInfo[0] << cpuInfo[1] << cpuInfo[2];
-        //qDebug() << "Processor Base Frequency:  %04d MHz\r" << cpuInfo[0];
-        //qDebug() << "Maximum Frequency:         %04d MHz\r" << cpuInfo[1];
-        //qDebug() << "Bus (Reference) Frequency: %04d MHz\r" << cpuInfo[2];
+        __cpuid(CpuInfo, 0x16);
+        //qDebug() << "EAX: 0x%08x EBX: 0x%08x ECX: %08x\r" << CpuInfo[0] << CpuInfo[1] << CpuInfo[2];
+        //qDebug() << "Processor Base Frequency:  %04d MHz\r" << CpuInfo[0];
+        //qDebug() << "Maximum Frequency:         %04d MHz\r" << CpuInfo[1];
+        //qDebug() << "Bus (Reference) Frequency: %04d MHz\r" << CpuInfo[2];
     }
 
     //string includes manufacturer, model and clockspeed
@@ -175,7 +175,7 @@ void CPUInfo::fetchStaticInfo()
     staticInfo.l3CacheSize = processorL3CacheSize/1024;
 }
 
-void CPUInfo::fetchDynamicInfo()
+void CpuInfo::fetchDynamicInfo()
 {
 //    PdhOpenQuery(NULL, NULL, &cpuQuery);
 //    // You can also use L"\\Processor(*)\\% Processor Time" and get individual CPU values with PdhGetFormattedCounterArray()
@@ -195,12 +195,12 @@ void CPUInfo::fetchDynamicInfo()
     }
 }
 
-const CPUInfo::CPU_StaticInfo &CPUInfo::getStaticInfo() const
+const CpuInfo::CpuStaticInfo &CpuInfo::getStaticInfo() const
 {
     return staticInfo;
 }
 
-const CPUInfo::CPU_DynamicInfo &CPUInfo::getDynamicInfo() const
+const CpuInfo::CpuDynamicInfo &CpuInfo::getDynamicInfo() const
 {
     return dynamicInfo;
 }

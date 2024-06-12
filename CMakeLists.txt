@@ -15,12 +15,18 @@ find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets Charts)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets Charts)
 
 set(PROJECT_SOURCES
-    CPUInfo.h
-    CPUInfo.cpp
+    AdlManager.h
+    AdlManager.cpp
+    CpuInfo.h
+    CpuInfo.cpp
     DevicesInfo.h
     DevicesInfo.cpp
-    GPUInfo.h
-    GPUInfo.cpp
+    GpuInfo.h
+    GpuInfo.cpp
+    GpuInfoNVidia.h
+    GpuInfoNVidia.cpp
+    GpuInfoAmd.h
+    GpuInfoAmd.cpp
     MemoryInfo.h
     MemoryInfo.cpp
     ProcessInfo.h
