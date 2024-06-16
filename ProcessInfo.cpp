@@ -5,7 +5,12 @@
 //#include <stdio.h>
 //#include <tchar.h>
 #include <cmath>
+
+#ifdef _WIN32
 #include <psapi.h>
+#else
+#endif
+
 //#include <strsafe.h>
 
 #include <QDebug>
@@ -21,22 +26,30 @@ void ProcessInfo::update()
     //Enumerates all top-level windows on the screen by passing the handle to each window, in turn,
     //to an application-defined callback function. EnumWindows continues until the last top-level
     //window is enumerated or the callback function returns FALSE.
-    EnumWindows(StaticEnumWindowsProc, reinterpret_cast<LPARAM>(this));
+#ifdef _WIN32
+EnumWindows(StaticEnumWindowsProc, reinterpret_cast<LPARAM>(this));
+#else
+#endif
+
     updateRunningProcesses();
 }
 
+#ifdef _WIN32
 void ProcessInfo::updateRunningProcesses()
 {
-    auto process = std::begin(processMap);
-    while (process != std::end(processMap))
+    auto process = std::begin(m_processMap);
+    while (process != std::end(m_processMap))
     {
+
+        EnumWindows(StaticEnumWindowsProc, reinterpret_cast<LPARAM>(this));
+
         HANDLE processHandle = OpenProcess(SYNCHRONIZE, FALSE, process->second.processID);
         DWORD ret = WaitForSingleObject(processHandle, 0);
 
         if (!processHandle || (ret != WAIT_TIMEOUT))
         {
             //qDebug() << "remove process " << process->second.description;
-            process = processMap.erase(process);
+            process = m_processMap.erase(process);
         }
         else
         {
@@ -55,8 +68,8 @@ void ProcessInfo::updateRunningProcesses()
 
 void ProcessInfo::updateProcessesUsage()
 {
-    auto process = std::begin(processMap);
-    while (process != std::end(processMap))
+    auto process = std::begin(m_processMap);
+    while (process != std::end(m_processMap))
     {
         HANDLE processHandle = OpenProcess(PROCESS_ALL_ACCESS, FALSE, process->first);
         if(processHandle == NULL)
@@ -192,8 +205,8 @@ BOOL ProcessInfo::EnumWindowsProc(HWND hwnd)
 
 bool ProcessInfo::addProcess(const Process& processInfo)
 {
-    std::map<uint32_t, Process>::iterator itProcessMap = processMap.find(processInfo.processID);
-    if(itProcessMap == processMap.end() )
+    std::map<uint32_t, Process>::iterator itProcessMap = m_processMap.find(processInfo.processID);
+    if(itProcessMap == m_processMap.end() )
     {
         Process process;
         process.processID = processInfo.processID;
@@ -201,7 +214,7 @@ bool ProcessInfo::addProcess(const Process& processInfo)
         process.baseName = processInfo.baseName;
         process.filePath = processInfo.filePath;
 
-        processMap.insert({processInfo.processID,process});
+        m_processMap.insert({processInfo.processID,process});
 
         qDebug() << "WorkerProcess::receivedProcess new process " << process.description.c_str();
         return true;
@@ -255,6 +268,9 @@ bool ProcessInfo::addProcessModules(const std::string& processName, const HANDLE
     return false;
 }
 
+#else
+#endif
+
 void ProcessInfo::setProcessorCount(uint8_t newProcessorCount)
 {
     processorCount = newProcessorCount;
@@ -262,5 +278,5 @@ void ProcessInfo::setProcessorCount(uint8_t newProcessorCount)
 
 const std::map<uint32_t, ProcessInfo::Process> &ProcessInfo::getProcessMap() const
 {
-    return processMap;
+    return m_processMap;
 }

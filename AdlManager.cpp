@@ -3,6 +3,8 @@
 #include <string>
 #include <iostream>
 
+#include <QDebug>
+
 //Memory allocating callback for ADL
 void* __stdcall ADL_Main_Memory_Alloc(int iSize)
 {
@@ -44,6 +46,11 @@ AdlManager::AdlManager()
 
 }
 
+AdlManager::~AdlManager()
+{
+	destroyAdl();
+}
+
 bool AdlManager::init()
 {
 	if (!loadLibrary())
@@ -55,23 +62,36 @@ bool AdlManager::init()
 	setupAdapter();
 	setupDisplay();
 	setupGraphics();
-	setupOverdrive();
 	setupDesktop();
+	setupOthers();
 
 	// Initialize legacy ADL transaction.Note that applications still can mix ADL and ADL2 API providing that only single 
 	// transaction that uses legacy ADL APIs exists at any given time in the process. Numer of ADL2 transactions is not limited.  
 	// The second parameter is 1, which means:
 	// retrieve adapter information only for adapters that are physically present and enabled in the system
-	if (ADL_OK != ADL2_Main_Control_Create(ADL_Main_Memory_Alloc, 1, &m_context))
+	if (ADL2_Main_Control_Create(ADL_Main_Memory_Alloc, 1, &m_context) != ADL_OK)
 	{
-		printf("ADL Initialization Error!\n");
+		qWarning() << "ADL Initialization Error!";
 		return false;
 	}
 
+	setupOverdrive();
+
+	return true;
+}
+
+bool AdlManager::fetchStaticInfo()
+{
 	readAdapterInfo();
 	readMemoryInfo();
 	readGraphicsDriverInfo();
 	readBiosInfo();
+
+	return true;
+}
+
+bool AdlManager::fetchDynamicInfo()
+{
 	readOverdriveInfo();
 
 	return true;
@@ -93,7 +113,7 @@ bool AdlManager::loadLibrary()
 
 	if (NULL == m_hDLL)
 	{
-		printf("ADL library not found!\n");
+		qWarning() << "ADL library not found!";
 		return false;
 	}
 
@@ -107,10 +127,10 @@ bool AdlManager::setupMainControl()
 	ADL2_Main_Control_Create = (ADL2_MAIN_CONTROL_CREATE)GetProcAddress(m_hDLL, "ADL2_Main_Control_Create");
 	ADL2_Main_Control_Destroy = (ADL2_MAIN_CONTROL_DESTROY)GetProcAddress(m_hDLL, "ADL2_Main_Control_Destroy");
 
-	if (nullptr == ADL2_Main_Control_Create ||
-		nullptr == ADL2_Main_Control_Destroy)
+	if (!ADL2_Main_Control_Create ||
+		!ADL2_Main_Control_Destroy)
 	{
-		printf("ADL's API is missing!\n");
+		qWarning() << "ADL's API is missing!";
 		return false;
 	}
 
@@ -130,21 +150,24 @@ bool AdlManager::setupAdapter()
 	ADL2_Adapter_PMLog_Start = (ADL2_ADAPTER_PMLOG_START)GetProcAddress(m_hDLL, "ADL2_Adapter_PMLog_Start");
 	ADL2_Adapter_PMLog_Stop = (ADL2_ADAPTER_PMLOG_STOP)GetProcAddress(m_hDLL, "ADL2_Adapter_PMLog_Stop");
 
-	if (nullptr == ADL2_Adapter_NumberOfAdapters_Get ||
-		nullptr == ADL2_Adapter_Active_Get ||
-		nullptr == ADL2_Adapter_Primary_Get ||
-		nullptr == ADL2_Adapter_AdapterInfo_Get ||
-		nullptr == ADL2_Adapter_MemoryInfo3_Get ||
-		nullptr == ADL2_Adapter_VideoBiosInfo_Get ||
-		nullptr == ADL2_Adapter_PMLog_Support_Get ||
-		nullptr == ADL2_Adapter_PMLog_Start ||
-		nullptr == ADL2_Adapter_PMLog_Stop)
+    ADL2_Adapter_RegValueInt_Get = (ADL2_ADAPTER_REGVALUEINT_GET)GetProcAddress(m_hDLL, "ADL2_Adapter_RegValueInt_Get");
+
+	if (!ADL2_Adapter_NumberOfAdapters_Get ||
+		!ADL2_Adapter_Active_Get ||
+		!ADL2_Adapter_Primary_Get ||
+		!ADL2_Adapter_AdapterInfo_Get ||
+		!ADL2_Adapter_MemoryInfo3_Get ||
+		!ADL2_Adapter_VideoBiosInfo_Get ||
+		!ADL2_Adapter_PMLog_Support_Get ||
+		!ADL2_Adapter_PMLog_Start ||
+        !ADL2_Adapter_PMLog_Stop ||
+        !ADL2_Adapter_RegValueInt_Get)
 	{
-		printf("ADL's API is missing!\n");
-		return ADL_ERR;
+		qWarning() << "ADL's API is missing!";
+        return false;
 	}
 
-	return ADL_OK;
+    return true;
 }
 
 bool AdlManager::setupDisplay()
@@ -155,25 +178,25 @@ bool AdlManager::setupDisplay()
 	ADL2_Display_Property_Get = (ADL2_DISPLAY_PROPERTY_GET)GetProcAddress(m_hDLL, "ADL2_Display_Property_Get");
 	ADL2_Display_DCE_Get = (ADL2_DISPLAY_DCE_GET)GetProcAddress(m_hDLL, "ADL2_Display_DCE_Get");
 
-	if (nullptr == ADL2_Display_Modes_Get ||
-		nullptr == ADL2_Display_DisplayInfo_Get ||
-		nullptr == ADL2_Display_Property_Get ||
-		nullptr == ADL2_Display_DCE_Get)
+	if (!ADL2_Display_Modes_Get ||
+		!ADL2_Display_DisplayInfo_Get ||
+		!ADL2_Display_Property_Get ||
+		!ADL2_Display_DCE_Get)
 	{
-		printf("ADL's API is missing!\n");
-		return ADL_ERR;
+		qWarning() << "ADL's API is missing!";
+        return false;
 	}
 
-	return ADL_OK;
+    return true;
 }
 
 bool AdlManager::setupGraphics()
 {
 	ADL2_Graphics_VersionsX2_Get = (ADL2_GRAPHICS_VERSIONSX2_GET)GetProcAddress(m_hDLL, "ADL2_Graphics_VersionsX2_Get");
 
-	if (nullptr == ADL2_Graphics_VersionsX2_Get)
+	if (!ADL2_Graphics_VersionsX2_Get)
 	{
-		printf("ADL's API is missing!\n");
+		qWarning() << "ADL's API is missing!";
 		return false;
 	}
 
@@ -185,10 +208,10 @@ bool AdlManager::setupOverdrive()
 	ADL_Overdrive_Caps = (ADL_OVERDRIVE_CAPS)GetProcAddress(m_hDLL, "ADL_Overdrive_Caps");
 	ADL2_Overdrive_Caps = (ADL2_OVERDRIVE_CAPS)GetProcAddress(m_hDLL, "ADL2_Overdrive_Caps");
 
-	if (nullptr == ADL_Overdrive_Caps ||
-		nullptr == ADL2_Overdrive_Caps)
+	if (!ADL_Overdrive_Caps ||
+		!ADL2_Overdrive_Caps)
 	{
-		printf("ADL's API is missing!\n");
+		qWarning() << "ADL's API is missing!";
 		return false;
 	}
 
@@ -209,17 +232,17 @@ bool AdlManager::setupOverdrive()
 			ADL_Overdrive5_PowerControlInfo_Get = (ADL_OVERDRIVE5_POWERCONTROLINFO_GET)GetProcAddress(m_hDLL, "ADL_Overdrive5_PowerControlInfo_Get");
 			ADL_Overdrive5_PowerControl_Get = (ADL_OVERDRIVE5_POWERCONTROL_GET)GetProcAddress(m_hDLL, "ADL_Overdrive5_PowerControl_Get");
 
-			if (nullptr == ADL_Overdrive5_ThermalDevices_Enum ||
-				nullptr == ADL_Overdrive5_Temperature_Get ||
-				nullptr == ADL_Overdrive5_FanSpeedInfo_Get ||
-				nullptr == ADL_Overdrive5_ODPerformanceLevels_Get ||
-				nullptr == ADL_Overdrive5_ODParameters_Get ||
-				nullptr == ADL_Overdrive5_CurrentActivity_Get ||
-				nullptr == ADL_Overdrive5_PowerControl_Caps ||
-				nullptr == ADL_Overdrive5_PowerControlInfo_Get ||
-				nullptr == ADL_Overdrive5_PowerControl_Get)
+			if (!ADL_Overdrive5_ThermalDevices_Enum ||
+				!ADL_Overdrive5_Temperature_Get ||
+				!ADL_Overdrive5_FanSpeedInfo_Get ||
+				!ADL_Overdrive5_ODPerformanceLevels_Get ||
+				!ADL_Overdrive5_ODParameters_Get ||
+				!ADL_Overdrive5_CurrentActivity_Get ||
+				!ADL_Overdrive5_PowerControl_Caps ||
+				!ADL_Overdrive5_PowerControlInfo_Get ||
+				!ADL_Overdrive5_PowerControl_Get)
 			{
-				printf("ADL's API is missing!\n");
+				qWarning() << "ADL's API is missing!";
 				return false;
 			}
 		}
@@ -235,17 +258,17 @@ bool AdlManager::setupOverdrive()
 			ADL_Overdrive6_PowerControlInfo_Get = (ADL_OVERDRIVE6_POWERCONTROLINFO_GET)GetProcAddress(m_hDLL, "ADL_Overdrive6_PowerControlInfo_Get");
 			ADL_Overdrive6_PowerControl_Get = (ADL_OVERDRIVE6_POWERCONTROL_GET)GetProcAddress(m_hDLL, "ADL_Overdrive6_PowerControl_Get");
 
-			if (nullptr == ADL_Overdrive6_FanSpeed_Get ||
-				nullptr == ADL_Overdrive6_ThermalController_Caps ||
-				nullptr == ADL_Overdrive6_Temperature_Get ||
-				nullptr == ADL_Overdrive6_Capabilities_Get ||
-				nullptr == ADL_Overdrive6_StateInfo_Get ||
-				nullptr == ADL_Overdrive6_CurrentStatus_Get ||
-				nullptr == ADL_Overdrive6_PowerControl_Caps ||
-				nullptr == ADL_Overdrive6_PowerControlInfo_Get ||
-				nullptr == ADL_Overdrive6_PowerControl_Get)
+			if (!ADL_Overdrive6_FanSpeed_Get ||
+				!ADL_Overdrive6_ThermalController_Caps ||
+				!ADL_Overdrive6_Temperature_Get ||
+				!ADL_Overdrive6_Capabilities_Get ||
+				!ADL_Overdrive6_StateInfo_Get ||
+				!ADL_Overdrive6_CurrentStatus_Get ||
+				!ADL_Overdrive6_PowerControl_Caps ||
+				!ADL_Overdrive6_PowerControlInfo_Get ||
+				!ADL_Overdrive6_PowerControl_Get)
 			{
-				printf("ADL's API is missing!\n");
+				qWarning() << "ADL's API is missing!";
 				return false;
 			}
 		}
@@ -254,9 +277,9 @@ bool AdlManager::setupOverdrive()
 	{
 		ADL2_WS_Overdrive_Caps = (ADL2_WS_OVERDRIVE_CAPS)GetProcAddress(m_hDLL, "ADL2_WS_Overdrive_Caps");
 
-		if (nullptr == ADL2_WS_Overdrive_Caps)
+		if (!ADL2_WS_Overdrive_Caps)
 		{
-			printf("ADL's API is missing!\n");
+			qWarning() << "ADL's API is missing!";
 			return false;
 		}
 
@@ -273,29 +296,36 @@ bool AdlManager::setupOverdrive()
 			ADL2_Overdrive5_PowerControlInfo_Get = (ADL2_OVERDRIVE5_POWERCONTROLINFO_GET)GetProcAddress(m_hDLL, "ADL2_Overdrive5_PowerControlInfo_Get");
 			ADL2_Overdrive5_PowerControl_Get = (ADL2_OVERDRIVE5_POWERCONTROL_GET)GetProcAddress(m_hDLL, "ADL2_Overdrive5_PowerControl_Get");
 
-			if (nullptr == ADL2_Overdrive5_ThermalDevices_Enum ||
-				nullptr == ADL2_Overdrive5_Temperature_Get ||
-				nullptr == ADL2_Overdrive5_FanSpeedInfo_Get ||
-				nullptr == ADL2_Overdrive5_ODPerformanceLevels_Get ||
-				nullptr == ADL2_Overdrive5_ODParameters_Get ||
-				nullptr == ADL2_Overdrive5_CurrentActivity_Get ||
-				nullptr == ADL2_Overdrive5_PowerControl_Caps ||
-				nullptr == ADL2_Overdrive5_PowerControlInfo_Get ||
-				nullptr == ADL2_Overdrive5_PowerControl_Get)
+			if (!ADL2_Overdrive5_ThermalDevices_Enum ||
+				!ADL2_Overdrive5_Temperature_Get ||
+				!ADL2_Overdrive5_FanSpeedInfo_Get ||
+				!ADL2_Overdrive5_ODPerformanceLevels_Get ||
+				!ADL2_Overdrive5_ODParameters_Get ||
+				!ADL2_Overdrive5_CurrentActivity_Get ||
+				!ADL2_Overdrive5_PowerControl_Caps ||
+				!ADL2_Overdrive5_PowerControlInfo_Get ||
+				!ADL2_Overdrive5_PowerControl_Get)
 			{
-				printf("ADL's API is missing!\n");
+				qWarning() << "ADL's API is missing!";
 				return false;
 			}
-		}
-		else if (m_overdriveVersion == 6)
+        }
+        else if (m_overdriveVersion == 6)
+        {
+        }
+        else if (m_overdriveVersion == 8)
 		{
+            ADL2_Overdrive8_Init_Setting_Get = (ADL2_OVERDRIVE8_INIT_SETTING_GET)GetProcAddress(m_hDLL, "ADL2_Overdrive8_Init_Setting_Get");
 			ADL2_Overdrive8_Init_SettingX2_Get = (ADL2_OVERDRIVE8_INIT_SETTINGX2_GET)GetProcAddress(m_hDLL, "ADL2_Overdrive8_Init_SettingX2_Get");
+            ADL2_Overdrive8_Current_Setting_Get = (ADL2_OVERDRIVE8_CURRENT_SETTING_GET)GetProcAddress(m_hDLL, "ADL2_Overdrive8_Current_Setting_Get");
 			ADL2_Overdrive8_Current_SettingX2_Get = (ADL2_OVERDRIVE8_CURRENT_SETTINGX2_GET)GetProcAddress(m_hDLL, "ADL2_Overdrive8_Current_SettingX2_Get");
 
-			if (nullptr == ADL2_Overdrive8_Init_SettingX2_Get ||
-				nullptr == ADL2_Overdrive8_Current_SettingX2_Get)
+            if (!ADL2_Overdrive8_Init_Setting_Get ||
+                !ADL2_Overdrive8_Init_SettingX2_Get ||
+                !ADL2_Overdrive8_Current_Setting_Get ||
+				!ADL2_Overdrive8_Current_SettingX2_Get)
 			{
-				printf("ADL's API is missing!\n");
+				qWarning() << "ADL's API is missing!";
 				return false;
 			}
 		}
@@ -309,99 +339,33 @@ bool AdlManager::setupDesktop()
 	ADL2_Desktop_Device_Create = (ADL2_DESKTOP_DEVICE_CREATE)GetProcAddress(m_hDLL, "ADL2_Desktop_Device_Create");
 	ADL2_Desktop_Device_Destroy = (ADL2_DESKTOP_DEVICE_DESTROY)GetProcAddress(m_hDLL, "ADL2_Desktop_Device_Destroy");
 
-	if (nullptr == ADL2_Desktop_Device_Create ||
-		nullptr == ADL2_Desktop_Device_Destroy)
+	if (!ADL2_Desktop_Device_Create ||
+		!ADL2_Desktop_Device_Destroy)
 	{
-		printf("ADL's API is missing!\n");
+		qWarning() << "ADL's API is missing!";
 		return false;
 	}
 
 	return true;
 }
 
-bool AdlManager::fetchInfo()
+bool AdlManager::setupOthers()
 {
-	PrepareAPI();
+    ADL2_New_QueryPMLogData_Get = (ADL2_NEW_QUERYPMLOGDATA_GET)GetProcAddress(m_hDLL, "ADL2_New_QueryPMLogData_Get");
 
-	//ADLVersionsInfoX2 versionsInfo;
-	//ADL2_Graphics_VersionsX2_Get(m_context, &versionsInfo);
+    if (!ADL2_New_QueryPMLogData_Get)
+    {
+		qWarning() << "ADL's API is missing!";
+        return false;
+    }
 
-	//int  iNumberAdapters;
-
-	//// Obtain the number of adapters for the system
-	//if (ADL_OK != ADL2_Adapter_NumberOfAdapters_Get(m_context, &iNumberAdapters))
-	//{
-	//	printf("Cannot get the number of adapters!\n");
-	//	return false;
-	//}
-
-	//for (int adapterId = 0; adapterId < iNumberAdapters; adapterId++)
-	//{
-	//	if (ADL_OK != PrintAdapterInfo(adapterId))
-	//		break;
-	//}
-
-	////Finishing legacy ADL transaction
-	//if (ADL_OK != ADL2_Main_Control_Destroy(m_context))
-	//{
-	//	printf("Failed to destroy ADL context");
-	//}
-
-	return true;
-}
-
-
-//Retrieves active status of given adapter. Implements the retrieval as isolated ADL2 transaction.
-//Note that the function can be nested inside another ADL2 transaction without interfering with it.
-//In real application it would be much more efficient to share the same context with the parent transaction by passing the context handle in the function argument list.   
-int AdlManager::GetAdapterActiveStatus(int adapterId, int& active)
-{
-	active = 0;
-
-	if (ADL_OK != ADL2_Adapter_Active_Get(m_context, adapterId, &active))
-	{
-		printf("Failed to get adapter status");
-	}
-	return ADL_OK;
-}
-
-//Demonstrates execution of multiple nested ADL2 transactions that are executed on the same thread. 
-//Uncoordinated ADL2 transactions can be also executed on separate thread. 
-int AdlManager::PrintAdapterInfo(int adapterId)
-{
-	int active = 0;
-
-	//Invoking additional nested ADL2 based transaction on the same thread to demonstrate that multiple ADL2 transactions can be executed at the same time inside 
-	//the process without interfering. Not the most efficient way to work with ADL. In real application it would be much more efficient to re-use  context of parent
-	//transaction by passing it to GetAdapterActiveStatus.  
-	if (ADL_OK == GetAdapterActiveStatus(adapterId, active))
-	{
-		printf("*************************************************\n");
-
-		printf("Adapter %d is %s\n", adapterId, (active) ? "active" : "not active");
-		if (active)
-		{
-			int numModes;
-			ADLMode* adlMode;
-
-			if (ADL_OK == ADL2_Display_Modes_Get(m_context, adapterId, -1, &numModes, &adlMode))
-			{
-				if (numModes == 1)
-				{
-					printf("Adapter %d resolution is %d by %d\n", adapterId, adlMode->iXRes, adlMode->iYRes);
-					ADL_Main_Memory_Free(adlMode);
-				}
-			}
-		}
-	}
-
-	return ADL_OK;
+    return true;
 }
 
 //Destroy ADL. ALD calls can't be called after the method is invoked;
-void AdlManager::DestroyADL()
+void AdlManager::destroyAdl()
 {
-	if (NULL != ADL2_Main_Control_Destroy)
+	if (ADL2_Main_Control_Destroy)
 	{
 		ADL2_Main_Control_Destroy(m_context);
 	}
@@ -412,14 +376,9 @@ void AdlManager::DestroyADL()
 	}
 }
 
-int AdlManager::GpuBDF(int busNo_, int devNo_, int funcNo_)
+std::string AdlManager::getGpuVramNameFromId(int vramVendorRevId)
 {
-	return ((busNo_ & 0xFF) << 8) | ((devNo_ & 0x1F) << 3) | (funcNo_ & 0x07);
-}
-
-std::string AdlManager::GetGPUVRAMNameFromID(int iVramVendorRevId)
-{
-	switch (iVramVendorRevId)
+	switch (vramVendorRevId)
 	{
 	case ADLvRamVendor_SAMSUNG:
 		return "Samsung";
@@ -448,28 +407,28 @@ std::string AdlManager::GetGPUVRAMNameFromID(int iVramVendorRevId)
 
 void AdlManager::readAdapterInfo()
 {
-	int iNumberAdapters = 0;
+	int numberAdapters = 0;
 
-	if (ADL_OK == ADL2_Adapter_NumberOfAdapters_Get(m_context, &iNumberAdapters))
+	if (ADL2_Adapter_NumberOfAdapters_Get(m_context, &numberAdapters) == ADL_OK)
 	{
 		int primary = -1;
-		ADL2_Adapter_Primary_Get(m_context, &primary);
-
-		AdapterInfo* infos = new AdapterInfo[iNumberAdapters];
-		if (ADL_OK == ADL2_Adapter_AdapterInfo_Get(m_context, infos, sizeof(AdapterInfo) * iNumberAdapters))
+		if (ADL2_Adapter_Primary_Get(m_context, &primary))
 		{
-			for (uint32_t adapterIdx = 0; adapterIdx < iNumberAdapters; ++adapterIdx)
+			AdapterInfo* infos = new AdapterInfo[numberAdapters];
+			if (ADL2_Adapter_AdapterInfo_Get(m_context, infos, sizeof(AdapterInfo) * numberAdapters) == ADL_OK)
 			{
-				int active = 0;
-				if (ADL_OK == ADL2_Adapter_Active_Get(m_context, adapterIdx, &active) && active/* && primary == adapterIdx*/)
+				for (uint32_t adapterIdx = 0; adapterIdx < static_cast<uint32_t>(numberAdapters); ++adapterIdx)
 				{
-					m_adapterInfo = infos[adapterIdx];
-					m_adapterIndex = m_adapterInfo.iAdapterIndex;
-					m_model = m_adapterInfo.strAdapterName;
-					break;
+					int active = 0;
+					if (ADL2_Adapter_Active_Get(m_context, adapterIdx, &active) == ADL_OK && active/* && primary == adapterIdx*/)
+					{
+						m_adapterInfo = infos[adapterIdx];
+						m_adapterIndex = m_adapterInfo.iAdapterIndex;
+						m_staticInfo.gpuModel = m_adapterInfo.strAdapterName;
+						break;
+					}
 				}
 			}
-
 			delete[] infos;
 		}
 	}
@@ -478,19 +437,19 @@ void AdlManager::readAdapterInfo()
 void AdlManager::readMemoryInfo()
 {
 	ADLMemoryInfo3 adlMemInfo3;
-	if (ADL_OK == ADL2_Adapter_MemoryInfo3_Get(m_context, m_adapterInfo.iAdapterIndex, &adlMemInfo3))
+	if (ADL2_Adapter_MemoryInfo3_Get(m_context, m_adapterInfo.iAdapterIndex, &adlMemInfo3) == ADL_OK)
 	{
-		m_memorySize = adlMemInfo3.iMemorySize / 1024 / 1024 / 1000;
-		m_memoryType = adlMemInfo3.strMemoryType;
-		m_memoryBandwidth = adlMemInfo3.iMemoryBandwidth / 1024;
+		m_staticInfo.memorySize = adlMemInfo3.iMemorySize / 1024 / 1024 / 1000;
+		m_staticInfo.memoryType = adlMemInfo3.strMemoryType;
+		m_staticInfo.memoryBandwidth = adlMemInfo3.iMemoryBandwidth / 1024;
 
 		if (adlMemInfo3.iVramVendorRevId == ADLvRamVendor_Unsupported == adlMemInfo3.iVramVendorRevId)
 		{
-			printf("\tGPU Vedio RAM vendor ID Unsupport, only support AMD dGPU now.\n");
+            qWarning() << "GPU Vedio RAM vendor ID Unsupport, only support AMD dGPU now.";
 		}
 		else
 		{
-			m_memoryVendor = GetGPUVRAMNameFromID(adlMemInfo3.iVramVendorRevId);
+			m_staticInfo.memoryVendor = getGpuVramNameFromId(adlMemInfo3.iVramVendorRevId);
 		}
 	}
 }
@@ -501,18 +460,18 @@ void AdlManager::readGraphicsDriverInfo()
 	{
 		ADLVersionsInfoX2 versionsInfo;
 		int ADLResult = ADL2_Graphics_VersionsX2_Get(m_context, &versionsInfo);
-		if (ADL_OK == ADLResult || ADL_OK_WARNING == ADLResult) 
+		if (ADLResult == ADL_OK || ADLResult == ADL_OK_WARNING)
 		{
-			m_driverInfo = versionsInfo.strDriverVer;
+			m_staticInfo.driverInfo = versionsInfo.strDriverVer;
 
 			std::string catalystVersion = std::string(versionsInfo.strCatalystVersion);
 			if (catalystVersion.empty())
 			{
-				m_driverVersion = versionsInfo.strCrimsonVersion;
+				m_staticInfo.driverVersion = versionsInfo.strCrimsonVersion;
 			}
 			else
 			{
-				m_driverVersion = catalystVersion;
+				m_staticInfo.driverVersion = catalystVersion;
 			}	
 		}
 	}
@@ -520,10 +479,10 @@ void AdlManager::readGraphicsDriverInfo()
 	{
 		ADLVersionsInfo versionsInfo;
 		int ADLResult = ADL2_Graphics_Versions_Get(m_context, &versionsInfo);
-		if (ADL_OK == ADLResult || ADL_OK_WARNING == ADLResult) 
+		if (ADLResult == ADL_OK || ADLResult == ADL_OK_WARNING)
 		{
-			m_driverInfo = versionsInfo.strDriverVer;
-			m_driverVersion = versionsInfo.strCatalystVersion;
+			m_staticInfo.driverInfo = versionsInfo.strDriverVer;
+			m_staticInfo.driverVersion = versionsInfo.strCatalystVersion;
 		}
 	}
 }
@@ -531,8 +490,8 @@ void AdlManager::readGraphicsDriverInfo()
 void AdlManager::readBiosInfo()
 {
 	ADLBiosInfo biosInfo;
-	if (ADL_OK == ADL2_Adapter_VideoBiosInfo_Get(m_context, m_adapterIndex, &biosInfo)) {
-		//printf("\tBIOS\n"
+	if (ADL2_Adapter_VideoBiosInfo_Get(m_context, m_adapterIndex, &biosInfo) == ADL_OK) {
+        //printf("\tBIOS\n"
 		//	"\t\tPart#: %s\n"
 		//	"\t\tVersion: %s\n"
 		//	"\t\tDate: %s\n",
@@ -543,7 +502,39 @@ void AdlManager::readBiosInfo()
 	}
 }
 
-#define ADL_WARNING_NO_DATA      -100
+void AdlManager::readOverdriveVersion()
+{
+	int iOverdriveSupported = 0;
+	int iOverdriveEnabled = 0;
+	int	iOverdriveVersion = 0;
+
+	if (ADL_Overdrive_Caps(m_adapterIndex, &iOverdriveSupported, &iOverdriveEnabled, &iOverdriveVersion) != ADL_OK)
+	{
+		if (ADL2_Overdrive_Caps(m_context, m_adapterIndex, &iOverdriveSupported, &iOverdriveEnabled, &iOverdriveVersion) == ADL_OK)
+		{
+			m_adlOverdriveVersion = 2;
+			qDebug() << "Found ADL2_Overdrive_Caps";
+		}
+		else
+		{
+			qWarning() << "ADL_Overdrive_Caps and ADL2_Overdrive_Caps failed";
+		}
+	}
+	else
+	{
+		m_adlOverdriveVersion = 1;
+		qDebug() << "Found ADL_Overdrive_Caps";
+	}
+
+	if (!iOverdriveSupported)
+	{
+		qWarning() << "Overdrive is not supported";
+	}
+
+	m_overdriveSupported = (iOverdriveSupported == 1);
+	m_overdriveEnabled = (iOverdriveEnabled == 1);
+	m_overdriveVersion = iOverdriveVersion;
+}
 
 void AdlManager::readOverdriveInfo()
 {
@@ -563,7 +554,7 @@ void AdlManager::readOverdriveInfo()
 			readAdlOverdrive6Info();
 		}
 	}
-	else
+	else if (m_adlOverdriveVersion == 2)
 	{
 		if (m_overdriveVersion == 5)
 		{
@@ -578,43 +569,6 @@ void AdlManager::readOverdriveInfo()
 			readAdl2Overdrive8Info();
 		}
 	}
-
-}
-
-void AdlManager::readOverdriveVersion()
-{
-	int iOverdriveSupported = 0;
-	int iOverdriveEnabled = 0;
-	int	iOverdriveVersion = 0;
-	int result;
-
-	result = ADL_Overdrive_Caps(m_adapterIndex, &iOverdriveSupported, &iOverdriveEnabled, &iOverdriveVersion);
-	if (result != ADL_OK)
-	{
-		result = ADL2_Overdrive_Caps(m_context, m_adapterIndex, &iOverdriveSupported, &iOverdriveEnabled, &iOverdriveVersion);
-		if(result != ADL_OK)
-		{
-		}
-		else
-		{
-			m_adlOverdriveVersion = 2;
-			printf("Found ADL2_Overdrive_Caps \n");
-		}
-	}
-	else
-	{
-		m_adlOverdriveVersion = 1;
-		printf("Found ADL_Overdrive_Caps \n");
-	}
-
-	if (!iOverdriveSupported)
-	{
-		printf("Overdrive is not supported \n");
-	}
-
-	m_overdriveSupported = (iOverdriveSupported == 1);
-	m_overdriveEnabled = (iOverdriveEnabled == 1);
-	m_overdriveVersion = iOverdriveVersion;
 }
 
 bool AdlManager::readAdlOverdrive5Info()
@@ -628,27 +582,20 @@ bool AdlManager::readAdlOverdrive5Info()
 	return true;
 }
 
+#define ADL_WARNING_NO_DATA      -100
+
 bool AdlManager::readAdlOverdrive5Temperature()
 {
 	ADLThermalControllerInfo termalControllerInfo = { 0 };
 	termalControllerInfo.iSize = sizeof(ADLThermalControllerInfo);
 
-	ADLTemperature temperatureInfo;
-	int result;
-
 	for (int iThermalControllerIndex = 0; iThermalControllerIndex < 10; iThermalControllerIndex++)
 	{
-		result = ADL2_Overdrive5_ThermalDevices_Enum(m_context, m_adapterIndex, iThermalControllerIndex, &termalControllerInfo);
+		int result = ADL2_Overdrive5_ThermalDevices_Enum(m_context, m_adapterIndex, iThermalControllerIndex, &termalControllerInfo);
 
 		if (result == ADL_WARNING_NO_DATA)
 		{
-			m_maxThermalControllerIndex = iThermalControllerIndex - 1;
-			break;
-		}
-
-		if (result == ADL_WARNING_NO_DATA)
-		{
-			printf("Failed to enumerate thermal devices\n");
+            qWarning() << "Failed to enumerate thermal devices";
 			return false;
 		}
 
@@ -656,17 +603,15 @@ bool AdlManager::readAdlOverdrive5Temperature()
 		{
 			ADLTemperature adlTemperature = { 0 };
 			adlTemperature.iSize = sizeof(ADLTemperature);
-			if (ADL_OK != ADL2_Overdrive5_Temperature_Get(m_context, m_adapterIndex, iThermalControllerIndex, &adlTemperature))
+			if (ADL2_Overdrive5_Temperature_Get(m_context, m_adapterIndex, iThermalControllerIndex, &adlTemperature) != ADL_OK)
 			{
-				printf("Failed to get thermal devices temperature\n");
+				qWarning() << "Failed to get thermal devices temperature";
 				return false;
 			}
-			int temperatureInDegreesCelsius = adlTemperature.iTemperature / 1000; // The temperature is returned in millidegrees Celsius.
-
-			printf("Thermal controller id:%d \n", iThermalControllerIndex);
-			printf("Current temperature: %d\n", temperatureInDegreesCelsius);
 
 			m_thermalDomainControllerIndex = iThermalControllerIndex;
+			m_dynamicInfo.gpuTemperature = adlTemperature.iTemperature / 1000; // The temperature is returned in millidegrees Celsius.
+			return true;
 		}
 	}
 
@@ -675,42 +620,36 @@ bool AdlManager::readAdlOverdrive5Temperature()
 
 bool AdlManager::readAdlOverdrive5FanSpeed()
 {
-	if (!m_fanSpeedInfo)
+	ADLFanSpeedInfo fanSpeedInfo;
+	fanSpeedInfo.iSize;
+
+	if (ADL_Overdrive5_FanSpeedInfo_Get(m_adapterIndex, m_thermalDomainControllerIndex, &fanSpeedInfo) != ADL_OK)
 	{
-		m_fanSpeedInfo = new ADLFanSpeedInfo();
-		m_fanSpeedInfo->iSize = sizeof(ADLFanSpeedInfo);
-
-		if (ADL_OK != ADL_Overdrive5_FanSpeedInfo_Get(m_adapterIndex, m_thermalDomainControllerIndex, m_fanSpeedInfo))
-		{
-			printf("Failed to get fan caps\n");
-			return false;
-		}
-
-		m_fanSpeedReportingMethod = ((m_fanSpeedInfo->iFlags & ADL_DL_FANCTRL_SUPPORTS_RPM_READ) == ADL_DL_FANCTRL_SUPPORTS_RPM_READ) ? ADL_DL_FANCTRL_SPEED_TYPE_RPM : ADL_DL_FANCTRL_SPEED_TYPE_PERCENT;
+		qWarning() << "Failed to get fan caps";
+		return false;
 	}
+
+	int fanSpeedReportingMethod = ((fanSpeedInfo.iFlags & ADL_DL_FANCTRL_SUPPORTS_RPM_READ) == ADL_DL_FANCTRL_SUPPORTS_RPM_READ) ? ADL_DL_FANCTRL_SPEED_TYPE_RPM : ADL_DL_FANCTRL_SPEED_TYPE_PERCENT;
 
 	ADLFanSpeedValue fanSpeedValue = { 0 };
 	
 	//Set to ADL_DL_FANCTRL_SPEED_TYPE_RPM or to ADL_DL_FANCTRL_SPEED_TYPE_PERCENT to request fan speed to be returned in rounds per minute or in percentage points.
 	//Note that the call might fail if requested fan speed reporting method is not supported by the GPU.
-	fanSpeedValue.iSpeedType = m_fanSpeedReportingMethod;
-	if (ADL_OK != ADL_Overdrive5_FanSpeed_Get(m_adapterIndex, m_thermalDomainControllerIndex, &fanSpeedValue))
+	fanSpeedValue.iSpeedType = fanSpeedReportingMethod;
+	if (ADL_Overdrive5_FanSpeed_Get(m_adapterIndex, m_thermalDomainControllerIndex, &fanSpeedValue) != ADL_OK)
 	{
-		printf("Failed to get fan speed\n");
+		qWarning() << "Failed to get fan speed";
 		return false;
 	}
 
-	if (m_fanSpeedReportingMethod == ADL_DL_FANCTRL_SPEED_TYPE_RPM)
+	if (fanSpeedReportingMethod == ADL_DL_FANCTRL_SPEED_TYPE_RPM)
 	{
-		printf("Current fan speed: %d rpm\n", fanSpeedValue.iFanSpeed);
-		printf("Minimum fan speed: %d rpm\n", m_fanSpeedInfo->iMinRPM);
-		printf("Maximum fan speed: %d rpm\n", m_fanSpeedInfo->iMaxRPM);
+		m_dynamicInfo.gpuFanSpeed = fanSpeedValue.iFanSpeed;
+		m_dynamicInfo.gpuFanSpeedPercent = 100 * (fanSpeedValue.iFanSpeed - fanSpeedInfo.iMinRPM) / (fanSpeedInfo.iMaxRPM - fanSpeedInfo.iMinRPM) ;
 	}
 	else
 	{
-		printf("Current fan speed: %d percent\n", fanSpeedValue.iFanSpeed);
-		printf("Minimum fan speed: %d percent\n", m_fanSpeedInfo->iMinPercent);
-		printf("Maximum fan speed: %d percent\n", m_fanSpeedInfo->iMaxPercent);
+		m_dynamicInfo.gpuFanSpeedPercent = fanSpeedValue.iFanSpeed;
 	}
 
 	return true;
@@ -719,32 +658,34 @@ bool AdlManager::readAdlOverdrive5FanSpeed()
 bool AdlManager::readAdlOverdrive5PowerControl()
 {
 	int powerControlSupported = 0;
-	ADLPowerControlInfo powerControlInfo = { 0 };
-	int powerControlCurrent = 0;
-	int powerControlDefault = 0;
-
-	if (ADL_OK != ADL_Overdrive5_PowerControl_Caps(m_adapterIndex, &powerControlSupported))
+	
+	if (ADL_Overdrive5_PowerControl_Caps(m_adapterIndex, &powerControlSupported) != ADL_OK)
 	{
-		printf("Failed to get Power Controls support\n");
+		qWarning() << "Failed to get Power Controls support";
 		return false;
 	}
 
 	if (powerControlSupported)
 	{
-		if (ADL_OK != ADL_Overdrive5_PowerControlInfo_Get(m_adapterIndex, &powerControlInfo))
+		ADLPowerControlInfo powerControlInfo = { 0 };
+
+		if (ADL_Overdrive5_PowerControlInfo_Get(m_adapterIndex, &powerControlInfo) != ADL_OK)
 		{
-			printf("Failed to get Power Controls Info\n");
+			qWarning() << "Failed to get Power Controls Info";
 			return false;
 		}
 
-		if (ADL_OK != ADL_Overdrive5_PowerControl_Get(m_adapterIndex, &powerControlCurrent, &powerControlDefault))
+		int powerControlCurrent = 0;
+		int powerControlDefault = 0;
+
+		if (ADL_Overdrive5_PowerControl_Get(m_adapterIndex, &powerControlCurrent, &powerControlDefault) != ADL_OK)
 		{
-			printf("Failed to get Power Control current value\n");
+			qWarning() << "Failed to get Power Control current value";
 			return false;
 		}
 
-		printf("The Power Control threshold range is %d to %d with step of %d \n", powerControlInfo.iMinValue, powerControlInfo.iMaxValue, powerControlInfo.iStepValue);
-		printf("Current value of Power Control threshold is %d \n", powerControlCurrent);
+        //printf("The Power Control threshold range is %d to %d with step of %d \n", powerControlInfo.iMinValue, powerControlInfo.iMaxValue, powerControlInfo.iStepValue);
+        //printf("Current value of Power Control threshold is %d \n", powerControlCurrent);
 	}
 
 	return true;
@@ -757,28 +698,28 @@ bool AdlManager::readAdlOverdrive5ODParameters()
 		m_overdriveParameters = new ADLODParameters();
 		m_overdriveParameters->iSize = sizeof(ADLODParameters);
 
-		if (ADL_OK != ADL_Overdrive5_ODParameters_Get(m_adapterIndex, m_overdriveParameters))
+		if (ADL_Overdrive5_ODParameters_Get(m_adapterIndex, m_overdriveParameters) != ADL_OK)
 		{
-			printf("Failed to get overdrive parameters\n");
-			return 0;
+			qWarning() << "Failed to get overdrive parameters";
+			return false;
 		}
 	}
 
-	printf("The GPU  Engine clock range is %d..%d MHz with step of %d Mhz \n",
-		m_overdriveParameters->sEngineClock.iMin / 100,
-		m_overdriveParameters->sEngineClock.iMax / 100,
-		m_overdriveParameters->sEngineClock.iStep / 100);
+  //  printf("The GPU  Engine clock range is %d..%d MHz with step of %d Mhz \n",
+		//m_overdriveParameters->sEngineClock.iMin / 100,
+		//m_overdriveParameters->sEngineClock.iMax / 100,
+		//m_overdriveParameters->sEngineClock.iStep / 100);
 
-	printf("The GPU  Memory clock range is %d..%d MHz with step of %d MHz\n",
-		m_overdriveParameters->sMemoryClock.iMin / 100,
-		m_overdriveParameters->sMemoryClock.iMax / 100,
-		m_overdriveParameters->sMemoryClock.iStep);
+  //  printf("The GPU  Memory clock range is %d..%d MHz with step of %d MHz\n",
+		//m_overdriveParameters->sMemoryClock.iMin / 100,
+		//m_overdriveParameters->sMemoryClock.iMax / 100,
+		//m_overdriveParameters->sMemoryClock.iStep);
 
 
-	printf("The GPU  Core Voltage range is %d..%d with step of %d \n",
-		m_overdriveParameters->sVddc.iMin,
-		m_overdriveParameters->sVddc.iMax,
-		m_overdriveParameters->sVddc.iStep);
+  //  printf("The GPU  Core Voltage range is %d..%d with step of %d \n",
+		//m_overdriveParameters->sVddc.iMin,
+		//m_overdriveParameters->sVddc.iMax,
+		//m_overdriveParameters->sVddc.iStep);
 
 	return true;
 }
@@ -794,7 +735,7 @@ bool AdlManager::readAdlOverdrive5PerformanceLevel()
 		//Performance level with highest index corresponds to highest performance system state � 3D game playing for example.
 		//Users are usually interested in overclocking highest index performance level.
 
-		printf("The GPU supports %d performance levels: \n", m_overdriveParameters->iNumberOfPerformanceLevels);
+        printf("The GPU supports %d performance levels: \n", m_overdriveParameters->iNumberOfPerformanceLevels);
 
 		int size = sizeof(ADLODPerformanceLevels) + sizeof(ADLODPerformanceLevel) * (m_overdriveParameters->iNumberOfPerformanceLevels - 1);
 		void* performanceLevelsBuffer = malloc(size);
@@ -803,15 +744,15 @@ bool AdlManager::readAdlOverdrive5PerformanceLevel()
 		performanceLevels->iSize = size;
 
 
-		if (ADL_OK != ADL_Overdrive5_ODPerformanceLevels_Get(m_adapterIndex, 1/*Getting default values first*/, performanceLevels))
+		if (ADL_Overdrive5_ODPerformanceLevels_Get(m_adapterIndex, 1/*Getting default values first*/, performanceLevels) != ADL_OK)
 		{
-			printf("Failed to get information about supported performance levels.  \n");
-			return 0;
+			qWarning() << "Failed to get information about supported performance levels.";
+			return false;
 		}
 
 		for (int i = 0; i < m_overdriveParameters->iNumberOfPerformanceLevels; i++)
 		{
-			printf("Performance level %d - Default Engine Clock:%d MHz, Default Memory Clock:%d MHz, Default Core Voltage:%d \n",
+            printf("Performance level %d - Default Engine Clock:%d MHz, Default Memory Clock:%d MHz, Default Core Voltage:%d \n",
 				i,
 				performanceLevels->aLevels[i].iEngineClock / 100,
 				performanceLevels->aLevels[i].iMemoryClock / 100,
@@ -821,21 +762,23 @@ bool AdlManager::readAdlOverdrive5PerformanceLevel()
 		memset(performanceLevelsBuffer, 0, size);
 		performanceLevels->iSize = size;
 
-		if (ADL_OK != ADL_Overdrive5_ODPerformanceLevels_Get(m_adapterIndex, 0/*Getting current values first*/, performanceLevels))
+		if (ADL_Overdrive5_ODPerformanceLevels_Get(m_adapterIndex, 0/*Getting current values first*/, performanceLevels) != ADL_OK)
 		{
-			printf("Failed to get information about supported performance levels.  \n");
-			return 0;
+			qWarning() << "Failed to get information about supported performance levels.";
+			return false;
 		}
 
 		for (int i = 0; i < m_overdriveParameters->iNumberOfPerformanceLevels; i++)
 		{
-			printf("Performance level %d - Current Engine Clock:%d MHz, Current Memory Clock:%d MHz, Current Core Voltage:%d \n",
+            printf("Performance level %d - Current Engine Clock:%d MHz, Current Memory Clock:%d MHz, Current Core Voltage:%d \n",
 				i,
 				performanceLevels->aLevels[i].iEngineClock / 100,
 				performanceLevels->aLevels[i].iMemoryClock / 100,
 				performanceLevels->aLevels[i].iVddc);
 		}
 	}
+
+	return true;
 }
 
 bool AdlManager::readAdlOverdrive5CurrentActivity()
@@ -843,22 +786,22 @@ bool AdlManager::readAdlOverdrive5CurrentActivity()
 	//Getting real current values for clocks, performance levels, voltage effective in the system.
 	ADLPMActivity activity = { 0 };
 	activity.iSize = sizeof(ADLPMActivity);
-	if (ADL_OK != ADL_Overdrive5_CurrentActivity_Get(m_adapterIndex, &activity))
+	if (ADL_Overdrive5_CurrentActivity_Get(m_adapterIndex, &activity) != ADL_OK)
 	{
-		printf("Failed to get current GPU activity.  \n");
-		return 0;
+		qWarning() << "Failed to get current GPU activity.";
+		return false;
 	}
-	printf("Current Engine Clock: %d MHz\n", activity.iEngineClock / 100);
-	printf("Current Memory Clock: %d MHz\n", activity.iMemoryClock / 100);
-	printf("Current Core Voltage: %d \n", activity.iVddc);
-	printf("Current Performance Level: %d \n", activity.iCurrentPerformanceLevel);
 
 	if (m_overdriveParameters->iActivityReportingSupported)
 	{
-		printf("Current Engine Clock: %d persent\n", activity.iActivityPercent);
+		m_dynamicInfo.gpuGraphicsUsage = activity.iActivityPercent;
 	}
 
-	//...setter...
+    m_dynamicInfo.gpuGraphicsClock = activity.iEngineClock / 100;
+    m_dynamicInfo.gpuMemoryClock = activity.iMemoryClock / 100;
+	m_dynamicInfo.gpuGraphicsVoltage = activity.iVddc;
+
+	return true;
 }
 
 bool AdlManager::readAdlOverdrive6Info()
@@ -873,28 +816,28 @@ bool AdlManager::readAdlOverdrive6Info()
 
 bool AdlManager::readAdlOverdrive6Temperature()
 {
-	int temperature = 0;
-
 	if (!m_thermalControllerCaps)
 	{
 		m_thermalControllerCaps = new ADLOD6ThermalControllerCaps();
 
-		if (ADL_OK != ADL_Overdrive6_ThermalController_Caps(m_adapterIndex, m_thermalControllerCaps))
+		if (ADL_Overdrive6_ThermalController_Caps(m_adapterIndex, m_thermalControllerCaps) != ADL_OK)
 		{
-			printf("Failed to get thermal controller capabilities \n");
+			qWarning() << "Failed to get thermal controller capabilities";
 			return false;
 		}
 	}
 
 	if (ADL_OD6_TCCAPS_THERMAL_CONTROLLER == (m_thermalControllerCaps->iCapabilities & ADL_OD6_TCCAPS_THERMAL_CONTROLLER)) //Verifies that thermal controller exists on the GPU.
 	{
-		if (ADL_OK != ADL_Overdrive6_Temperature_Get(m_adapterIndex, &temperature))
+		int temperature = 0;
+
+		if (ADL_Overdrive6_Temperature_Get(m_adapterIndex, &temperature) != ADL_OK)
 		{
-			printf("Failed to get GPU temperature\n");
+			qWarning() << "Failed to get GPU temperature";
 			return false;
 		}
 
-		printf("GPU temperature is %d degrees celsius \n", temperature / 1000); //The temperature is returned in mili-degree of Celsius 
+		m_dynamicInfo.gpuTemperature = temperature / 1000; //The temperature is returned in mili-degree of Celsius
 	}
 
 	return true;
@@ -914,26 +857,29 @@ bool AdlManager::readAdlOverdrive6FanSpeed()
 										ADL_OD6_FANSPEED_TYPE_RPM :
 										ADL_OD6_FANSPEED_TYPE_PERCENT;*/
 
-			if (ADL_OK != ADL_Overdrive6_FanSpeed_Get(m_adapterIndex, &fanSpeedInfo))
+			if (ADL_Overdrive6_FanSpeed_Get(m_adapterIndex, &fanSpeedInfo) != ADL_OK)
 			{
-				printf("Failed to get fan speed info\n");
+                printf("Failed to get fan speed info\n");
 				return false;
 			}
 
 			if (ADL_OD6_TCCAPS_FANSPEED_RPM_READ == (m_thermalControllerCaps->iCapabilities & ADL_OD6_TCCAPS_FANSPEED_RPM_READ))
 			{
-				printf("Fan speed range: %d..%d rpm\n", m_thermalControllerCaps->iFanMinRPM, m_thermalControllerCaps->iFanMaxRPM);
+                printf("Fan speed range: %d..%d rpm\n", m_thermalControllerCaps->iFanMinRPM, m_thermalControllerCaps->iFanMaxRPM);
 			}
 			else
 			{
-				printf("Fan speed range: %d..%d percent\n", m_thermalControllerCaps->iFanMinPercent, m_thermalControllerCaps->iFanMaxPercent);
+                printf("Fan speed range: %d..%d percent\n", m_thermalControllerCaps->iFanMinPercent, m_thermalControllerCaps->iFanMaxPercent);
 			}
 
 
 			if (ADL_OD6_FANSPEED_TYPE_RPM == (fanSpeedInfo.iSpeedType & ADL_OD6_FANSPEED_TYPE_RPM))
-				printf("Current fan speed: %d rpm \n", fanSpeedInfo.iFanSpeedRPM);
+                printf("Current fan speed: %d rpm \n", fanSpeedInfo.iFanSpeedRPM);
 			else
-				printf("Current fan speed: %d percent \n", fanSpeedInfo.iFanSpeedPercent);
+                printf("Current fan speed: %d percent \n", fanSpeedInfo.iFanSpeedPercent);
+
+            m_dynamicInfo.gpuFanSpeed = fanSpeedInfo.iFanSpeedRPM;
+            m_dynamicInfo.gpuFanSpeedPercent = fanSpeedInfo.iFanSpeedPercent;
 		}
 	}
 
@@ -945,9 +891,9 @@ bool AdlManager::readAdlOverdrive6CurrentStatus()
 	ADLOD6Capabilities od6Capabilities = { 0 };
 	ADLOD6CurrentStatus currentStatus = { 0 };
 
-	if (ADL_OK != ADL_Overdrive6_Capabilities_Get(m_adapterIndex, &od6Capabilities))
+	if (ADL_Overdrive6_Capabilities_Get(m_adapterIndex, &od6Capabilities) != ADL_OK)
 	{
-		printf("Failed to get Overdrive capabilities\n");
+        printf("Failed to get Overdrive capabilities\n");
 		return false;
 	}
 
@@ -955,7 +901,7 @@ bool AdlManager::readAdlOverdrive6CurrentStatus()
 	//either requested by user or preconfigured by the driver defaults. Thus only 2 performance levels  should be returned.
 	if (od6Capabilities.iNumberOfPerformanceLevels != 2)
 	{
-		printf("Unexpected number of performance levels\n");
+        printf("Unexpected number of performance levels\n");
 		return false;
 	}
 
@@ -970,9 +916,9 @@ bool AdlManager::readAdlOverdrive6CurrentStatus()
 
 	//Getting default effective minimum and maximum values for memory and GPU clocks.
 	//The only state supported by Overdrive6 is "Performance". 
-	if (ADL_OK != ADL_Overdrive6_StateInfo_Get(m_adapterIndex, ADL_OD6_GETSTATEINFO_DEFAULT_PERFORMANCE, defaultStateInfo))
+	if (ADL_Overdrive6_StateInfo_Get(m_adapterIndex, ADL_OD6_GETSTATEINFO_DEFAULT_PERFORMANCE, defaultStateInfo) != ADL_OK)
 	{
-		printf("Failed to get default performance levels info\n");
+        printf("Failed to get default performance levels info\n");
 		return false;
 	}
 
@@ -982,49 +928,49 @@ bool AdlManager::readAdlOverdrive6CurrentStatus()
 
 	//Getting default effective minimum and maximum values for memory and GPU clocks.
 	//The only state supported by Overdrive6 is "Performance". 
-	if (ADL_OK != ADL_Overdrive6_StateInfo_Get(m_adapterIndex, ADL_OD6_GETSTATEINFO_CUSTOM_PERFORMANCE, customStateInfo))
+	if (ADL_Overdrive6_StateInfo_Get(m_adapterIndex, ADL_OD6_GETSTATEINFO_CUSTOM_PERFORMANCE, customStateInfo) != ADL_OK)
 	{
-		printf("Failed to get custom performance levels info\n");
+        printf("Failed to get custom performance levels info\n");
 		return false;
 	}
 
 	if (ADL_OD6_CAPABILITY_SCLK_CUSTOMIZATION == (od6Capabilities.iCapabilities & ADL_OD6_CAPABILITY_SCLK_CUSTOMIZATION))
 	{
-		printf("Range of clock supported by GPU core: %d...%d MHz with step of %d MHz \n",
+        printf("Range of clock supported by GPU core: %d...%d MHz with step of %d MHz \n",
 			od6Capabilities.sEngineClockRange.iMin / 100,
 			od6Capabilities.sEngineClockRange.iMax / 100,
 			od6Capabilities.sEngineClockRange.iStep / 100);
 
-		printf("Default effective range of GPU core clock: %d .. %d \n", defaultStateInfo->aLevels[0].iEngineClock / 100, defaultStateInfo->aLevels[1].iEngineClock / 100);
-		printf("Custom effective range of GPU core clock: %d .. %d \n", customStateInfo->aLevels[0].iEngineClock / 100, customStateInfo->aLevels[1].iEngineClock / 100);
+        printf("Default effective range of GPU core clock: %d .. %d \n", defaultStateInfo->aLevels[0].iEngineClock / 100, defaultStateInfo->aLevels[1].iEngineClock / 100);
+        printf("Custom effective range of GPU core clock: %d .. %d \n", customStateInfo->aLevels[0].iEngineClock / 100, customStateInfo->aLevels[1].iEngineClock / 100);
 	}
 
 	if (ADL_OD6_CAPABILITY_MCLK_CUSTOMIZATION == (od6Capabilities.iCapabilities & ADL_OD6_CAPABILITY_MCLK_CUSTOMIZATION))
 	{
-		printf("Range of supported memory clock: %d...%d MHz with step of %d MHz \n",
+        printf("Range of supported memory clock: %d...%d MHz with step of %d MHz \n",
 			od6Capabilities.sMemoryClockRange.iMin / 100,
 			od6Capabilities.sMemoryClockRange.iMax / 100,
 			od6Capabilities.sMemoryClockRange.iStep / 100);
 
-		printf("Default effective range of GPU memory clock: %d .. %d \n", defaultStateInfo->aLevels[0].iMemoryClock / 100, defaultStateInfo->aLevels[1].iMemoryClock / 100);
-		printf("Custom effective range of GPU memory clock: %d .. %d \n", customStateInfo->aLevels[0].iMemoryClock / 100, customStateInfo->aLevels[1].iMemoryClock / 100);
+        printf("Default effective range of GPU memory clock: %d .. %d \n", defaultStateInfo->aLevels[0].iMemoryClock / 100, defaultStateInfo->aLevels[1].iMemoryClock / 100);
+        printf("Custom effective range of GPU memory clock: %d .. %d \n", customStateInfo->aLevels[0].iMemoryClock / 100, customStateInfo->aLevels[1].iMemoryClock / 100);
 	}
 
-	if (ADL_OK != ADL_Overdrive6_CurrentStatus_Get(m_adapterIndex, &currentStatus))
+	if (ADL_Overdrive6_CurrentStatus_Get(m_adapterIndex, &currentStatus) != ADL_OK)
 	{
-		printf("Failed to get custom performance levels info\n");
+        printf("Failed to get custom performance levels info\n");
 		return false;
 	}
 
-	printf("Current GPU core clock: %d MHz \n", currentStatus.iEngineClock / 100);
-	printf("Current GPU memory clock: %d MHz \n", currentStatus.iMemoryClock / 100);
-	printf("Current number of PCI bus lanes: %d \n", currentStatus.iCurrentBusLanes);
-	printf("Current PCI bus speed: %d \n", currentStatus.iCurrentBusSpeed);
+    printf("Current GPU core clock: %d MHz \n", currentStatus.iEngineClock / 100);
+    printf("Current GPU memory clock: %d MHz \n", currentStatus.iMemoryClock / 100);
+    printf("Current number of PCI bus lanes: %d \n", currentStatus.iCurrentBusLanes);
+    printf("Current PCI bus speed: %d \n", currentStatus.iCurrentBusSpeed);
 
 	//First we need to verify that ASIC supports monitoring of its current activities before we attempt to retrieve its current clock
 	if ((od6Capabilities.iCapabilities & ADL_OD6_CAPABILITY_GPU_ACTIVITY_MONITOR) == ADL_OD6_CAPABILITY_GPU_ACTIVITY_MONITOR)
 	{
-		printf("Current GPU activity level: %d percent \n", currentStatus.iActivityPercent);
+        printf("Current GPU activity level: %d percent \n", currentStatus.iActivityPercent);
 	}
 
 	return true;
@@ -1037,29 +983,29 @@ bool AdlManager::readAdlOverdrive6PowerControl()
 	int powerControlCurrent = 0;
 	int powerControlDefault = 0;
 
-	if (ADL_OK != ADL_Overdrive6_PowerControl_Caps(m_adapterIndex, &powerControlSupported))
+	if (ADL_Overdrive6_PowerControl_Caps(m_adapterIndex, &powerControlSupported) != ADL_OK)
 	{
-		printf("Failed to get power control capabilities\n");
+        printf("Failed to get power control capabilities\n");
 		return false;
 	}
 
 	if (powerControlSupported)
 	{
-		if (ADL_OK != ADL_Overdrive6_PowerControlInfo_Get(m_adapterIndex, &powerControlInfo))
+		if (ADL_Overdrive6_PowerControlInfo_Get(m_adapterIndex, &powerControlInfo) != ADL_OK)
 		{
-			printf("Failed to get power control information\n");
+            printf("Failed to get power control information\n");
 			return false;
 		}
 
-		if (ADL_OK != ADL_Overdrive6_PowerControl_Get(m_adapterIndex, &powerControlCurrent, &powerControlDefault))
+		if (ADL_Overdrive6_PowerControl_Get(m_adapterIndex, &powerControlCurrent, &powerControlDefault) != ADL_OK)
 		{
-			printf("Failed to get power control current and default settings\n");
+            printf("Failed to get power control current and default settings\n");
 			return false;
 		}
 
-		printf("Power Control range: %d...%d with step of %d \n", powerControlInfo.iMinValue, powerControlInfo.iMaxValue, powerControlInfo.iStepValue);
-		printf("Power Control current level: %d \n", powerControlCurrent);
-		printf("Power Control default level: %d \n", powerControlDefault);
+        printf("Power Control range: %d...%d with step of %d \n", powerControlInfo.iMinValue, powerControlInfo.iMaxValue, powerControlInfo.iStepValue);
+        printf("Power Control current level: %d \n", powerControlCurrent);
+        printf("Power Control default level: %d \n", powerControlDefault);
 	}
 
 	return true;
@@ -1081,7 +1027,6 @@ bool AdlManager::readAdl2Overdrive5Temperature()
 	ADLThermalControllerInfo termalControllerInfo = { 0 };
 	termalControllerInfo.iSize = sizeof(ADLThermalControllerInfo);
 
-	ADLTemperature temperatureInfo;
 	int result;
 
 	for (int iThermalControllerIndex = 0; iThermalControllerIndex < 10; iThermalControllerIndex++)
@@ -1096,7 +1041,7 @@ bool AdlManager::readAdl2Overdrive5Temperature()
 
 		if (result == ADL_WARNING_NO_DATA)
 		{
-			printf("Failed to enumerate thermal devices\n");
+            printf("Failed to enumerate thermal devices\n");
 			return false;
 		}
 
@@ -1104,15 +1049,15 @@ bool AdlManager::readAdl2Overdrive5Temperature()
 		{
 			ADLTemperature adlTemperature = { 0 };
 			adlTemperature.iSize = sizeof(ADLTemperature);
-			if (ADL_OK != ADL2_Overdrive5_Temperature_Get(m_context, m_adapterIndex, iThermalControllerIndex, &adlTemperature))
+			if (ADL2_Overdrive5_Temperature_Get(m_context, m_adapterIndex, iThermalControllerIndex, &adlTemperature) != ADL_OK)
 			{
-				printf("Failed to get thermal devices temperature\n");
+                printf("Failed to get thermal devices temperature\n");
 				return false;
 			}
 			int temperatureInDegreesCelsius = adlTemperature.iTemperature / 1000; // The temperature is returned in millidegrees Celsius.
 
-			printf("Thermal controller id:%d \n", iThermalControllerIndex);
-			printf("Current temperature: %d\n", temperatureInDegreesCelsius);
+            printf("Thermal controller id:%d \n", iThermalControllerIndex);
+            printf("Current temperature: %d\n", temperatureInDegreesCelsius);
 
 			m_thermalDomainControllerIndex = iThermalControllerIndex;
 		}
@@ -1123,42 +1068,39 @@ bool AdlManager::readAdl2Overdrive5Temperature()
 
 bool AdlManager::readAdl2Overdrive5FanSpeed()
 {
-	if (!m_fanSpeedInfo)
+	ADLFanSpeedInfo fanSpeedInfo;
+	fanSpeedInfo.iSize = sizeof(ADLFanSpeedInfo);
+
+	if (ADL_Overdrive5_FanSpeedInfo_Get(m_adapterIndex, m_thermalDomainControllerIndex, &fanSpeedInfo) != ADL_OK)
 	{
-		m_fanSpeedInfo = new ADLFanSpeedInfo();
-		m_fanSpeedInfo->iSize = sizeof(ADLFanSpeedInfo);
-
-		if (ADL_OK != ADL_Overdrive5_FanSpeedInfo_Get(m_adapterIndex, m_thermalDomainControllerIndex, m_fanSpeedInfo))
-		{
-			printf("Failed to get fan caps\n");
-			return false;
-		}
-
-		m_fanSpeedReportingMethod = ((m_fanSpeedInfo->iFlags & ADL_DL_FANCTRL_SUPPORTS_RPM_READ) == ADL_DL_FANCTRL_SUPPORTS_RPM_READ) ? ADL_DL_FANCTRL_SPEED_TYPE_RPM : ADL_DL_FANCTRL_SPEED_TYPE_PERCENT;
+		printf("Failed to get fan caps\n");
+		return false;
 	}
+
+	int fanSpeedReportingMethod = ((fanSpeedInfo.iFlags & ADL_DL_FANCTRL_SUPPORTS_RPM_READ) == ADL_DL_FANCTRL_SUPPORTS_RPM_READ) ? ADL_DL_FANCTRL_SPEED_TYPE_RPM : ADL_DL_FANCTRL_SPEED_TYPE_PERCENT;
 
 	ADLFanSpeedValue fanSpeedValue = { 0 };
 
 	//Set to ADL_DL_FANCTRL_SPEED_TYPE_RPM or to ADL_DL_FANCTRL_SPEED_TYPE_PERCENT to request fan speed to be returned in rounds per minute or in percentage points.
 	//Note that the call might fail if requested fan speed reporting method is not supported by the GPU.
-	fanSpeedValue.iSpeedType = m_fanSpeedReportingMethod;
-	if (ADL_OK != ADL_Overdrive5_FanSpeed_Get(m_adapterIndex, m_thermalDomainControllerIndex, &fanSpeedValue))
+	fanSpeedValue.iSpeedType = fanSpeedReportingMethod;
+	if (ADL_Overdrive5_FanSpeed_Get(m_adapterIndex, m_thermalDomainControllerIndex, &fanSpeedValue) != ADL_OK)
 	{
-		printf("Failed to get fan speed\n");
+        printf("Failed to get fan speed\n");
 		return false;
 	}
 
-	if (m_fanSpeedReportingMethod == ADL_DL_FANCTRL_SPEED_TYPE_RPM)
+	if (fanSpeedReportingMethod == ADL_DL_FANCTRL_SPEED_TYPE_RPM)
 	{
-		printf("Current fan speed: %d rpm\n", fanSpeedValue.iFanSpeed);
-		printf("Minimum fan speed: %d rpm\n", m_fanSpeedInfo->iMinRPM);
-		printf("Maximum fan speed: %d rpm\n", m_fanSpeedInfo->iMaxRPM);
+        printf("Current fan speed: %d rpm\n", fanSpeedValue.iFanSpeed);
+        printf("Minimum fan speed: %d rpm\n", fanSpeedInfo.iMinRPM);
+        printf("Maximum fan speed: %d rpm\n", fanSpeedInfo.iMaxRPM);
 	}
 	else
 	{
-		printf("Current fan speed: %d percent\n", fanSpeedValue.iFanSpeed);
-		printf("Minimum fan speed: %d percent\n", m_fanSpeedInfo->iMinPercent);
-		printf("Maximum fan speed: %d percent\n", m_fanSpeedInfo->iMaxPercent);
+        printf("Current fan speed: %d percent\n", fanSpeedValue.iFanSpeed);
+        printf("Minimum fan speed: %d percent\n", fanSpeedInfo.iMinPercent);
+        printf("Maximum fan speed: %d percent\n", fanSpeedInfo.iMaxPercent);
 	}
 
 	return true;
@@ -1171,28 +1113,28 @@ bool AdlManager::readAdl2Overdrive5PowerControl()
 	int powerControlCurrent = 0;
 	int powerControlDefault = 0;
 
-	if (ADL_OK != ADL2_Overdrive5_PowerControl_Caps(m_context, m_adapterIndex, &powerControlSupported))
+	if (ADL2_Overdrive5_PowerControl_Caps(m_context, m_adapterIndex, &powerControlSupported) != ADL_OK)
 	{
-		printf("Failed to get Power Controls support\n");
+        printf("Failed to get Power Controls support\n");
 		return false;
 	}
 
 	if (powerControlSupported)
 	{
-		if (ADL_OK != ADL2_Overdrive5_PowerControlInfo_Get(m_context, m_adapterIndex, &powerControlInfo))
+		if (ADL2_Overdrive5_PowerControlInfo_Get(m_context, m_adapterIndex, &powerControlInfo) != ADL_OK)
 		{
-			printf("Failed to get Power Controls Info\n");
+            printf("Failed to get Power Controls Info\n");
 			return false;
 		}
 
-		if (ADL_OK != ADL2_Overdrive5_PowerControl_Get(m_context, m_adapterIndex, &powerControlCurrent, &powerControlDefault))
+		if (ADL2_Overdrive5_PowerControl_Get(m_context, m_adapterIndex, &powerControlCurrent, &powerControlDefault) != ADL_OK)
 		{
-			printf("Failed to get Power Control current value\n");
+            printf("Failed to get Power Control current value\n");
 			return false;
 		}
 
-		printf("The Power Control threshold range is %d to %d with step of %d \n", powerControlInfo.iMinValue, powerControlInfo.iMaxValue, powerControlInfo.iStepValue);
-		printf("Current value of Power Control threshold is %d \n", powerControlCurrent);
+        printf("The Power Control threshold range is %d to %d with step of %d \n", powerControlInfo.iMinValue, powerControlInfo.iMaxValue, powerControlInfo.iStepValue);
+        printf("Current value of Power Control threshold is %d \n", powerControlCurrent);
 	}
 
 	return true;
@@ -1205,25 +1147,25 @@ bool AdlManager::readAdl2Overdrive5ODParameters()
 		m_overdriveParameters = new ADLODParameters();
 		m_overdriveParameters->iSize = sizeof(ADLODParameters);
 
-		if (ADL_OK != ADL2_Overdrive5_ODParameters_Get(m_context, m_adapterIndex, m_overdriveParameters))
+		if (ADL2_Overdrive5_ODParameters_Get(m_context, m_adapterIndex, m_overdriveParameters) != ADL_OK)
 		{
-			printf("Failed to get overdrive parameters\n");
-			return 0;
+            printf("Failed to get overdrive parameters\n");
+			return false;
 		}
 	}
 
-	printf("The GPU  Engine clock range is %d..%d MHz with step of %d Mhz \n",
+    printf("The GPU  Engine clock range is %d..%d MHz with step of %d Mhz \n",
 		m_overdriveParameters->sEngineClock.iMin / 100,
 		m_overdriveParameters->sEngineClock.iMax / 100,
 		m_overdriveParameters->sEngineClock.iStep / 100);
 
-	printf("The GPU  Memory clock range is %d..%d MHz with step of %d MHz\n",
+    printf("The GPU  Memory clock range is %d..%d MHz with step of %d MHz\n",
 		m_overdriveParameters->sMemoryClock.iMin / 100,
 		m_overdriveParameters->sMemoryClock.iMax / 100,
 		m_overdriveParameters->sMemoryClock.iStep);
 
 
-	printf("The GPU  Core Voltage range is %d..%d with step of %d \n",
+    printf("The GPU  Core Voltage range is %d..%d with step of %d \n",
 		m_overdriveParameters->sVddc.iMin,
 		m_overdriveParameters->sVddc.iMax,
 		m_overdriveParameters->sVddc.iStep);
@@ -1242,7 +1184,7 @@ bool AdlManager::readAdl2Overdrive5PerformanceLevel()
 		//Performance level with highest index corresponds to highest performance system state � 3D game playing for example.
 		//Users are usually interested in overclocking highest index performance level.
 
-		printf("The GPU supports %d performance levels: \n", m_overdriveParameters->iNumberOfPerformanceLevels);
+        printf("The GPU supports %d performance levels: \n", m_overdriveParameters->iNumberOfPerformanceLevels);
 
 		int size = sizeof(ADLODPerformanceLevels) + sizeof(ADLODPerformanceLevel) * (m_overdriveParameters->iNumberOfPerformanceLevels - 1);
 		void* performanceLevelsBuffer = malloc(size);
@@ -1251,15 +1193,15 @@ bool AdlManager::readAdl2Overdrive5PerformanceLevel()
 		performanceLevels->iSize = size;
 
 
-		if (ADL_OK != ADL2_Overdrive5_ODPerformanceLevels_Get(m_context, m_adapterIndex, 1/*Getting default values first*/, performanceLevels))
+		if (ADL2_Overdrive5_ODPerformanceLevels_Get(m_context, m_adapterIndex, 1/*Getting default values first*/, performanceLevels) != ADL_OK)
 		{
-			printf("Failed to get information about supported performance levels.  \n");
+            printf("Failed to get information about supported performance levels.  \n");
 			return 0;
 		}
 
 		for (int i = 0; i < m_overdriveParameters->iNumberOfPerformanceLevels; i++)
 		{
-			printf("Performance level %d - Default Engine Clock:%d MHz, Default Memory Clock:%d MHz, Default Core Voltage:%d \n",
+            printf("Performance level %d - Default Engine Clock:%d MHz, Default Memory Clock:%d MHz, Default Core Voltage:%d \n",
 				i,
 				performanceLevels->aLevels[i].iEngineClock / 100,
 				performanceLevels->aLevels[i].iMemoryClock / 100,
@@ -1269,15 +1211,15 @@ bool AdlManager::readAdl2Overdrive5PerformanceLevel()
 		memset(performanceLevelsBuffer, 0, size);
 		performanceLevels->iSize = size;
 
-		if (ADL_OK != ADL2_Overdrive5_ODPerformanceLevels_Get(m_context, m_adapterIndex, 0/*Getting current values first*/, performanceLevels))
+		if (ADL2_Overdrive5_ODPerformanceLevels_Get(m_context, m_adapterIndex, 0/*Getting current values first*/, performanceLevels) != ADL_OK)
 		{
-			printf("Failed to get information about supported performance levels.  \n");
+            printf("Failed to get information about supported performance levels.  \n");
 			return 0;
 		}
 
 		for (int i = 0; i < m_overdriveParameters->iNumberOfPerformanceLevels; i++)
 		{
-			printf("Performance level %d - Current Engine Clock:%d MHz, Current Memory Clock:%d MHz, Current Core Voltage:%d \n",
+            printf("Performance level %d - Current Engine Clock:%d MHz, Current Memory Clock:%d MHz, Current Core Voltage:%d \n",
 				i,
 				performanceLevels->aLevels[i].iEngineClock / 100,
 				performanceLevels->aLevels[i].iMemoryClock / 100,
@@ -1288,137 +1230,581 @@ bool AdlManager::readAdl2Overdrive5PerformanceLevel()
 
 bool AdlManager::readAdl2Overdrive5CurrentActivity()
 {
+	if (!ADL2_Overdrive5_CurrentActivity_Get)
+	{
+		return false;
+	}
+
 	//Getting real current values for clocks, performance levels, voltage effective in the system.
 	ADLPMActivity activity = { 0 };
 	activity.iSize = sizeof(ADLPMActivity);
-	if (ADL_OK != ADL2_Overdrive5_CurrentActivity_Get(m_context, m_adapterIndex, &activity))
+	if (ADL2_Overdrive5_CurrentActivity_Get(m_context, m_adapterIndex, &activity) != ADL_OK)
 	{
-		printf("Failed to get current GPU activity.  \n");
-		return 0;
+		qWarning() << "Failed to get current GPU activity.";
+		return false;
 	}
-	printf("Current Engine Clock: %d MHz\n", activity.iEngineClock / 100);
-	printf("Current Memory Clock: %d MHz\n", activity.iMemoryClock / 100);
-	printf("Current Core Voltage: %d \n", activity.iVddc);
-	printf("Current Performance Level: %d \n", activity.iCurrentPerformanceLevel);
 
 	if (m_overdriveParameters->iActivityReportingSupported)
 	{
-		printf("Current Engine Clock: %d persent\n", activity.iActivityPercent);
+		m_dynamicInfo.gpuGraphicsClock = activity.iEngineClock / 100;
+		m_dynamicInfo.gpuMemoryClock = activity.iMemoryClock / 100;
+		m_dynamicInfo.gpuGraphicsVoltage = activity.iVddc;
+		m_dynamicInfo.gpuGraphicsUsage = activity.iActivityPercent;
+		//activity.iCurrentPerformanceLevel
+		return true;
 	}
-
-	//...setter...
+	else
+	{
+		return false;
+	}
 }
 
 bool AdlManager::readAdl2Overdrive6Info()
 {
-	return true;
+	return false;
 }
 
 bool AdlManager::readAdl2Overdrive8Info()
 {
-	return true;
-}
+    readAdl2Overdrive8InitSetting();
+    readAdl2Overdrive8CurrentSetting();
 
-void AdlManager::PrepareAPI()
-{
-
-	//	int numModes;
-	//	ADLMode* adlMode;
-	//	if (ADL_OK == ADL2_Display_Modes_Get(m_context, adapterIdx, -1, &numModes, &adlMode)) {
-	//		printf("\tDisplay Modes\n");
-	//		if (numModes == 1) {
-	//			printf("\t\t%dx%d\n", adlMode->iXRes, adlMode->iYRes);
-	//			ADL_Main_Memory_Free(adlMode);
-	//		}
-	//	}
-
-	//	if (ADL2_Adapter_Aspects_Get) {
-	//		int iSize = ADL_MAX_CHAR;
-	//		char lpAspects[ADL_MAX_CHAR];
-	//		if (ADL_OK == ADL2_Adapter_Aspects_Get(m_context, adapterIdx, lpAspects, iSize)) {
-	//			printf("\tAspects: %s\n", lpAspects);
-	//		}
-	//	}
-
-	//	if (ADL2_PowerXpress_AncillaryDevices_Get) {
-	//		int  numberOfAncillaryDevices = 0;
-	//		ADLBdf* lpAncillaryDevices = nullptr;
-	//		if (ADL_OK == ADL2_PowerXpress_AncillaryDevices_Get(m_context, adapterIdx, &numberOfAncillaryDevices, &lpAncillaryDevices)) {
-	//			printf("\tPowerXpress Ancillary Devices\n");
-	//			for (int i = 0; i < numberOfAncillaryDevices; ++i) {
-	//				ADLBdf bdf = lpAncillaryDevices[i];
-	//				printf("\t\tLocation: PCI bus %i, device %i, function %i\n", bdf.iBus, bdf.iDevice, bdf.iFunction);
-	//			}
-	//		}
-	//	}
-	//}
-}
-
-void AdlManager::Get_All_DisplayInfo(int adapterIndex)
-{
-	int numDisplays = 0;
-	ADLDisplayInfo* allDisplaysBuffer = NULL;
-
-	if (ADL_OK == ADL2_Display_DisplayInfo_Get(m_context, adapterIndex, &numDisplays, &allDisplaysBuffer, 1)) {
-		for (int i = 0; i < numDisplays; i++) {
-			ADLDisplayInfo* oneDis = &(allDisplaysBuffer[i]);
-			if (ADL_DISPLAY_DISPLAYINFO_DISPLAYCONNECTED == (oneDis->iDisplayInfoValue & ADL_DISPLAY_DISPLAYINFO_DISPLAYCONNECTED)) {
-				ADLDisplayID display(oneDis->displayID);
-				m_DisplayID.insert(std::pair<int, ADLDisplayID>(i, display));
-			}
-
-		}
-
+	if (!ADL2_New_QueryPMLogData_Get)
+	{
+		return false;
 	}
 
-	ADL_Main_Memory_Free((void**)&allDisplaysBuffer);
-}
+	ADLPMLogDataOutput odlpDataOutput;
+	memset(&odlpDataOutput, 0, sizeof(ADLPMLogDataOutput));
 
-int AdlManager::printApplicationProfilesX3(ADL_CONTEXT_HANDLE context, int iListType) {
-	int numApps = 0;
-	if (ADL2_ApplicationProfiles_HitListsX3_Get) {
-		ADLApplicationDataX3* profiles = NULL;
-		if (ADL_OK == ADL2_ApplicationProfiles_HitListsX3_Get(context, iListType, &numApps, &profiles)) {
-			wprintf(L"\t[N] File,Path,Time,Version,ProcessId\n");
-			for (int i = 0; i < numApps; ++i) {
-				ADLApplicationDataX3 profile = profiles[i];
-				wprintf(L"\t[%i] %s,%s,%s,%s,%08x\n",
-					i,
-					profile.strFileName,
-					profile.strPathName,
-					profile.strTimeStamp,
-					profile.strVersion,
-					profile.iProcessId
-				);
-			}
+	if (ADL2_New_QueryPMLogData_Get(m_context, m_adapterIndex, &odlpDataOutput) == ADL_OK)
+	{
+		if (odlpDataOutput.sensors[PMLOG_INFO_ACTIVITY_GFX].supported)
+		{
+			m_dynamicInfo.gpuGraphicsUsage = odlpDataOutput.sensors[PMLOG_INFO_ACTIVITY_GFX].value;
 		}
+		if (odlpDataOutput.sensors[PMLOG_INFO_ACTIVITY_MEM].supported)
+		{
+			m_dynamicInfo.gpuMemoryUsage = odlpDataOutput.sensors[PMLOG_INFO_ACTIVITY_MEM].value;
+		}
+
+		if (odlpDataOutput.sensors[PMLOG_CLK_GFXCLK].supported)
+		{
+			m_dynamicInfo.gpuGraphicsClock = odlpDataOutput.sensors[PMLOG_CLK_GFXCLK].value;
+		}
+		if (odlpDataOutput.sensors[PMLOG_CLK_MEMCLK].supported)
+		{
+			m_dynamicInfo.gpuMemoryClock = odlpDataOutput.sensors[PMLOG_CLK_MEMCLK].value;
+		}
+		
+		if (odlpDataOutput.sensors[PMLOG_TEMPERATURE_EDGE].supported)
+		{
+			m_dynamicInfo.gpuTemperature = odlpDataOutput.sensors[PMLOG_TEMPERATURE_EDGE].value;
+		}
+		if (odlpDataOutput.sensors[PMLOG_TEMPERATURE_HOTSPOT].supported)
+		{
+			m_dynamicInfo.gpuTemperatureHotspot = odlpDataOutput.sensors[PMLOG_TEMPERATURE_HOTSPOT].value;
+		}
+
+		//PMLOG_TEMPERATURE_MEM
+		//PMLOG_TEMPERATURE_VRVDDC
+		//PMLOG_TEMPERATURE_VRMVDD
+		//PMLOG_TEMPERATURE_LIQUID
+		//PMLOG_TEMPERATURE_PLX
+		//PMLOG_TEMPERATURE_VRSOC = 24,
+		//PMLOG_TEMPERATURE_VRMVDD0 = 25,
+		//PMLOG_TEMPERATURE_VRMVDD1 = 26,
+		//PMLOG_TEMPERATURE_GFX = 28,
+		//PMLOG_TEMPERATURE_SOC = 29,
+
+		if (odlpDataOutput.sensors[PMLOG_FAN_RPM].supported)
+		{
+			m_dynamicInfo.gpuFanSpeed = odlpDataOutput.sensors[PMLOG_FAN_RPM].value;
+		}
+		if (odlpDataOutput.sensors[PMLOG_FAN_PERCENTAGE].supported)
+		{
+			m_dynamicInfo.gpuFanSpeedPercent = odlpDataOutput.sensors[PMLOG_FAN_PERCENTAGE].value;
+		}
+
+		//PMLOG_SOC_VOLTAGE = 16,
+		//PMLOG_SOC_POWER = 17,
+		//PMLOG_SOC_CURRENT = 18,
+
+		if (odlpDataOutput.sensors[PMLOG_GFX_POWER].supported)
+		{
+			m_dynamicInfo.gpuGraphicsPower = odlpDataOutput.sensors[PMLOG_GFX_POWER].value;
+		}
+
+		if (odlpDataOutput.sensors[PMLOG_ASIC_POWER].supported)
+		{
+			m_dynamicInfo.gpuAsicPower = odlpDataOutput.sensors[PMLOG_ASIC_POWER].value;
+		}
+
+		if (odlpDataOutput.sensors[PMLOG_GFX_VOLTAGE].supported)
+		{
+			m_dynamicInfo.gpuGraphicsVoltage = odlpDataOutput.sensors[PMLOG_GFX_VOLTAGE].value;
+		}
+
+		if (odlpDataOutput.sensors[PMLOG_MEM_VOLTAGE].supported)
+		{
+			m_dynamicInfo.gpuMemoryVoltage = odlpDataOutput.sensors[PMLOG_MEM_VOLTAGE].value;
+		}
+		//PMLOG_GFX_CURRENT
+		return true;
 	}
-	return numApps;
+	else
+	{
+		return false;
+	}
+    //readAdl2Overdrive8OneRange();
+    //readAdl2Overdrive8GPUClocksParameters();
+    //readAdl2Overdrive8GPUVoltageParameters();
+    //readAdl2Overdrive8MemoryClocksParameters();
+    //readAdl2Overdrive8TemperatureSettingParameters();
+    //readAdl2Overdrive8FanSettingParameters();
+    //readAdl2Overdrive8MemoryTimingSettingParameters();
+}
+
+bool AdlManager::readAdl2Overdrive8InitSetting()
+{
+    memset(&m_od8InitSetting, 0, sizeof(ADLOD8InitSetting));
+    m_od8InitSetting.count = OD8_COUNT;
+
+    if (ADL2_Overdrive8_Init_SettingX2_Get)
+    {
+		int overdrive8Capabilities;
+		int numberOfFeatures = OD8_COUNT;
+		ADLOD8SingleInitSetting* lpInitSettingList = nullptr;
+
+        if (ADL2_Overdrive8_Init_SettingX2_Get(m_context, m_adapterIndex, &overdrive8Capabilities, &numberOfFeatures, &lpInitSettingList) == ADL_OK)
+        {
+            m_od8InitSetting.count = numberOfFeatures > OD8_COUNT ? OD8_COUNT : numberOfFeatures;
+            m_od8InitSetting.overdrive8Capabilities = overdrive8Capabilities;
+            for (int i = 0; i < m_od8InitSetting.count; i++)
+            {
+                m_od8InitSetting.od8SettingTable[i].defaultValue = lpInitSettingList[i].defaultValue;
+                m_od8InitSetting.od8SettingTable[i].featureID = lpInitSettingList[i].featureID;
+                m_od8InitSetting.od8SettingTable[i].maxValue = lpInitSettingList[i].maxValue;
+                m_od8InitSetting.od8SettingTable[i].minValue = lpInitSettingList[i].minValue;
+            }
+            ADL_Main_Memory_Free((void**)&lpInitSettingList);
+        }
+        else
+        {
+			qWarning() << "ADL2_Overdrive8_Init_SettingX2_Get is failed";
+            ADL_Main_Memory_Free((void**)&lpInitSettingList);
+            return false;
+        }
+    }
+    else if (ADL2_Overdrive8_Init_Setting_Get)
+    {
+        if (ADL2_Overdrive8_Init_Setting_Get(m_context, m_adapterIndex, &m_od8InitSetting) != ADL_OK)
+        {
+			qWarning() << "ADL2_Overdrive8_Init_Setting_Get is failed";
+            return false;
+        }
+    }
+	else
+	{
+		return false;
+	}
+
+    return true;
+}
+
+bool AdlManager::readAdl2Overdrive8CurrentSetting()
+{
+    memset(&m_od8CurrentSetting, 0, sizeof(ADLOD8CurrentSetting));
+    m_od8CurrentSetting.count = OD8_COUNT;
+
+    if (ADL2_Overdrive8_Current_SettingX2_Get)
+    {
+		int numberOfFeaturesCurrent = OD8_COUNT;
+		int* lpCurrentSettingList = nullptr;
+        if (ADL2_Overdrive8_Current_SettingX2_Get(m_context, m_adapterIndex, &numberOfFeaturesCurrent, &lpCurrentSettingList) == ADL_OK)
+        {
+            m_od8CurrentSetting.count = numberOfFeaturesCurrent > OD8_COUNT ? OD8_COUNT : numberOfFeaturesCurrent;
+            for (int i = 0; i < m_od8CurrentSetting.count; i++)
+            {
+                m_od8CurrentSetting.Od8SettingTable[i] = lpCurrentSettingList[i];
+            }
+            ADL_Main_Memory_Free((void**)&lpCurrentSettingList);
+        }
+        else
+        {
+			qWarning() << "ADL2_Overdrive8_Current_SettingX2_Get is failed";
+            ADL_Main_Memory_Free((void**)&lpCurrentSettingList);
+            return false;
+        }
+    }
+    else if (ADL2_Overdrive8_Current_Setting_Get)
+    {
+        if (ADL2_Overdrive8_Current_Setting_Get(m_context, m_adapterIndex, &m_od8CurrentSetting))
+        {
+			qWarning() << "ADL2_Overdrive8_Current_Setting_Get is failed";
+            return false;
+        }
+    }
+    return true;
+}
+
+bool AdlManager::readAdl2Overdrive8OneRange()
+{
+    bool RangeSupport_ = (m_od8InitSetting.overdrive8Capabilities & ADL_OD8_FAN_CURVE) ? true : false;
+    return RangeSupport_;
+}
+
+bool AdlManager::readAdl2Overdrive8GPUClocksParameters()
+{
+    int i;
+    int ret = -1;
+
+    //ADL2_Overdrive_Caps(m_context, m_adapterIndex, &iSupported, &iEnabled, &iVersion);
+    if (m_overdriveVersion == 8)
+    {
+        //OD8 initial Status
+//        ADLOD8InitSetting m_od8InitSetting;
+//        if (ADL_OK != GetOD8InitSetting(m_adapterIndex, m_od8InitSetting))
+//        {
+//            printf("Get Init Setting failed.\n");
+//            return false;
+//        }
+
+//        //OD8 Current Status
+//        ADLOD8CurrentSetting m_od8CurrentSetting;
+//        if (ADL_OK != GetOD8CurrentSetting(m_adapterIndex, m_od8CurrentSetting))
+//        {
+//            printf("Get Current Setting failed.\n");
+//            return false;
+//        }
+
+        ADLPMLogDataOutput odlpDataOutput;
+        memset(&odlpDataOutput, 0, sizeof(ADLPMLogDataOutput));
+        ret = ADL2_New_QueryPMLogData_Get(m_context, m_adapterIndex, &odlpDataOutput);
+        if (0 == ret)
+        {
+            if ((m_od8InitSetting.overdrive8Capabilities & ADL_OD8_GFXCLK_LIMITS) == ADL_OD8_GFXCLK_LIMITS &&
+                (m_od8InitSetting.overdrive8Capabilities & ADL_OD8_GFXCLK_CURVE) == ADL_OD8_GFXCLK_CURVE)
+            {
+                //GPU clocks
+                //OverdriveRangeDataStruct oneRangeData;
+                //GetOD8RangePrint(m_od8InitSetting, m_od8CurrentSetting, oneRangeData, OD8_GFXCLK_FREQ1, ADL_OD8_GFXCLK_CURVE);
+                //GetOD8RangePrint(m_od8InitSetting, m_od8CurrentSetting, oneRangeData, OD8_GFXCLK_FREQ2, ADL_OD8_GFXCLK_CURVE);
+                //GetOD8RangePrint(m_od8InitSetting, m_od8CurrentSetting, oneRangeData, OD8_GFXCLK_FREQ3, ADL_OD8_GFXCLK_CURVE);
+                //GetOD8RangePrint(m_od8InitSetting, m_od8CurrentSetting, oneRangeData, OD8_GFXCLK_FMIN, ADL_OD8_GFXCLK_CURVE);
+                //GetOD8RangePrint(m_od8InitSetting, m_od8CurrentSetting, oneRangeData, OD8_GFXCLK_FMAX, ADL_OD8_GFXCLK_CURVE);
+
+                printf("ADLSensorType: PMLOG_CLK_GFXCLK\n");
+                printf("PMLOG_CLK_GFXCLK.supported:%d\n", odlpDataOutput.sensors[PMLOG_CLK_GFXCLK].supported);
+                printf("PMLOG_CLK_GFXCLK.value:%d\n", odlpDataOutput.sensors[PMLOG_CLK_GFXCLK].value);
+                printf("-----------------------------------------\n");
+                printf("ADLSensorType: PMLOG_INFO_ACTIVITY_GFX-GPU activity percentage value\n");
+                printf("PMLOG_INFO_ACTIVITY_GFX.supported:%d\n", odlpDataOutput.sensors[PMLOG_INFO_ACTIVITY_GFX].supported);
+                printf("PMLOG_INFO_ACTIVITY_GFX.value:%d\n", odlpDataOutput.sensors[PMLOG_INFO_ACTIVITY_GFX].value);
+                printf("-----------------------------------------\n");
+
+            }
+            else if ((m_od8InitSetting.overdrive8Capabilities & ADL_OD8_GFXCLK_LIMITS) == ADL_OD8_GFXCLK_LIMITS &&
+                     (m_od8InitSetting.overdrive8Capabilities & ADL_OD8_GFXCLK_CURVE) != ADL_OD8_GFXCLK_CURVE) {
+                //GPU clocks
+                //OverdriveRangeDataStruct oneRangeData;
+                //GetOD8RangePrint(m_od8InitSetting, m_od8CurrentSetting, oneRangeData, OD8_GFXCLK_FMIN, ADL_OD8_GFXCLK_CURVE);
+                //GetOD8RangePrint(m_od8InitSetting, m_od8CurrentSetting, oneRangeData, OD8_GFXCLK_FMAX, ADL_OD8_GFXCLK_CURVE);
+
+                printf("ADLSensorType: PMLOG_CLK_GFXCLK\n");
+                printf("PMLOG_CLK_GFXCLK.supported:%d\n", odlpDataOutput.sensors[PMLOG_CLK_GFXCLK].supported);
+                printf("PMLOG_CLK_GFXCLK.value:%d\n", odlpDataOutput.sensors[PMLOG_CLK_GFXCLK].value);
+                printf("-----------------------------------------\n");
+                printf("ADLSensorType: PMLOG_INFO_ACTIVITY_GFX-GPU activity percentage value\n");
+                printf("PMLOG_INFO_ACTIVITY_GFX.supported:%d\n", odlpDataOutput.sensors[PMLOG_INFO_ACTIVITY_GFX].supported);
+                printf("PMLOG_INFO_ACTIVITY_GFX.value:%d\n", odlpDataOutput.sensors[PMLOG_INFO_ACTIVITY_GFX].value);
+                printf("-----------------------------------------\n");
+            }
+            else
+                printf("OD8PLUS Failed to get GPU clocks\n");
+        }
+        else
+        {
+            printf("ADL2_New_QueryPMLogData_Get is failed\n");
+            return false;
+        }
+    }
+    return true;
+}
+
+bool AdlManager::readAdl2Overdrive8GPUVoltageParameters()
+{
+	int ret = -1;
+    //ADL2_Overdrive_Caps(m_context, m_adapterIndex, &iSupported, &iEnabled, &iVersion);
+    if (m_overdriveVersion == 8)
+    {
+        //OD8 initial Status
+//        ADLOD8InitSetting m_od8InitSetting;
+//        if (ADL_OK != GetOD8InitSetting(m_adapterIndex, m_od8InitSetting))
+//        {
+//            printf("Get Init Setting failed.\n");
+//            return false;
+//        }
+
+//        //OD8 Current Status
+//        ADLOD8CurrentSetting m_od8CurrentSetting;
+//        if (ADL_OK != GetOD8CurrentSetting(m_adapterIndex, m_od8CurrentSetting))
+//        {
+//            printf("Get Current Setting failed.\n");
+//            return false;
+//        }
+
+        //make ADL call for VEGA12
+        ADLPMLogDataOutput odlpDataOutput;
+        memset(&odlpDataOutput, 0, sizeof(ADLPMLogDataOutput));
+        ret = ADL2_New_QueryPMLogData_Get(m_context, m_adapterIndex, &odlpDataOutput);
+        if (0 == ret)
+        {
+            if (((m_od8InitSetting.overdrive8Capabilities & ADL_OD8_GFXCLK_LIMITS) == ADL_OD8_GFXCLK_LIMITS) &&
+                ((m_od8InitSetting.overdrive8Capabilities & ADL_OD8_GFXCLK_CURVE) == ADL_OD8_GFXCLK_CURVE))
+            {
+                //GPU Voltage
+                //OverdriveRangeDataStruct oneRangeData;
+                //GetOD8RangePrint(m_od8InitSetting, m_od8CurrentSetting, oneRangeData, OD8_GFXCLK_VOLTAGE1, ADL_OD8_GFXCLK_CURVE);
+                //GetOD8RangePrint(m_od8InitSetting, m_od8CurrentSetting, oneRangeData, OD8_GFXCLK_VOLTAGE2, ADL_OD8_GFXCLK_CURVE);
+                //GetOD8RangePrint(m_od8InitSetting, m_od8CurrentSetting, oneRangeData, OD8_GFXCLK_VOLTAGE3, ADL_OD8_GFXCLK_CURVE);
+            }
+            else if (((m_od8InitSetting.overdrive8Capabilities & ADL_OD8_GFXCLK_LIMITS) == ADL_OD8_GFXCLK_LIMITS) &&
+                     ((m_od8InitSetting.overdrive8Capabilities & ADL_OD8_GFXCLK_CURVE) != ADL_OD8_GFXCLK_CURVE)) {
+                //GPU Voltage
+                //OverdriveRangeDataStruct oneRangeData;
+                //GetOD8RangePrint(m_od8InitSetting, m_od8CurrentSetting, oneRangeData, OD8_OD_VOLTAGE, ADL_OD8_ODVOLTAGE_LIMIT);
+            }
+            else
+                printf("OD8 Failed to get GPU voltages\n");
+        }
+        else
+        {
+            printf("ADL2_New_QueryPMLogData_Get is failed\n");
+            return false;
+        }
+    }
+    return true;
+}
+
+bool AdlManager::readAdl2Overdrive8MemoryClocksParameters()
+{
+	int ret = -1;
+    //ADL2_Overdrive_Caps(m_context, m_adapterIndex, &iSupported, &iEnabled, &iVersion);
+    if (m_overdriveVersion == 8)
+    {
+//        //OD8 initial Status
+//        ADLOD8InitSetting m_od8InitSetting;
+//        if (ADL_OK != GetOD8InitSetting(m_adapterIndex, m_od8InitSetting))
+//        {
+//            printf("Get Init Setting failed.\n");
+//            return false;
+//        }
+
+//        //OD8 Current Status
+//        ADLOD8CurrentSetting m_od8CurrentSetting;
+//        if (ADL_OK != GetOD8CurrentSetting(m_adapterIndex, m_od8CurrentSetting))
+//        {
+//            printf("Get Current Setting failed.\n");
+//            return false;
+//        }
+
+        //make ADL call for VEGA12
+        ADLPMLogDataOutput odlpDataOutput;
+        memset(&odlpDataOutput, 0, sizeof(ADLPMLogDataOutput));
+        ret = ADL2_New_QueryPMLogData_Get(m_context, m_adapterIndex, &odlpDataOutput);
+        if (0 == ret)
+        {
+            if ((m_od8InitSetting.overdrive8Capabilities & ADL_OD8_UCLK_MAX) == ADL_OD8_UCLK_MAX)
+            {
+                //Memory Clocks
+                //OverdriveRangeDataStruct oneRangeData;
+                //GetOD8RangePrint(m_od8InitSetting, m_od8CurrentSetting, oneRangeData, OD8_UCLK_FMAX, ADL_OD8_UCLK_MAX);
+
+                if (m_od8InitSetting.overdrive8Capabilities & m_od8InitSetting.od8SettingTable[OD8_UCLK_FMIN].featureID)
+                    //GetOD8RangePrint(m_od8InitSetting, m_od8CurrentSetting, oneRangeData, OD8_UCLK_FMIN, ADL_OD8_UCLK_MAX);
+
+                printf("ADLSensorType: PMLOG_CLK_MEMCLK\n");
+                printf("PMLOG_CLK_MEMCLK.supported:%d\n", odlpDataOutput.sensors[PMLOG_CLK_MEMCLK].supported);
+                printf("PMLOG_CLK_MEMCLK.value:%d\n", odlpDataOutput.sensors[PMLOG_CLK_MEMCLK].value);
+                printf("-----------------------------------------\n");
+
+            }
+            else
+                printf("OD8 Failed to get Memory Clocks\n");
+        }
+        else
+        {
+            printf("ADL2_New_QueryPMLogData_Get is failed\n");
+            return false;
+        }
+    }
+    return true;
 }
 
 
-//		{
-//			printf("ADL_PX40_MRU\n");
-//			printApplicationProfilesX3(context, ADL_PX40_MRU);
-//
-//			printf("ADL_PX40_MISSED\n");
-//			printApplicationProfilesX3(context, ADL_PX40_MISSED);
-//
-//			printf("ADL_PX40_DISCRETE\n");
-//			printApplicationProfilesX3(context, ADL_PX40_DISCRETE);
-//
-//			printf("ADL_PX40_INTEGRATED\n");
-//			printApplicationProfilesX3(context, ADL_PX40_INTEGRATED);
-//
-//			printf("ADL_MMD_PROFILED\n");
-//			printApplicationProfilesX3(context, ADL_MMD_PROFILED);
-//
-//			printf("ADL_PX40_TOTAL\n");
-//			printApplicationProfilesX3(context, ADL_PX40_TOTAL);
-//		}
-//
-//		ADL2_Main_Control_Destroy(context);
-//	}
-//
-//	return 0;
-//}
+bool AdlManager::readAdl2Overdrive8TemperatureSettingParameters()
+{
+	int ret = -1;
+    //ADL2_Overdrive_Caps(m_context, m_adapterIndex, &iSupported, &iEnabled, &iVersion);
+    if (m_overdriveVersion == 8)
+    {
+//        //OD8 initial Status
+//        ADLOD8InitSetting m_od8InitSetting;
+//        if (ADL_OK != GetOD8InitSetting(m_adapterIndex, m_od8InitSetting))
+//        {
+//            printf("Get Init Setting failed.\n");
+//            return false;
+//        }
+
+//        //OD8 Current Status
+//        ADLOD8CurrentSetting m_od8CurrentSetting;
+//        if (ADL_OK != GetOD8CurrentSetting(m_adapterIndex, m_od8CurrentSetting))
+//        {
+//            printf("Get Current Setting failed.\n");
+//            return false;
+//        }
+
+        //make ADL call for VEGA12
+        ADLPMLogDataOutput odlpDataOutput;
+        memset(&odlpDataOutput, 0, sizeof(ADLPMLogDataOutput));
+        ret = ADL2_New_QueryPMLogData_Get(m_context, m_adapterIndex, &odlpDataOutput);
+        if (0 == ret)
+        {
+            if (((m_od8InitSetting.overdrive8Capabilities &  ADL_OD8_TEMPERATURE_SYSTEM) == ADL_OD8_TEMPERATURE_SYSTEM) ||
+                ((m_od8InitSetting.overdrive8Capabilities &  ADL_OD8_TEMPERATURE_FAN) == ADL_OD8_TEMPERATURE_FAN) ||
+                ((m_od8InitSetting.overdrive8Capabilities &  ADL_OD8_POWER_LIMIT) == ADL_OD8_POWER_LIMIT))
+            {
+                //OverdriveRangeDataStruct oneRangeData;
+                //GetOD8RangePrint(m_od8InitSetting, m_od8CurrentSetting, oneRangeData, OD8_OPERATING_TEMP_MAX, ADL_OD8_TEMPERATURE_SYSTEM);
+                //GetOD8RangePrint(m_od8InitSetting, m_od8CurrentSetting, oneRangeData, OD8_FAN_TARGET_TEMP, ADL_OD8_TEMPERATURE_FAN);
+                //GetOD8RangePrint(m_od8InitSetting, m_od8CurrentSetting, oneRangeData, OD8_POWER_PERCENTAGE, ADL_OD8_POWER_LIMIT);
+
+                printf("ADLSensorType: PMLOG_TEMPERATURE_EDGE - Current Temp\n");
+                printf("PMLOG_TEMPERATURE_EDGE.supported:%d\n", odlpDataOutput.sensors[PMLOG_TEMPERATURE_EDGE].supported);
+                printf("PMLOG_TEMPERATURE_EDGE.value:%d\n", odlpDataOutput.sensors[PMLOG_TEMPERATURE_EDGE].value);
+
+                printf("ADLSensorType: PMLOG_TEMPERATURE_HOTSPOT - Junction Temp\n");
+                printf("PMLOG_TEMPERATURE_HOTSPOT.supported:%d\n", odlpDataOutput.sensors[PMLOG_TEMPERATURE_HOTSPOT].supported);
+                printf("PMLOG_TEMPERATURE_HOTSPOT.value:%d\n", odlpDataOutput.sensors[PMLOG_TEMPERATURE_HOTSPOT].value);
+
+                printf("ADLSensorType: PMLOG_TEMPERATURE_MEM - Memory Temp\n");
+                printf("PMLOG_TEMPERATURE_MEM.supported:%d\n", odlpDataOutput.sensors[PMLOG_TEMPERATURE_MEM].supported);
+                printf("PMLOG_TEMPERATURE_MEM.value:%d\n", odlpDataOutput.sensors[PMLOG_TEMPERATURE_MEM].value);
+                printf("-----------------------------------------\n");
+
+            }
+            else
+                printf("OD8 Failed to get Temperature Settings\n");
+        }
+        else
+        {
+            printf("ADL2_New_QueryPMLogData_Get is failed\n");
+            return false;
+        }
+    }
+    return true;
+}
+
+bool AdlManager::readAdl2Overdrive8FanSettingParameters()
+{
+	int ret = -1;
+    //ret = ADL2_Overdrive_Caps(m_context, m_adapterIndex, &iSupported, &iEnabled, &iVersion);
+    if (m_overdriveVersion == 8)
+    {
+        //OD8 initial Status
+//        ADLOD8InitSetting m_od8InitSetting;
+//        if (ADL_OK != GetOD8InitSetting(m_adapterIndex, m_od8InitSetting))
+//        {
+//            printf("Get Init Setting failed.\n");
+//            return false;
+//        }
+
+//        //OD8 Current Status
+//        ADLOD8CurrentSetting m_od8CurrentSetting;
+//        if (ADL_OK != GetOD8CurrentSetting(m_adapterIndex, m_od8CurrentSetting))
+//        {
+//            printf("Get Current Setting failed.\n");
+//            return false;
+//        }
+
+        //make ADL call for VEGA12
+        ADLPMLogDataOutput odlpDataOutput;
+        memset(&odlpDataOutput, 0, sizeof(ADLPMLogDataOutput));
+        ret = ADL2_New_QueryPMLogData_Get(m_context, m_adapterIndex, &odlpDataOutput);
+        if (0 == ret)
+        {
+            if ((m_od8InitSetting.overdrive8Capabilities & ADL_OD8_ACOUSTIC_LIMIT_SCLK) == ADL_OD8_ACOUSTIC_LIMIT_SCLK ||
+                (m_od8InitSetting.overdrive8Capabilities & ADL_OD8_FAN_SPEED_MIN) == ADL_OD8_FAN_SPEED_MIN)
+            {
+                //OverdriveRangeDataStruct oneRangeData;
+                //GetOD8RangePrint(m_od8InitSetting, m_od8CurrentSetting, oneRangeData, OD8_FAN_MIN_SPEED, ADL_OD8_FAN_SPEED_MIN);
+                //GetOD8RangePrint(m_od8InitSetting, m_od8CurrentSetting, oneRangeData, OD8_FAN_ACOUSTIC_LIMIT, ADL_OD8_ACOUSTIC_LIMIT_SCLK);
+
+                printf("ADLSensorType: PMLOG_FAN_RPM\n");
+                printf("PMLOG_FAN_RPM.supported:%d\n", odlpDataOutput.sensors[PMLOG_FAN_RPM].supported);
+                printf("PMLOG_FAN_RPM.value:%d\n", odlpDataOutput.sensors[PMLOG_FAN_RPM].value);
+                printf("-----------------------------------------\n");
+            }
+            // Fan Curve
+            else if ((m_od8InitSetting.overdrive8Capabilities & ADL_OD8_FAN_CURVE) == ADL_OD8_FAN_CURVE)
+            {
+                printf("ADLSensorType: PMLOG_FAN_RPM\n");
+                printf("OD8_FAN_RPM:%d\n", odlpDataOutput.sensors[PMLOG_FAN_RPM].value);
+                printf("-----------------------------------------\n");
+            }
+            else
+                printf("OD8 Failed to get Fan Settings\n");
+        }
+        else
+        {
+            printf("ADL2_New_QueryPMLogData_Get is failed\n");
+            return false;
+        }
+    }
+    return true;
+}
+
+bool AdlManager::readAdl2Overdrive8MemoryTimingSettingParameters()
+{
+	int ret = -1;
+    //ADL2_Overdrive_Caps(m_context, m_adapterIndex, &iSupported, &iEnabled, &iVersion);
+    if (m_overdriveVersion == 8)
+    {
+        //OD8 initial Status
+//        ADLOD8InitSetting m_od8InitSetting;
+//        if (ADL_OK != GetOD8InitSetting(m_adapterIndex, m_od8InitSetting))
+//        {
+//            printf("Get Init Setting failed.\n");
+//            return false;
+//        }
+
+//        //OD8 Current Status
+//        ADLOD8CurrentSetting m_od8CurrentSetting;
+//        if (ADL_OK != GetOD8CurrentSetting(m_adapterIndex, m_od8CurrentSetting))
+//        {
+//            printf("Get Current Setting failed.\n");
+//            return false;
+//        }
+
+        ADLPMLogDataOutput odlpDataOutput;
+        memset(&odlpDataOutput, 0, sizeof(ADLPMLogDataOutput));
+        ret = ADL2_New_QueryPMLogData_Get(m_context, m_adapterIndex, &odlpDataOutput);
+        if (0 == ret)
+        {
+            if ((m_od8InitSetting.overdrive8Capabilities & ADL_OD8_MEMORY_TIMING_TUNE) == ADL_OD8_MEMORY_TIMING_TUNE)
+            {
+                //OverdriveRangeDataStruct oneRangeData;
+                //GetOD8RangePrint(m_od8InitSetting, m_od8CurrentSetting, oneRangeData, OD8_AC_TIMING, ADL_OD8_MEMORY_TIMING_TUNE);
+            }
+            else
+                printf("OD8 Failed to get Memory Timing Settings\n");
+        }
+        else
+        {
+            printf("ADL2_New_QueryPMLogData_Get is failed\n");
+            return false;
+        }
+    }
+    return true;
+}

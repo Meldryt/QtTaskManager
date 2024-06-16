@@ -1,6 +1,8 @@
 #include "CpuInfo.h"
 
+#ifdef _WIN32
 #include <intrin.h>
+#endif
 
 CpuInfo::CpuInfo()
 {
@@ -10,6 +12,8 @@ void CpuInfo::init()
 {
     fetchStaticInfo();
 
+//todo: necessary to split? move this to function.
+#ifdef _WIN32
     PdhOpenQuery(NULL, 0, &totalCPUQuery);
     std::string text = "\\Processor(_Total)\\% Processor Time";
     std::wstring ws = std::wstring(text.begin(), text.end());
@@ -35,6 +39,8 @@ void CpuInfo::init()
         singleCPUCounters.push_back(singleCPUCounter);
         dynamicInfo.singleCoreLoads.push_back(0.0);
     }
+#else
+#endif
 }
 
 void CpuInfo::update()
@@ -42,6 +48,7 @@ void CpuInfo::update()
     fetchDynamicInfo();
 }
 
+#ifdef _WIN32
 // Helper function to count set bits in the processor mask.
 DWORD CountSetBits(ULONG_PTR bitMask)
 {
@@ -58,8 +65,19 @@ DWORD CountSetBits(ULONG_PTR bitMask)
 
     return bitSetCount;
 }
+#endif
 
 void CpuInfo::fetchStaticInfo()
+{
+#ifdef _WIN32
+    fetchStaticInfoWindows();
+#else
+    fetchStaticInfoLinux();
+#endif
+}
+
+#ifdef _WIN32
+void CpuInfo::fetchStaticInfoWindows()
 {
     int CpuInfo[4] = {-1};
     unsigned nExIds, i =  0;
@@ -174,6 +192,13 @@ void CpuInfo::fetchStaticInfo()
     staticInfo.l2CacheSize = processorL2CacheSize/1024;
     staticInfo.l3CacheSize = processorL3CacheSize/1024;
 }
+#else
+void CpuInfo::fetchStaticInfoLinux()
+{
+
+}
+#endif
+
 
 void CpuInfo::fetchDynamicInfo()
 {
@@ -182,6 +207,16 @@ void CpuInfo::fetchDynamicInfo()
 //    PdhAddEnglishCounter(cpuQuery, L"\\Processor(_Total)\\% Processor Time", NULL, &cpuTotal);
 //    PdhCollectQueryData(cpuQuery);
 
+#ifdef _WIN32
+    fetchDynamicInfoWindows();
+#else
+    fetchDynamicInfoLinux();
+#endif
+}
+
+#ifdef _WIN32
+void CpuInfo::fetchDynamicInfoWindows()
+{
     PDH_FMT_COUNTERVALUE counterVal;
     PdhCollectQueryData(totalCPUQuery);
     PdhGetFormattedCounterValue(totalCPUCounter, PDH_FMT_DOUBLE, NULL, &counterVal);
@@ -194,6 +229,13 @@ void CpuInfo::fetchDynamicInfo()
         dynamicInfo.singleCoreLoads[i] = counterVal.doubleValue;
     }
 }
+#else
+void CpuInfo::fetchDynamicInfoLinux()
+{
+
+}
+#endif
+
 
 const CpuInfo::CpuStaticInfo &CpuInfo::getStaticInfo() const
 {

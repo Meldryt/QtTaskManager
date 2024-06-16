@@ -16,12 +16,10 @@ bool GpuInfoAmd::detectGpu()
 
 void GpuInfoAmd::fetchStaticInfo()
 {
-    //m_model = m_adlManager->readModel();
-    //m_manufacturer = m_adlManager->readManufacturer();
+    m_adlManager->fetchStaticInfo();
 }
 
 void GpuInfoAmd::fetchDynamicInfo()
 {
-    m_temperature = 0;
-    m_totalLoad = 0;
+    m_adlManager->fetchDynamicInfo();
 }

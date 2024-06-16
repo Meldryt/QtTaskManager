@@ -3,23 +3,21 @@
 #include <QObject>
 #include <string>
 
-class GpuInfo;
+#include <Globals.h>
 
 class GpuInfoNVidia
 {
 public:
     GpuInfoNVidia();
 
-    std::string getBrand() const {
-        return m_brand;
+    const Globals::GpuStaticInfo& staticInfo() const
+    {
+        return m_staticInfo;
     }
 
-    uint8_t getTotalLoad() const {
-        return m_totalLoad;
-    }
-
-    uint8_t getTemperature() const {
-        return m_temperature;
+    const Globals::GpuDynamicInfo& dynamicInfo() const
+    {
+        return m_dynamicInfo;
     }
 
     bool detectGpu();
@@ -27,7 +25,7 @@ public:
     void fetchDynamicInfo();
 
 private:
-    std::string m_brand{ "" };
-    uint8_t m_totalLoad{ 0 };
-    uint8_t m_temperature{ 0 };
+
+    Globals::GpuStaticInfo m_staticInfo;
+    Globals::GpuDynamicInfo m_dynamicInfo;
 };

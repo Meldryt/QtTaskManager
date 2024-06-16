@@ -135,7 +135,7 @@ void GpuInfoNVidia::fetchStaticInfo()
     (*NvAPI_EnumPhysicalGPUs)( gpuHandles, &gpuCount );
 
     (*NvAPI_GPU_GetFullName)( gpuHandles[0], gpuName );
-    m_brand = gpuName;
+    m_staticInfo.gpuModel = gpuName;
 }
 
 /*
@@ -160,8 +160,8 @@ void GpuInfoNVidia::fetchDynamicInfo()
     nvgts.sensor[0].target = NVAPI_THERMAL_TARGET_GPU;
 
     (*NvAPI_GPU_GetThermalSettings)(gpuHandles[0], 0 ,&nvgts);
-    m_temperature = nvgts.sensor[0].currentTemp;
+    m_dynamicInfo.gpuTemperature = nvgts.sensor[0].currentTemp;
 
     (*NvAPI_GPU_GetUsages)( gpuHandles[0], gpuUsages );
-    m_totalLoad = gpuUsages[3];
+    m_dynamicInfo.gpuGraphicsUsage = gpuUsages[3];
 }

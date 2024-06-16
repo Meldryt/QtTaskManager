@@ -1,30 +1,42 @@
 #pragma once
 
+#ifdef _WIN32
 #include <windows.h>
 #include <tchar.h>
-#include "../external/adl/include/adl_sdk.h"
+#else
+#endif
+
+#include "external/adl/include/adl_sdk.h"
 #include <map>
 #include <vector>
 #include <string>
+
+#include <Globals.h>
 
 class AdlManager
 {
 public:
     AdlManager();
+    ~AdlManager();
+
     bool init();
 
-    bool fetchInfo();
+    const Globals::GpuStaticInfo& staticInfo() const
+    {
+        return m_staticInfo;
+    }
 
-    int GetAdapterActiveStatus(int adapterId, int& active);
-    int PrintAdapterInfo(int adapterId);
-    void DestroyADL();
-    int GpuBDF(int busNo_, int devNo_, int funcNo_);
-    std::string GetGPUVRAMNameFromID(int iVramVendorRevId);
-    void PrepareAPI();
-    void Get_All_DisplayInfo(int adapterIndex);
+    const Globals::GpuDynamicInfo& dynamicInfo() const
+    {
+        return m_dynamicInfo;
+    }
 
-    int printApplicationProfilesX3(ADL_CONTEXT_HANDLE context, int iListType);
-    int test();
+    bool fetchStaticInfo();
+    bool fetchDynamicInfo();
+
+    void destroyAdl();
+
+    std::string getGpuVramNameFromId(int vramVendorRevId);
 
 private:
     bool loadLibrary();
@@ -34,13 +46,14 @@ private:
     bool setupGraphics();
     bool setupOverdrive();
     bool setupDesktop();
+    bool setupOthers();
 
     void readAdapterInfo();
     void readMemoryInfo();
     void readGraphicsDriverInfo();
     void readBiosInfo();
-    void readOverdriveInfo();
     void readOverdriveVersion();
+    void readOverdriveInfo();
 
     bool readAdlOverdrive5Info();
     bool readAdlOverdrive5Temperature();
@@ -65,6 +78,15 @@ private:
     bool readAdl2Overdrive5CurrentActivity();
     bool readAdl2Overdrive6Info();
     bool readAdl2Overdrive8Info();
+    bool readAdl2Overdrive8InitSetting();
+    bool readAdl2Overdrive8CurrentSetting();
+    bool readAdl2Overdrive8OneRange();
+    bool readAdl2Overdrive8GPUClocksParameters();
+    bool readAdl2Overdrive8GPUVoltageParameters();
+    bool readAdl2Overdrive8MemoryClocksParameters();
+    bool readAdl2Overdrive8TemperatureSettingParameters();
+    bool readAdl2Overdrive8FanSettingParameters();
+    bool readAdl2Overdrive8MemoryTimingSettingParameters();
 
     // ADL module handle
 #if defined (LINUX)
@@ -76,8 +98,8 @@ private:
     ADL_CONTEXT_HANDLE m_context = NULL;
     //std::map<int, int> m_AdapterIndexMap;
     std::map<int, ADLDisplayID> m_DisplayID;
-    
-    
+
+
     //Declaring pointers to ADL Methods. 
     //ADL2_MAIN_CONTROL_CREATE                 ADL2_Main_Control_Create = nullptr;
     //ADL2_MAIN_CONTROLX2_CREATE               ADL2_Main_ControlX2_Create;
@@ -125,7 +147,7 @@ private:
     //ADL2_GRAPHICS_VERSIONSX2_GET        ADL2_Graphics_VersionsX2_Get;
 
     // Definitions of the used function pointers. Add more if you use other ADL APIs. Note that that sample will use mixture of legacy ADL and ADL2 APIs.
-    
+
     //Declaring ADL Methods.
 
     //Main
@@ -157,18 +179,18 @@ private:
     //Display, Color Depth
     typedef int(*ADL2_DISPLAY_COLORDEPTH_GET)             (ADL_CONTEXT_HANDLE context, int iAdapterIndex, int iDisplayIndex, int* lpColorDepth);
     typedef int(*ADL2_DISPLAY_SUPPORTEDCOLORDEPTH_GET)    (ADL_CONTEXT_HANDLE context, int iAdapterIndex, int iDisplayIndex, int* lpColorDepth);
-      
+
     //Display, Pixel Format
     typedef int(*ADL2_DISPLAY_PIXELFORMAT_GET)            (ADL_CONTEXT_HANDLE context, int iAdapterIndex, int iDisplayIndex, int* lpPixelFormat);
     typedef int(*ADL2_DISPLAY_PIXELFORMATDEFAULT_GET)     (ADL_CONTEXT_HANDLE context, int iAdapterIndex, int iDisplayIndex, int* lpDefPixelFormat);
     typedef int(*ADL2_DISPLAY_SUPPORTEDPIXELFORMAT_GET)   (ADL_CONTEXT_HANDLE context, int iAdapterIndex, int iDisplayIndex, int* lpPixelFormat);
-    
+
     //Display, FreeSync ADL2 calls
     typedef int(*ADL2_DISPLAY_FREESYNCSTATE_GET)          (ADL_CONTEXT_HANDLE context, int iAdapterIndex, int iDisplayIndex, int* lpCurrent, int* lpDefault, int* lpMinRefreshRateInMicroHz, int* lpMaxRefreshRateInMicroHz);
-    
+
     //Display, Virtual Resolution ADL2 calls
     typedef int(*ADL2_DISPLAY_PROPERTY_GET)               (ADL_CONTEXT_HANDLE context, int iAdapterIndex, int iDisplayIndex, ADLDisplayProperty* lpDisplayProperty);
-    
+
     //Display, Color Temperature
     typedef int(*ADL2_DISPLAY_COLORTEMPERATURESOURCE_GET) (ADL_CONTEXT_HANDLE context, int iAdapterIndex, int iDisplayIndex, int* lpSource);
     typedef int(*ADL2_DISPLAY_COLOR_GET)                  (ADL_CONTEXT_HANDLE context, int iAdapterIndex, int iDisplayIndex, int iColorType, int* iCurrent, int* iDefault, int* iMin, int* iMax, int* iStep);
@@ -178,17 +200,17 @@ private:
 
     //DFP
     typedef int(*ADL2_DFP_GPUSCALINGENABLE_GET)			  (ADL_CONTEXT_HANDLE context, int iAdapterIndex, int iDisplayIndex, int* lpSupport, int* lpCurrent, int* lpDefault);
-    
+
     //Chill
     typedef int(*ADL2_CHILL_SETTINGS_GET)                 (ADL_CONTEXT_HANDLE context, int iAdapterIndex, int* lpEnabled);
-    
+
     //Turbo Sync
     typedef int(*ADL2_TURBOSYNCSUPPORT_GET)               (ADL_CONTEXT_HANDLE context, int iAdapterIndex, int* iTurboSyncSupported);
 
     //Graphics
     typedef int(*ADL2_GRAPHICS_VERSIONSX2_GET)            (ADL_CONTEXT_HANDLE context, ADLVersionsInfoX2* lpVersionsInfo);
     typedef int(*ADL2_GRAPHICS_VERSIONX2_GET)             (ADL_CONTEXT_HANDLE context, ADLVersionsInfoX2* lpVersionsInfo);
-    typedef int(*ADL2_GRAPHICS_VERSION_GET)               (ADL_CONTEXT_HANDLE context, ADLVersionsInfo* lpVersionsInfo);  
+    typedef int(*ADL2_GRAPHICS_VERSION_GET)               (ADL_CONTEXT_HANDLE context, ADLVersionsInfo* lpVersionsInfo);
 
     //Desktop
     typedef int(*ADL2_DESKTOP_DEVICE_CREATE)              (ADL_CONTEXT_HANDLE context, int iAdapterIndex, ADL_D3DKMT_HANDLE* pDevice);
@@ -197,7 +219,7 @@ private:
     //Others
     typedef int(*ADL2_POWERXPRESS_ANCILLARYDEVICES_GET)   (ADL_CONTEXT_HANDLE context, int iAdapterIndex, int* lpNumberOfAncillaryDevices, ADLBdf** lppAncillaryDevices);
     typedef int(*ADL2_APPLICATIONPROFILES_HITLISTSX3_GET) (ADL_CONTEXT_HANDLE context, int iListType, int* lpNumApps, ADLApplicationDataX3** lppAppList);
-    
+
 
     //Overdrive
     typedef int(*ADL_OVERDRIVE_CAPS)                      (int iAdapterIndex, int* iSupported, int* iEnabled, int* iVersion);
@@ -216,7 +238,7 @@ private:
     typedef int (*ADL_OVERDRIVE5_POWERCONTROLINFO_GET)    (int iAdapterIndex, ADLPowerControlInfo* lpPowerControlInfo);
     typedef int (*ADL_OVERDRIVE5_POWERCONTROL_GET)        (int iAdapterIndex, int* lpCurrentValue, int* lpDefaultValue);
 
-    typedef int (*ADL2_OVERDRIVE5_THERMALDEVICES_ENUM)    (ADL_CONTEXT_HANDLE context, int iAdapterIndex, int iThermalControllerIndex, ADLThermalControllerInfo* lpThermalControllerInfo);   
+    typedef int (*ADL2_OVERDRIVE5_THERMALDEVICES_ENUM)    (ADL_CONTEXT_HANDLE context, int iAdapterIndex, int iThermalControllerIndex, ADLThermalControllerInfo* lpThermalControllerInfo);
     typedef int (*ADL2_OVERDRIVE5_ODPARAMETERS_GET)       (ADL_CONTEXT_HANDLE context, int iAdapterIndex, ADLODParameters* lpOdParameters);
     typedef int (*ADL2_OVERDRIVE5_TEMPERATURE_GET)        (ADL_CONTEXT_HANDLE context, int iAdapterIndex, int iThermalControllerIndex, ADLTemperature* lpTemperature);
     typedef int (*ADL2_OVERDRIVE5_FANSPEED_GET)           (ADL_CONTEXT_HANDLE context, int iAdapterIndex, int iThermalControllerIndex, ADLFanSpeedValue* lpFanSpeedValue);
@@ -241,12 +263,14 @@ private:
 
     //OVERDRIVE8
     typedef int(*ADL2_OVERDRIVE8_INIT_SETTING_GET)        (ADL_CONTEXT_HANDLE context, int iAdapterIndex, ADLOD8InitSetting* setting);
+    typedef int(*ADL2_OVERDRIVE8_INIT_SETTINGX2_GET)      (ADL_CONTEXT_HANDLE context, int iAdapterIndex, int* lpOverdrive8Capabilities, int* lpNumberOfFeatures, ADLOD8SingleInitSetting** lppInitSettingList);
     typedef int(*ADL2_OVERDRIVE8_CURRENT_SETTING_GET)     (ADL_CONTEXT_HANDLE context, int iAdapterIndex, ADLOD8CurrentSetting* setting);
+    typedef int(*ADL2_OVERDRIVE8_CURRENT_SETTINGX2_GET)   (ADL_CONTEXT_HANDLE context, int iAdapterIndex, int* lpNumberOfFeatures, int** lppCurrentSettingList);
+
     typedef int(*ADL2_NEW_QUERYPMLOGDATA_GET)             (ADL_CONTEXT_HANDLE context, int iAdapterIndex, ADLPMLogDataOutput* dataOutput);
 
-    typedef int(*ADL2_OVERDRIVE8_INIT_SETTINGX2_GET)      (ADL_CONTEXT_HANDLE context, int iAdapterIndex, int* lpOverdrive8Capabilities, int* lpNumberOfFeatures, ADLOD8SingleInitSetting** lppInitSettingList);
-    typedef int(*ADL2_OVERDRIVE8_CURRENT_SETTINGX2_GET)   (ADL_CONTEXT_HANDLE context, int iAdapterIndex, int* lpNumberOfFeatures, int** lppCurrentSettingList);
     typedef int(*ADL2_WS_OVERDRIVE_CAPS)                  (ADL_CONTEXT_HANDLE context, int iAdapterIndex, int* iSupported, int* iEnabled, int* iVersion);
+
 
     //Defining pointers to ADL Methods.
     ADL2_MAIN_CONTROL_CREATE			        ADL2_Main_Control_Create = nullptr;
@@ -262,6 +286,7 @@ private:
     ADL2_ADAPTER_PMLOG_STOP                     ADL2_Adapter_PMLog_Stop = nullptr;
     ADL2_ADAPTER_VIDEOBIOSINFO_GET              ADL2_Adapter_VideoBiosInfo_Get = nullptr;
     ADL2_ADAPTER_ASPECTS_GET                    ADL2_Adapter_Aspects_Get = nullptr;
+    ADL2_ADAPTER_REGVALUEINT_GET                ADL2_Adapter_RegValueInt_Get = nullptr;
 
     ADL2_GRAPHICS_VERSIONSX2_GET                ADL2_Graphics_VersionsX2_Get = nullptr;
     ADL2_GRAPHICS_VERSION_GET                   ADL2_Graphics_Versions_Get = nullptr;
@@ -317,10 +342,14 @@ private:
     ADL2_OVERDRIVE5_POWERCONTROL_GET			ADL2_Overdrive5_PowerControl_Get = nullptr;
 
     //ADL2_OVERDRIVE8
+    ADL2_OVERDRIVE8_INIT_SETTING_GET            ADL2_Overdrive8_Init_Setting_Get = nullptr;
     ADL2_OVERDRIVE8_INIT_SETTINGX2_GET          ADL2_Overdrive8_Init_SettingX2_Get = nullptr;
+    ADL2_OVERDRIVE8_CURRENT_SETTING_GET         ADL2_Overdrive8_Current_Setting_Get = nullptr;
     ADL2_OVERDRIVE8_CURRENT_SETTINGX2_GET       ADL2_Overdrive8_Current_SettingX2_Get = nullptr;
 
     ADL2_WS_OVERDRIVE_CAPS                      ADL2_WS_Overdrive_Caps = nullptr;
+
+    ADL2_NEW_QUERYPMLOGDATA_GET                 ADL2_New_QueryPMLogData_Get = nullptr;
 
     ADL2_DESKTOP_DEVICE_CREATE                  ADL2_Desktop_Device_Create = nullptr;
     ADL2_DESKTOP_DEVICE_DESTROY                 ADL2_Desktop_Device_Destroy = nullptr;
@@ -358,23 +387,17 @@ private:
     int m_maxThermalControllerIndex{ 10 };
     int m_thermalDomainControllerIndex{ 0 };
 
-    ADLFanSpeedInfo* m_fanSpeedInfo{ nullptr };
-    int m_fanSpeedReportingMethod{ 0 };
-
     ADLOD6ThermalControllerCaps* m_thermalControllerCaps{ nullptr };
 
-    std::string m_model{};
-
-    std::string m_memoryVendor{ "" };
-    std::string m_memorySize{ "" };
-    std::string m_memoryType{ "" };
-    uint32_t m_memoryBandwidth{ 0 };
-
-    std::string m_driverInfo{ "" };
-    std::string m_driverVersion{ "" };
+    ADLOD8InitSetting m_od8InitSetting;
+    ADLOD8CurrentSetting m_od8CurrentSetting;
 
     bool m_overdriveSupported{ false };
     bool m_overdriveEnabled{ false };
     int m_adlOverdriveVersion{ 1 };
     int m_overdriveVersion{ 0 };
+
+    Globals::GpuStaticInfo m_staticInfo;
+    Globals::GpuDynamicInfo m_dynamicInfo;
+
 };

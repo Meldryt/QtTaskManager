@@ -47,7 +47,7 @@ void GpuInfo::detectGpu()
     const std::string vendor = reinterpret_cast<const char*>(gl->glGetString(GL_VENDOR));
     const std::string renderer = reinterpret_cast<const char*>(gl->glGetString(GL_RENDERER));
 
-    m_staticInfo.gpuBrand = renderer;
+    m_staticInfo.gpuModel = renderer;
     //const std::string version = reinterpret_cast<const char*>(gl->glGetString(GL_VERSION));
     //const std::string extension = reinterpret_cast<const char*>(gl->glGetString(GL_EXTENSIONS));
     const bool isAmd = renderer.find("AMD") != std::string::npos || vendor.find("ATI") != std::string::npos;
@@ -56,11 +56,13 @@ void GpuInfo::detectGpu()
     if (isAmd && m_gpuInfoAmd->detectGpu())
     {
         m_gpuManufacturer = GpuManufacturer::AMD;
+        m_staticInfo.chipDesigner = "AMD";
         m_gpuDetected = true;
     }
     else if (isNVidia && m_gpuInfoNVidia->detectGpu())
     {
         m_gpuManufacturer = GpuManufacturer::NVIDIA;
+        m_staticInfo.chipDesigner = "NVIDIA";
         m_gpuDetected = true;
     }
     else
@@ -75,12 +77,12 @@ void GpuInfo::fetchStaticInfo()
     if (m_gpuManufacturer == GpuManufacturer::NVIDIA)
     {
         m_gpuInfoNVidia->fetchStaticInfo();
-        //m_staticInfo.gpuBrand = m_gpuInfoNVidia->getBrand();
+        m_staticInfo = m_gpuInfoNVidia->staticInfo();
     }
     else if (m_gpuManufacturer == GpuManufacturer::AMD)
     {
         m_gpuInfoAmd->fetchStaticInfo();
-        //m_staticInfo.gpuBrand = m_gpuInfoAmd->getBrand();
+        m_staticInfo = m_gpuInfoAmd->staticInfo();
     }
 }
 
@@ -89,13 +91,11 @@ void GpuInfo::fetchDynamicInfo()
     if(m_gpuManufacturer == GpuManufacturer::NVIDIA)
     {
         m_gpuInfoNVidia->fetchDynamicInfo();
-        m_dynamicInfo.gpuTemperature = m_gpuInfoNVidia->getTemperature();
-        m_dynamicInfo.gpuTotalLoad = m_gpuInfoNVidia->getTotalLoad();
+        m_dynamicInfo = m_gpuInfoNVidia->dynamicInfo();
     }
     else
     {
         m_gpuInfoAmd->fetchDynamicInfo();
-        m_dynamicInfo.gpuTemperature = m_gpuInfoAmd->getTemperature();
-        m_dynamicInfo.gpuTotalLoad = m_gpuInfoAmd->getTotalLoad();
+        m_dynamicInfo = m_gpuInfoAmd->dynamicInfo();
     }
 }

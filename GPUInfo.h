@@ -3,6 +3,8 @@
 #include <QObject>
 #include <string>
 
+#include <Globals.h>
+
 class GpuInfoNVidia;
 class GpuInfoAmd;
 
@@ -17,28 +19,17 @@ public:
         UNKNOWN
     };
 
-    struct GpuStaticInfo
-    {
-        std::string gpuBrand{""};
-    };
-
-    struct GpuDynamicInfo
-    {
-        uint8_t gpuTotalLoad{0};
-        uint8_t gpuTemperature{0};
-    };
-
     GpuInfo();
 
     void init();
     void update();
 
-    const GpuStaticInfo& getStaticInfo() const
+    const Globals::GpuStaticInfo& getStaticInfo() const
     {
         return m_staticInfo;
     }
 
-    const GpuDynamicInfo& getDynamicInfo() const
+    const Globals::GpuDynamicInfo& getDynamicInfo() const
     {
         return m_dynamicInfo;
     }
@@ -54,6 +45,6 @@ private:
     GpuInfoNVidia* m_gpuInfoNVidia{ nullptr };
     GpuInfoAmd* m_gpuInfoAmd{ nullptr };
 
-    GpuStaticInfo m_staticInfo;
-    GpuDynamicInfo m_dynamicInfo;
+    Globals::GpuStaticInfo m_staticInfo;
+    Globals::GpuDynamicInfo m_dynamicInfo;
 };

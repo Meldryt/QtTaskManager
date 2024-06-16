@@ -30,10 +30,10 @@ TabHardware::TabHardware(QWidget *parent) : QWidget{parent}
 
     {
         gpuWidget = new QWidget(this);
-        GpuInfoLabel= new QLabel(gpuWidget);
+        m_gpuInfoLabel= new QLabel(gpuWidget);
 
         QGridLayout *layout = new QGridLayout(gpuWidget);
-        layout->addWidget(GpuInfoLabel,0,0);
+        layout->addWidget(m_gpuInfoLabel,0,0);
         gpuWidget->setLayout(layout);
     }
 
@@ -91,10 +91,7 @@ void TabHardware::processCPU()
 
 void TabHardware::processGPU()
 {
-    QString text;
-    text += "GPU Brand : " + gpuBrand + "\n";
-    //text += "Number of Cores: " + QString::number(staticSystemInfo.processorCount) + "\n";
-    GpuInfoLabel->setText(text);
+    m_gpuInfoLabel->setText(m_gpuStaticInfoText);
 }
 
 void TabHardware::processRAM()
@@ -108,6 +105,22 @@ void TabHardware::processRAM()
 void TabHardware::processDevices()
 {
 
+}
+
+void TabHardware::slotGpuStaticInfo(const Globals::GpuStaticInfo& staticInfo)
+{
+    std::string text;
+    text += "Graphics Chip Designer : " + staticInfo.chipDesigner +"\n";
+    text += "Graphics Card Manufacturer : " + staticInfo.cardManufacturer + "\n";
+    text += "Graphics Card Model : " + staticInfo.gpuModel + "\n";
+    text += "Graphics Memory Vendor : " + staticInfo.memoryVendor + "\n";
+    text += "Graphics Memory Size : " + std::to_string(staticInfo.memorySize) + "\n";
+    text += "Graphics Memory Type : " + staticInfo.memoryType + "\n";
+    text += "Graphics Memory Bandwidth : " + std::to_string(staticInfo.memoryBandwidth) + "\n";
+    text += "Graphics Driver : " + staticInfo.driverInfo + "\n";
+    text += "Graphics Driver Version : " + staticInfo.driverVersion + "\n";
+
+    m_gpuStaticInfoText = QString(text.c_str());
 }
 
 void TabHardware::slotCPUBrand(const std::string& val)
@@ -138,11 +151,6 @@ void TabHardware::slotL2CacheSize(const uint32_t& val)
 void TabHardware::slotL3CacheSize(const uint32_t& val)
 {
     l3CacheSize = QString::number(val);
-}
-
-void TabHardware::slotGPUBrand(const std::string& val)
-{
-    gpuBrand = QString(val.c_str());
 }
 
 void TabHardware::slotTotalPhysicalMemory(const uint32_t& val)

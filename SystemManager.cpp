@@ -28,23 +28,22 @@ SystemManager::SystemManager(QWidget* parent) : QTabWidget(parent)
         tabHardware->slotL2CacheSize(staticInfo.l2CacheSize);
         tabHardware->slotL3CacheSize(staticInfo.l3CacheSize);
     });
-    connect( workerProcess, &WorkerProcess::signalStaticInfoGpu, this, [&](const GpuInfo::GpuStaticInfo& staticInfo)
+    connect( workerProcess, &WorkerProcess::signalStaticInfoGpu, this, [&](const Globals::GpuStaticInfo& staticInfo)
     {
-        tabHardware->slotGPUBrand(staticInfo.gpuBrand);
+        tabHardware->slotGpuStaticInfo(staticInfo);
     });
-    connect( workerProcess, &WorkerProcess::signalStaticInfoMemory, this, [&](const MemoryInfo::MemoryStaticInfo& staticInfo)
+    connect(workerProcess, &WorkerProcess::signalStaticInfoMemory, this, [&](const MemoryInfo::MemoryStaticInfo& staticInfo)
     {
         tabHardware->slotTotalPhysicalMemory(staticInfo.totalPhysicalMemory);
+    });
+
+    connect(workerProcess, &WorkerProcess::signalDynamicInfoGpu, this, [&](const Globals::GpuDynamicInfo& dynamicInfo)
+    {
+        tabPerformance->slotGpuDynamicInfo(dynamicInfo);
     });
     connect( workerProcess, &WorkerProcess::signalDynamicInfoCpu, this, [&](const CpuInfo::CpuDynamicInfo& dynamicInfo)
     {
         tabPerformance->slotCPUTotalLoad(dynamicInfo.cpuTotalLoad);
-
-    });
-    connect( workerProcess, &WorkerProcess::signalDynamicInfoGpu, this, [&](const GpuInfo::GpuDynamicInfo& dynamicInfo)
-    {
-        tabPerformance->slotGPUTotalLoad(dynamicInfo.gpuTotalLoad);
-        tabPerformance->slotGPUTemperature(dynamicInfo.gpuTemperature);
     });
     connect( workerProcess, &WorkerProcess::signalDynamicInfoMemory, this, [&](const MemoryInfo::MemoryDynamicInfo& dynamicInfo)
     {

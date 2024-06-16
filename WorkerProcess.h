@@ -35,10 +35,10 @@ private:
 
 signals:
     void signalStaticInfoCpu(const CpuInfo::CpuStaticInfo&);
-    void signalStaticInfoGpu(const GpuInfo::GpuStaticInfo&);
+    void signalStaticInfoGpu(const Globals::GpuStaticInfo&);
     void signalStaticInfoMemory(const MemoryInfo::MemoryStaticInfo&);
     void signalDynamicInfoCpu(const CpuInfo::CpuDynamicInfo&);
-    void signalDynamicInfoGpu(const GpuInfo::GpuDynamicInfo&);
+    void signalDynamicInfoGpu(const Globals::GpuDynamicInfo&);
     void signalDynamicInfoMemory(const MemoryInfo::MemoryDynamicInfo&);
     void signalDynamicInfoProcesses(const std::map<uint32_t, ProcessInfo::Process>&);
 

@@ -6,6 +6,8 @@
 #include <QTableWidget>
 #include <QTimer>
 
+#include <Globals.h>
+
 class TabHardware : public QWidget
 {
 public:
@@ -24,7 +26,7 @@ private:
     QLabel* CpuInfoLabel{nullptr};
 
     QWidget* gpuWidget{nullptr};
-    QLabel* GpuInfoLabel{nullptr};
+    QLabel* m_gpuInfoLabel{nullptr};
 
     QWidget* ramWidget{nullptr};
     QLabel* ramInfoLabel{nullptr};
@@ -34,16 +36,19 @@ private:
 
     QTimer* timer{nullptr};
 
+    QString m_gpuStaticInfoText;
+
     QString cpuBrand{""};
     QString processorCount{""};
     QString threadCount{""};
     QString l1CacheSize{""};
     QString l2CacheSize{""};
     QString l3CacheSize{""};
-    QString gpuBrand{""};
     QString totalPhysicalMemory{""};
 
 public slots:
+    void slotGpuStaticInfo(const Globals::GpuStaticInfo& staticInfo);
+
     void slotCPUBrand(const std::string& val);
     void slotProcessorCount(const uint8_t& val);  
     void slotThreadCount(const uint8_t& val);
@@ -51,7 +56,6 @@ public slots:
     void slotL2CacheSize(const uint32_t& val);
     void slotL3CacheSize(const uint32_t& val);
 
-    void slotGPUBrand(const std::string& val);
     void slotTotalPhysicalMemory(const uint32_t& val);
 
 private slots:
