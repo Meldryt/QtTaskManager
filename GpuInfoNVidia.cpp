@@ -70,6 +70,7 @@ NvAPI_GPU_GetFullName_t     NvAPI_GPU_GetFullName = NULL;
 
 GpuInfoNVidia::GpuInfoNVidia()
 {
+    m_staticInfo.chipDesigner = "NVIDIA";
 }
 
 /*

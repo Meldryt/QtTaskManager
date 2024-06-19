@@ -63,10 +63,10 @@ TabHardware::TabHardware(QWidget *parent) : QWidget{parent}
     connect(listWidget,&QListWidget::itemSelectionChanged, this, &TabHardware::showSelectionWidget);
     listWidget->setCurrentRow(0);
 
-    timer = new QTimer(this);
-    timer->setInterval(1000);
-    connect(timer, &QTimer::timeout, this, &TabHardware::process);
-    timer->start();
+    m_timer = new QTimer(this);
+    m_timer->setInterval(1000);
+    connect(m_timer, &QTimer::timeout, this, &TabHardware::process);
+    m_timer->start();
 }
 
 void TabHardware::process()
@@ -80,12 +80,12 @@ void TabHardware::process()
 void TabHardware::processCPU()
 {
     QString text;
-    text += "CPU Brand : " + cpuBrand + "\n";
-    text += "Number of Cores: " + processorCount + "\n";
-    text += "Number of Threads: " + threadCount + "\n";
-    text += "L1 Cache Size: " + l1CacheSize + " KB" + "\n";
-    text += "L2 Cache Size: " + l2CacheSize + " KB" + "\n";
-    text += "L3 Cache Size: " + l3CacheSize + " KB" + "\n";
+    text += "CPU Brand : " + m_cpuBrand + "\n";
+    text += "Number of Cores: " + m_processorCount + "\n";
+    text += "Number of Threads: " + m_threadCount + "\n";
+    text += "L1 Cache Size: " + m_l1CacheSize + " KB" + "\n";
+    text += "L2 Cache Size: " + m_l2CacheSize + " KB" + "\n";
+    text += "L3 Cache Size: " + m_l3CacheSize + " KB" + "\n";
     CpuInfoLabel->setText(text);
 }
 
@@ -98,13 +98,23 @@ void TabHardware::processRAM()
 {
     QString text;
     text += "RAM Brand : " + QString("") + "\n";
-    text += "Total Physical Memory: " + totalPhysicalMemory + "MB \n";
+    text += "Total Physical Memory: " + m_totalPhysicalMemory + "MB \n";
     ramInfoLabel->setText(text);
 }
 
 void TabHardware::processDevices()
 {
 
+}
+
+void TabHardware::slotCpuStaticInfo(const Globals::CpuStaticInfo& staticInfo)
+{
+    m_cpuBrand = staticInfo.cpuBrand.c_str();
+    m_processorCount = QString::number(staticInfo.processorCount);
+    m_threadCount = QString::number(staticInfo.threadCount);
+    m_l1CacheSize = QString::number(staticInfo.l1CacheSize);
+    m_l2CacheSize = QString::number(staticInfo.l2CacheSize);
+    m_l3CacheSize = QString::number(staticInfo.l3CacheSize);
 }
 
 void TabHardware::slotGpuStaticInfo(const Globals::GpuStaticInfo& staticInfo)
@@ -123,39 +133,9 @@ void TabHardware::slotGpuStaticInfo(const Globals::GpuStaticInfo& staticInfo)
     m_gpuStaticInfoText = QString(text.c_str());
 }
 
-void TabHardware::slotCPUBrand(const std::string& val)
-{
-    cpuBrand = QString(val.c_str());
-}
-
-void TabHardware::slotProcessorCount(const uint8_t& val)
-{
-    processorCount = QString::number(val);
-}
-
-void TabHardware::slotThreadCount(const uint8_t& val)
-{
-    threadCount = QString::number(val);
-}
-
-void TabHardware::slotL1CacheSize(const uint32_t& val)
-{
-    l1CacheSize = QString::number(val);
-}
-
-void TabHardware::slotL2CacheSize(const uint32_t& val)
-{
-    l2CacheSize = QString::number(val);
-}
-
-void TabHardware::slotL3CacheSize(const uint32_t& val)
-{
-    l3CacheSize = QString::number(val);
-}
-
 void TabHardware::slotTotalPhysicalMemory(const uint32_t& val)
 {
-    totalPhysicalMemory = QString::number((val/1024)/1024);
+    m_totalPhysicalMemory = QString::number(val);
 }
 
 void TabHardware::showSelectionWidget()

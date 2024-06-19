@@ -7,75 +7,50 @@
 
 TabPerformance::TabPerformance(QWidget *parent) : QWidget{parent}
 {
-    listWidget = new QListWidget(this);
-    listWidget->addItem("CPU");
-    listWidget->addItem("GPU");
-    listWidget->addItem("RAM");
-    listWidget->addItem("Disk");
-    listWidget->addItem("Network");
-    listWidget->setFixedWidth(100);
+    m_listWidget = new QListWidget(this);
+    m_listWidget->addItem("CPU");
+    m_listWidget->addItem("GPU");
+    m_listWidget->addItem("RAM");
+    m_listWidget->addItem("Disk");
+    m_listWidget->addItem("Network");
+    m_listWidget->setFixedWidth(100);
 
     QGridLayout *layout = new QGridLayout(this);
-    layout->addWidget(listWidget,0,0);
+    layout->addWidget(m_listWidget,0,0);
     setLayout(layout);
 
     {
-        cpuLineSeries = new QLineSeries();
+        m_memoryLineSeries = new QLineSeries();
 
-        cpuChart = new QChart();
-        cpuChart->legend()->hide();
-        cpuChart->addSeries(cpuLineSeries);
-        cpuChart->createDefaultAxes();
-        cpuChart->axes(Qt::Horizontal).back()->setRange(0,60);
-        cpuChart->axes(Qt::Vertical).back()->setRange(0.0,100.0);
+        m_memoryChart = new QChart();
+        m_memoryChart->legend()->hide();
+        m_memoryChart->addSeries(m_memoryLineSeries);
+        m_memoryChart->createDefaultAxes();
+        m_memoryChart->axes(Qt::Horizontal).back()->setRange(0, 60);
+        m_memoryChart->axes(Qt::Vertical).back()->setRange(0.0, 100.0);
         //chart->setTitle("Simple line chart example");
 
-        cpuChartView = new QChartView(cpuChart);
-        cpuChartView->setRenderHint(QPainter::Antialiasing);
+        m_memoryChartView = new QChartView(m_memoryChart);
+        m_memoryChartView->setRenderHint(QPainter::Antialiasing);
 
-        cpuWidget = new QWidget(this);
+        m_memoryWidget = new QWidget(this);
 
-        QGridLayout *cpuWidgetLayout = new QGridLayout(cpuWidget);
-        cpuWidgetLayout->addWidget(cpuChartView,0,0);
-        cpuWidget->setLayout(cpuWidgetLayout);
+        QGridLayout* memoryWidgetLayout = new QGridLayout(m_memoryWidget);
+        memoryWidgetLayout->addWidget(m_memoryChartView, 0, 0);
+        m_memoryWidget->setLayout(memoryWidgetLayout);
     }
 
-    m_stackedWidget = new QStackedWidget(this);
+    initCpuWidgets();
+    initGpuWidgets();
 
-    initGraphs();
+    layout->addWidget(m_cpuWidget, 0, 1);
+    layout->addWidget(m_gpuWidget, 0, 2);
+    layout->addWidget(m_memoryWidget, 0, 3);
 
-    m_gpuWidget = new QWidget(this);
+    connect(m_listWidget,&QListWidget::itemSelectionChanged, this, &TabPerformance::showSelectionWidget);
+    m_listWidget->setCurrentRow(0);
 
-    m_tableWidget = new QTableWidget(m_gpuWidget);
-    m_tableWidget->setRowCount(GpuGraphTitles.size());
-    m_tableWidget->setColumnCount(1);
-    m_tableWidget->horizontalHeader()->setStretchLastSection(true);
-
-    for (int i = 0; i < GpuGraphTitles.size(); ++i)
-    {
-        m_tableWidget->setItem(i, 0, new QTableWidgetItem(GpuGraphTitles.at(i) + ": "));
-    }
-
-    m_comboBoxActiveGraph = new QComboBox(m_gpuWidget);
-    m_comboBoxActiveGraph->addItems(GpuGraphTitles);
-    m_comboBoxActiveGraph->setCurrentIndex(0);
-
-    QObject::connect(m_comboBoxActiveGraph, &QComboBox::currentIndexChanged,
-        m_stackedWidget, &QStackedWidget::setCurrentIndex);
-
-    QGridLayout* gpuWidgetLayout = new QGridLayout(m_gpuWidget);
-    gpuWidgetLayout->addWidget(m_comboBoxActiveGraph, 0, 0);
-    gpuWidgetLayout->addWidget(m_stackedWidget, 1, 0);
-    gpuWidgetLayout->addWidget(m_tableWidget, 1, 1);
-    gpuWidgetLayout->setRowStretch(0,1);
-    gpuWidgetLayout->setRowStretch(1,3);
-    m_gpuWidget->setLayout(gpuWidgetLayout);
-
-    layout->addWidget(cpuWidget,0,1);
-    layout->addWidget(m_gpuWidget,0,2);
-
-    connect(listWidget,&QListWidget::itemSelectionChanged, this, &TabPerformance::showSelectionWidget);
-    listWidget->setCurrentRow(0);
+    showSelectionWidget();
 
     timer = new QTimer(this);
     timer->setInterval(1000);
@@ -83,94 +58,206 @@ TabPerformance::TabPerformance(QWidget *parent) : QWidget{parent}
     timer->start();
 }
 
-void TabPerformance::initGraphs()
+void TabPerformance::initCpuWidgets()
+{
+    m_cpuStackedWidget = new QStackedWidget(this);
+    m_cpuStackedWidget->setCurrentIndex(0);
+
+    m_cpuWidget = new QWidget(this);
+
+    m_cpuTableWidget = new QTableWidget(m_cpuWidget);
+    m_cpuTableWidget->setRowCount(CpuGraphTitles.size());
+    m_cpuTableWidget->setColumnCount(1);
+    m_cpuTableWidget->horizontalHeader()->setStretchLastSection(true);
+
+    for (int i = 0; i < CpuGraphTitles.size(); ++i)
+    {
+        m_cpuTableWidget->setItem(i, 0, new QTableWidgetItem(CpuGraphTitles.at(i) + ": "));
+    }
+
+    m_cpuComboBoxActiveGraph = new QComboBox(m_cpuWidget);
+    m_cpuComboBoxActiveGraph->addItems(CpuGraphTitles);
+    m_cpuComboBoxActiveGraph->setCurrentIndex(0);
+
+    QObject::connect(m_cpuComboBoxActiveGraph, &QComboBox::currentIndexChanged,
+        m_cpuStackedWidget, &QStackedWidget::setCurrentIndex);
+
+    QGridLayout* cpuWidgetLayout = new QGridLayout(m_cpuWidget);
+    cpuWidgetLayout->addWidget(m_cpuComboBoxActiveGraph, 0, 0);
+    cpuWidgetLayout->addWidget(m_cpuStackedWidget, 1, 0);
+    cpuWidgetLayout->addWidget(m_cpuTableWidget, 1, 1);
+    cpuWidgetLayout->setRowStretch(0, 1);
+    cpuWidgetLayout->setRowStretch(1, 3);
+    cpuWidgetLayout->setColumnStretch(0, 2);
+    cpuWidgetLayout->setColumnStretch(1, 1);
+    m_cpuWidget->setLayout(cpuWidgetLayout);
+
+    initCpuGraphs();
+}
+
+void TabPerformance::initGpuWidgets()
+{
+    m_gpuStackedWidget = new QStackedWidget(this);
+    m_gpuStackedWidget->setCurrentIndex(0);
+
+    m_gpuWidget = new QWidget(this);
+
+    m_gpuTableWidget = new QTableWidget(m_gpuWidget);
+    m_gpuTableWidget->setRowCount(GpuGraphTitles.size());
+    m_gpuTableWidget->setColumnCount(1);
+    m_gpuTableWidget->horizontalHeader()->setStretchLastSection(true);
+
+    for (int i = 0; i < GpuGraphTitles.size(); ++i)
+    {
+        m_gpuTableWidget->setItem(i, 0, new QTableWidgetItem(GpuGraphTitles.at(i) + ": "));
+    }
+
+    m_gpuComboBoxActiveGraph = new QComboBox(m_gpuWidget);
+    m_gpuComboBoxActiveGraph->addItems(GpuGraphTitles);
+    m_gpuComboBoxActiveGraph->setCurrentIndex(0);
+
+    QObject::connect(m_gpuComboBoxActiveGraph, &QComboBox::currentIndexChanged,
+        m_gpuStackedWidget, &QStackedWidget::setCurrentIndex);
+
+    QGridLayout* gpuWidgetLayout = new QGridLayout(m_gpuWidget);
+    gpuWidgetLayout->addWidget(m_gpuComboBoxActiveGraph, 0, 0);
+    gpuWidgetLayout->addWidget(m_gpuStackedWidget, 1, 0);
+    gpuWidgetLayout->addWidget(m_gpuTableWidget, 1, 1);
+    gpuWidgetLayout->setRowStretch(0, 1);
+    gpuWidgetLayout->setRowStretch(1, 3);
+    gpuWidgetLayout->setColumnStretch(0, 2);
+    gpuWidgetLayout->setColumnStretch(1, 1);
+    m_gpuWidget->setLayout(gpuWidgetLayout);
+
+    initGpuGraphs();
+}
+
+void TabPerformance::initCpuGraphs()
+{
+    for (int i = 0; i < CpuGraphTitles.size(); ++i)
+    {
+        m_cpuGraphs[i].lineSeries = new QLineSeries();
+        m_cpuGraphs[i].chart = new QChart();
+        m_cpuGraphs[i].chart->legend()->hide();
+        m_cpuGraphs[i].chart->addSeries(m_cpuGraphs[i].lineSeries);
+        m_cpuGraphs[i].chart->createDefaultAxes();
+
+        m_cpuGraphs[i].chartView = new QChartView(m_cpuGraphs[i].chart);
+        m_cpuGraphs[i].chartView->setRenderHint(QPainter::Antialiasing);
+
+        m_cpuStackedWidget->addWidget(m_cpuGraphs[i].chartView);
+    }
+
+    int index = 0;
+
+    //CpuUsage
+    m_cpuGraphs[index].chart->axes(Qt::Horizontal).back()->setRange(0, 60);
+    m_cpuGraphs[index].chart->axes(Qt::Vertical).back()->setRange(0, 100);
+    ++index;
+
+    //CurrentMaxFrequency
+    m_cpuGraphs[index].chart->axes(Qt::Horizontal).back()->setRange(0, 60);
+    m_cpuGraphs[index].chart->axes(Qt::Vertical).back()->setRange(0, 5000);
+    ++index;
+
+    //Frequencies
+    m_cpuGraphs[index].chart->axes(Qt::Horizontal).back()->setRange(0, 60);
+    m_cpuGraphs[index].chart->axes(Qt::Vertical).back()->setRange(0, 5000);
+    ++index;
+
+    //AsicPower
+    m_cpuGraphs[index].chart->axes(Qt::Horizontal).back()->setRange(0, 60);
+    m_cpuGraphs[index].chart->axes(Qt::Vertical).back()->setRange(0, 600);
+    ++index;
+
+    //Voltage
+    m_cpuGraphs[index].chart->axes(Qt::Horizontal).back()->setRange(0, 60);
+    m_cpuGraphs[index].chart->axes(Qt::Vertical).back()->setRange(0, 2000);
+    ++index;
+
+    //Temperature
+    m_cpuGraphs[index].chart->axes(Qt::Horizontal).back()->setRange(0, 60);
+    m_cpuGraphs[index].chart->axes(Qt::Vertical).back()->setRange(0, 200);
+    ++index;
+
+    //FanSpeed
+    m_cpuGraphs[index].chart->axes(Qt::Horizontal).back()->setRange(0, 60);
+    m_cpuGraphs[index].chart->axes(Qt::Vertical).back()->setRange(0, 10000);
+}
+
+void TabPerformance::initGpuGraphs()
 {
     for (int i = 0; i < GpuGraphTitles.size(); ++i)
     {
-        m_gpuGraphs[i].gpuLineSeries = new QLineSeries();
-        m_gpuGraphs[i].gpuChart = new QChart();
-        m_gpuGraphs[i].gpuChart->legend()->hide();
-        m_gpuGraphs[i].gpuChart->addSeries(m_gpuGraphs[i].gpuLineSeries);
-        m_gpuGraphs[i].gpuChart->createDefaultAxes();
+        m_gpuGraphs[i].lineSeries = new QLineSeries();
+        m_gpuGraphs[i].chart = new QChart();
+        m_gpuGraphs[i].chart->legend()->hide();
+        m_gpuGraphs[i].chart->addSeries(m_gpuGraphs[i].lineSeries);
+        m_gpuGraphs[i].chart->createDefaultAxes();
 
-        m_gpuGraphs[i].gpuChartView = new QChartView(m_gpuGraphs[i].gpuChart);
-        m_gpuGraphs[i].gpuChartView->setRenderHint(QPainter::Antialiasing);
+        m_gpuGraphs[i].chartView = new QChartView(m_gpuGraphs[i].chart);
+        m_gpuGraphs[i].chartView->setRenderHint(QPainter::Antialiasing);
 
-        m_stackedWidget->addWidget(m_gpuGraphs[i].gpuChartView);
+        m_gpuStackedWidget->addWidget(m_gpuGraphs[i].chartView);
     }
 
-    m_stackedWidget->setCurrentIndex(0);
+    int index = 0;
 
-    //m_gpuGraphs[0].gpuChart->setTitle("GraphicsUsage");
-    m_gpuGraphs[0].gpuChart->axes(Qt::Horizontal).back()->setRange(0, 60);
-    m_gpuGraphs[0].gpuChart->axes(Qt::Vertical).back()->setRange(0, 100);
+    //GraphicsUsage
+    m_gpuGraphs[index].chart->axes(Qt::Horizontal).back()->setRange(0, 60);
+    m_gpuGraphs[index].chart->axes(Qt::Vertical).back()->setRange(0, 100);
+    ++index;
 
-    //m_gpuGraphs[1].gpuChart->setTitle("GraphicsClock");
-    m_gpuGraphs[1].gpuChart->axes(Qt::Horizontal).back()->setRange(0, 60);
-    m_gpuGraphs[1].gpuChart->axes(Qt::Vertical).back()->setRange(0, 5000);
-    
-    //m_gpuGraphs[2].gpuChart->setTitle("MemoryClock");
-    m_gpuGraphs[2].gpuChart->axes(Qt::Horizontal).back()->setRange(0, 60);
-    m_gpuGraphs[2].gpuChart->axes(Qt::Vertical).back()->setRange(0, 4000);
+    //GraphicsClock
+    m_gpuGraphs[index].chart->axes(Qt::Horizontal).back()->setRange(0, 60);
+    m_gpuGraphs[index].chart->axes(Qt::Vertical).back()->setRange(0, 5000);
+    ++index;
 
-    //m_gpuGraphs[3].gpuChart->setTitle("AsicPower");
-    m_gpuGraphs[3].gpuChart->axes(Qt::Horizontal).back()->setRange(0, 60);
-    m_gpuGraphs[3].gpuChart->axes(Qt::Vertical).back()->setRange(0, 600);
+    //MemoryClock
+    m_gpuGraphs[index].chart->axes(Qt::Horizontal).back()->setRange(0, 60);
+    m_gpuGraphs[index].chart->axes(Qt::Vertical).back()->setRange(0, 4000);
+    ++index;
 
-    //m_gpuGraphs[4].gpuChart->setTitle("Voltage");
-    m_gpuGraphs[4].gpuChart->axes(Qt::Horizontal).back()->setRange(0, 60);
-    m_gpuGraphs[4].gpuChart->axes(Qt::Vertical).back()->setRange(0, 2000);
+    //AsicPower
+    m_gpuGraphs[index].chart->axes(Qt::Horizontal).back()->setRange(0, 60);
+    m_gpuGraphs[index].chart->axes(Qt::Vertical).back()->setRange(0, 600);
+    ++index;
 
-    //m_gpuGraphs[5].gpuChart->setTitle("Temperature");
-    m_gpuGraphs[5].gpuChart->axes(Qt::Horizontal).back()->setRange(0, 60);
-    m_gpuGraphs[5].gpuChart->axes(Qt::Vertical).back()->setRange(0, 200);
+    //Voltage
+    m_gpuGraphs[index].chart->axes(Qt::Horizontal).back()->setRange(0, 60);
+    m_gpuGraphs[index].chart->axes(Qt::Vertical).back()->setRange(0, 2000);
+    ++index;
 
-    //m_gpuGraphs[6].gpuChart->setTitle("Temperature(Hotspot)");
-    m_gpuGraphs[6].gpuChart->axes(Qt::Horizontal).back()->setRange(0, 60);
-    m_gpuGraphs[6].gpuChart->axes(Qt::Vertical).back()->setRange(0, 200);
+    //Temperature
+    m_gpuGraphs[index].chart->axes(Qt::Horizontal).back()->setRange(0, 60);
+    m_gpuGraphs[index].chart->axes(Qt::Vertical).back()->setRange(0, 200);
+    ++index;
 
-    //m_gpuGraphs[7].gpuChart->setTitle("FanSpeed");
-    m_gpuGraphs[7].gpuChart->axes(Qt::Horizontal).back()->setRange(0, 60);
-    m_gpuGraphs[7].gpuChart->axes(Qt::Vertical).back()->setRange(0, 10000);
+    //Temperature(Hotspot)
+    m_gpuGraphs[index].chart->axes(Qt::Horizontal).back()->setRange(0, 60);
+    m_gpuGraphs[index].chart->axes(Qt::Vertical).back()->setRange(0, 200);
+    ++index;
+
+    //FanSpeed
+    m_gpuGraphs[index].chart->axes(Qt::Horizontal).back()->setRange(0, 60);
+    m_gpuGraphs[index].chart->axes(Qt::Vertical).back()->setRange(0, 10000);
 }
 
 void TabPerformance::process()
 {
-    processCPU();
-    processGPU();
+    processCpu();
+    processGpu();
+    processMemory();
 }
 
-void TabPerformance::processCPU()
+void TabPerformance::processCpu()
 {
-    QList<QPointF> points = cpuLineSeries->points();
-    if(!points.empty())
+    for (int i = 0; i < m_cpuGraphs.size(); ++i)
     {
-        cpuLineSeries->clear();
-        for(uint8_t i=0;i<points.size();++i)
-        {
-            points[i].setX(points.at(i).x()-1);
-        }
-        if(points.first().x()<0)
-        {
-            points.removeFirst();
-        }
-        cpuLineSeries->append(points);
-    }
-
-    double x = 60;
-    double y = cpuTotalLoad;
-    cpuLineSeries->append(x,y);
-    cpuChartView->repaint();
-}
-
-void TabPerformance::processGPU()
-{
-    for (int i = 0; i < m_gpuGraphs.size(); ++i)
-    {
-        QList<QPointF> points = m_gpuGraphs[i].gpuLineSeries->points();
+        QList<QPointF> points = m_cpuGraphs[i].lineSeries->points();
         if (!points.empty())
         {
-            m_gpuGraphs[i].gpuLineSeries->clear();
+            m_cpuGraphs[i].lineSeries->clear();
             for (uint8_t i = 0; i < points.size(); ++i)
             {
                 points[i].setX(points.at(i).x() - 1);
@@ -179,40 +266,106 @@ void TabPerformance::processGPU()
             {
                 points.removeFirst();
             }
-            m_gpuGraphs[i].gpuLineSeries->append(points);
+            m_cpuGraphs[i].lineSeries->append(points);
         }
 
         double x = 60;
-        m_gpuGraphs[i].gpuLineSeries->append(x, m_gpuGraphs[i].currentY);
+        m_cpuGraphs[i].lineSeries->append(x, m_cpuGraphs[i].currentY);
     }
 
-    m_gpuGraphs[m_comboBoxActiveGraph->currentIndex()].gpuChartView->repaint();
+    m_cpuGraphs[m_cpuComboBoxActiveGraph->currentIndex()].chartView->repaint();
+
+    for (int i = 0; i < m_cpuTableInfos.size(); ++i)
+    {
+        m_cpuTableWidget->item(i, 0)->setText(m_cpuTableInfos[i]);
+    }
+}
+
+void TabPerformance::processGpu()
+{
+    for (int i = 0; i < m_gpuGraphs.size(); ++i)
+    {
+        QList<QPointF> points = m_gpuGraphs[i].lineSeries->points();
+        if (!points.empty())
+        {
+            m_gpuGraphs[i].lineSeries->clear();
+            for (uint8_t i = 0; i < points.size(); ++i)
+            {
+                points[i].setX(points.at(i).x() - 1);
+            }
+            if (points.first().x() < 0)
+            {
+                points.removeFirst();
+            }
+            m_gpuGraphs[i].lineSeries->append(points);
+        }
+
+        double x = 60;
+        m_gpuGraphs[i].lineSeries->append(x, m_gpuGraphs[i].currentY);
+    }
+
+    m_gpuGraphs[m_gpuComboBoxActiveGraph->currentIndex()].chartView->repaint();
 
     for (int i = 0; i < m_gpuTableInfos.size(); ++i)
     {
-        m_tableWidget->item(i, 0)->setText(m_gpuTableInfos[i]);
+        m_gpuTableWidget->item(i, 0)->setText(m_gpuTableInfos[i]);
     }
-
-    //gpuTempLabel->setText("Temperature: " + QString::number(gpuTemperature) + " °C");
 }
 
-void TabPerformance::slotCPUTotalLoad(const double& val)
+void TabPerformance::processMemory()
 {
-    cpuTotalLoad = val;
+    QList<QPointF> points = m_memoryLineSeries->points();
+    if (!points.empty())
+    {
+        m_memoryLineSeries->clear();
+        for (uint8_t i = 0; i < points.size(); ++i)
+        {
+            points[i].setX(points.at(i).x() - 1);
+        }
+        if (points.first().x() < 0)
+        {
+            points.removeFirst();
+        }
+        m_memoryLineSeries->append(points);
+    }
+
+    double x = 60;
+    double y = m_memoryUsedSize;
+    m_memoryLineSeries->append(x, y);
+    m_memoryChartView->repaint();
+}
+
+void TabPerformance::slotCpuDynamicInfo(const Globals::CpuDynamicInfo& dynamicInfo)
+{
+    int index = 0;
+
+
+    m_cpuGraphs[index++].currentY = dynamicInfo.cpuTotalLoad;
+    m_cpuGraphs[index++].currentY = dynamicInfo.cpuFrequencies[dynamicInfo.cpuMaxFrequencyIndex];
+    m_cpuGraphs[index++].currentY = 0;// dynamicInfo.cpuFrequencies
+    m_cpuGraphs[index++].currentY = 0;// dynamicInfo.cpuAsicPower;
+    m_cpuGraphs[index++].currentY = 0;// dynamicInfo.cpuVoltage;
+    m_cpuGraphs[index++].currentY = dynamicInfo.cpuTemperature;
+    m_cpuGraphs[index++].currentY = 0;// dynamicInfo.cpuFanSpeed;
+
+    for (int i = 0; i < m_cpuGraphs.size(); ++i)
+    {
+        m_cpuTableInfos[i] = CpuGraphTitles.at(i) + ": " + QString::number(m_cpuGraphs[i].currentY);
+    }
 }
 
 void TabPerformance::slotGpuDynamicInfo(const Globals::GpuDynamicInfo& dynamicInfo)
 {
-    int graphIndex = 0;
+    int index = 0;
 
-    m_gpuGraphs[graphIndex++].currentY = dynamicInfo.gpuGraphicsUsage;
-    m_gpuGraphs[graphIndex++].currentY = dynamicInfo.gpuGraphicsClock;
-    m_gpuGraphs[graphIndex++].currentY = dynamicInfo.gpuMemoryClock;
-    m_gpuGraphs[graphIndex++].currentY = dynamicInfo.gpuAsicPower;
-    m_gpuGraphs[graphIndex++].currentY = dynamicInfo.gpuGraphicsVoltage;
-    m_gpuGraphs[graphIndex++].currentY = dynamicInfo.gpuTemperature;
-    m_gpuGraphs[graphIndex++].currentY = dynamicInfo.gpuTemperatureHotspot;
-    m_gpuGraphs[graphIndex++].currentY = dynamicInfo.gpuFanSpeed;
+    m_gpuGraphs[index++].currentY = dynamicInfo.gpuGraphicsUsage;
+    m_gpuGraphs[index++].currentY = dynamicInfo.gpuGraphicsClock;
+    m_gpuGraphs[index++].currentY = dynamicInfo.gpuMemoryClock;
+    m_gpuGraphs[index++].currentY = dynamicInfo.gpuAsicPower;
+    m_gpuGraphs[index++].currentY = dynamicInfo.gpuGraphicsVoltage;
+    m_gpuGraphs[index++].currentY = dynamicInfo.gpuTemperature;
+    m_gpuGraphs[index++].currentY = dynamicInfo.gpuTemperatureHotspot;
+    m_gpuGraphs[index++].currentY = dynamicInfo.gpuFanSpeed;
 
     for (int i = 0; i < m_gpuGraphs.size(); ++i)
     {
@@ -220,20 +373,33 @@ void TabPerformance::slotGpuDynamicInfo(const Globals::GpuDynamicInfo& dynamicIn
     }
 }
 
+void TabPerformance::slotTotalMemory(const uint32_t& val)
+{
+    m_memoryTotalSize = val;
+    m_memoryChart->axes(Qt::Vertical).back()->setRange(0.0, m_memoryTotalSize);
+}
+
+void TabPerformance::slotUsedMemory(const uint32_t& val)
+{
+    m_memoryUsedSize = val;
+}
+
 void TabPerformance::showSelectionWidget()
 {
-    cpuWidget->hide();
+    m_cpuWidget->hide();
     m_gpuWidget->hide();
+    m_memoryWidget->hide();
 
-    switch(listWidget->currentRow())
+    switch(m_listWidget->currentRow())
     {
     case 0:
-        cpuWidget->show();
+        m_cpuWidget->show();
         break;
     case 1:
         m_gpuWidget->show();
         break;
     case 2:
+        m_memoryWidget->show();
         break;
     default:
         break;

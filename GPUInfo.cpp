@@ -56,13 +56,11 @@ void GpuInfo::detectGpu()
     if (isAmd && m_gpuInfoAmd->detectGpu())
     {
         m_gpuManufacturer = GpuManufacturer::AMD;
-        m_staticInfo.chipDesigner = "AMD";
         m_gpuDetected = true;
     }
     else if (isNVidia && m_gpuInfoNVidia->detectGpu())
     {
         m_gpuManufacturer = GpuManufacturer::NVIDIA;
-        m_staticInfo.chipDesigner = "NVIDIA";
         m_gpuDetected = true;
     }
     else

@@ -2,7 +2,7 @@
 
 #include <QObject>
 #include <string>
-#include "AdlManager.h"
+#include "AdlxManager.h"
 
 class GpuInfoAmd
 {
@@ -11,12 +11,12 @@ public:
 
     const Globals::GpuStaticInfo& staticInfo() const
     {
-        return m_adlManager->staticInfo();
+        return m_adlxManager->staticInfo();
     }
 
     const Globals::GpuDynamicInfo& dynamicInfo() const
     {
-        return m_adlManager->dynamicInfo();
+        return m_adlxManager->dynamicInfo();
     }
 
     bool detectGpu();
@@ -24,5 +24,5 @@ public:
     void fetchDynamicInfo();
 
 private:
-    AdlManager* m_adlManager{ nullptr };
+    AdlxManager* m_adlxManager{ nullptr };
 };

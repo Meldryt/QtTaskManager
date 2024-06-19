@@ -1,9 +1,5 @@
 #include "ProcessInfo.h"
 
-//#include <windows.h>
-//#include <iostream>
-//#include <stdio.h>
-//#include <tchar.h>
 #include <cmath>
 
 #ifdef _WIN32
@@ -11,14 +7,22 @@
 #else
 #endif
 
-//#include <strsafe.h>
-
 #include <QDebug>
 
 ProcessInfo::ProcessInfo()
 {
     elapsedTimer = new QElapsedTimer();
     elapsedTimer->start();
+}
+
+void ProcessInfo::setProcessorCount(uint8_t newProcessorCount)
+{
+    m_processorCount = newProcessorCount;
+}
+
+const std::map<uint32_t, ProcessInfo::Process> &ProcessInfo::getProcessMap() const
+{
+    return m_processMap;
 }
 
 void ProcessInfo::update()
@@ -40,9 +44,6 @@ void ProcessInfo::updateRunningProcesses()
     auto process = std::begin(m_processMap);
     while (process != std::end(m_processMap))
     {
-
-        EnumWindows(StaticEnumWindowsProc, reinterpret_cast<LPARAM>(this));
-
         HANDLE processHandle = OpenProcess(SYNCHRONIZE, FALSE, process->second.processID);
         DWORD ret = WaitForSingleObject(processHandle, 0);
 
@@ -107,7 +108,7 @@ void ProcessInfo::updateProcessUsage(const HANDLE& processHandle, Process& proce
     percent = (sys.QuadPart - processInfo.lastSysCPU.QuadPart) +
         (user.QuadPart - processInfo.lastUserCPU.QuadPart);
     percent /= (now.QuadPart - processInfo.lastCPU.QuadPart);
-    percent /= processorCount;
+    percent /= m_processorCount;
     processInfo.lastCPU = now;
     processInfo.lastUserCPU = user;
     processInfo.lastSysCPU = sys;
@@ -216,7 +217,7 @@ bool ProcessInfo::addProcess(const Process& processInfo)
 
         m_processMap.insert({processInfo.processID,process});
 
-        qDebug() << "WorkerProcess::receivedProcess new process " << process.description.c_str();
+        //qDebug() << "WorkerProcess::receivedProcess new process " << process.description.c_str();
         return true;
     }
     else
@@ -270,13 +271,3 @@ bool ProcessInfo::addProcessModules(const std::string& processName, const HANDLE
 
 #else
 #endif
-
-void ProcessInfo::setProcessorCount(uint8_t newProcessorCount)
-{
-    processorCount = newProcessorCount;
-}
-
-const std::map<uint32_t, ProcessInfo::Process> &ProcessInfo::getProcessMap() const
-{
-    return m_processMap;
-}

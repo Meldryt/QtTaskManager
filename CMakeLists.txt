@@ -11,13 +11,13 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets Charts)
-find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets Charts)
+find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets Charts Concurrent )
+find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets Charts Concurrent)
 
 set(PROJECT_SOURCES
     Globals.h
-    AdlManager.h
-    AdlManager.cpp
+    AdlxManager.h
+    AdlxManager.cpp
     CpuInfo.h
     CpuInfo.cpp
     DevicesInfo.h
@@ -45,9 +45,21 @@ set(PROJECT_SOURCES
     TabProcesses.h
     TabPerformance.cpp
     TabPerformance.h
-    WorkerProcess.cpp
-    WorkerProcess.h
+    ProcessWorker.cpp
+    ProcessWorker.h
+    CpuWorker.cpp
+    CpuWorker.h
+    GpuWorker.cpp
+    GpuWorker.h
+    MemoryWorker.cpp
+    MemoryWorker.h
+    Worker.h
+    Worker.cpp
     MainWindow.ui
+
+    external/ADLX/SDK/ADLXHelper/Windows/Cpp/ADLXHelper.h
+    external/ADLX/SDK/ADLXHelper/Windows/Cpp/ADLXHelper.cpp
+    external/ADLX/SDK/platform/Windows/WinAPIs.cpp
 )
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)

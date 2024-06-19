@@ -4,22 +4,22 @@
 
 GpuInfoAmd::GpuInfoAmd()
 {
-	m_adlManager = new AdlManager();
+    m_adlxManager = new AdlxManager();
 }
 
 bool GpuInfoAmd::detectGpu()
 {
-    m_adlManager->init();
+    m_adlxManager->init();
     //m_adlManager->fetchInfo();
     return true;
 }
 
 void GpuInfoAmd::fetchStaticInfo()
 {
-    m_adlManager->fetchStaticInfo();
+    m_adlxManager->fetchStaticInfo();
 }
 
 void GpuInfoAmd::fetchDynamicInfo()
 {
-    m_adlManager->fetchDynamicInfo();
+    m_adlxManager->fetchDynamicInfo();
 }

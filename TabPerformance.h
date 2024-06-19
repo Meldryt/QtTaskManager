@@ -20,34 +20,54 @@ public:
     explicit TabPerformance(QWidget *parent = nullptr);
 
 private:
-    void initGraphs();
+    void initCpuWidgets();
+    void initGpuWidgets();
+    void initCpuGraphs();
+    void initGpuGraphs();
 
     void process();
-    void processCPU();
-    void processGPU();
-
-    QListWidget* listWidget{nullptr};
-
-    QWidget* cpuWidget{nullptr};
-    QChartView* cpuChartView{nullptr};
-    QChart* cpuChart{nullptr};
-    QLineSeries* cpuLineSeries{nullptr};
-
-    QWidget* m_gpuWidget{nullptr};
-    QTableWidget* m_tableWidget{ nullptr };
-    QStackedWidget* m_stackedWidget{ nullptr };
+    void processCpu();
+    void processGpu();
+    void processMemory();
 
     struct GraphInfo
     {
-        QChartView* gpuChartView{ nullptr };
-        QChart* gpuChart{ nullptr };
-        QLineSeries* gpuLineSeries{ nullptr };
+        QChartView* chartView{ nullptr };
+        QChart* chart{ nullptr };
+        QLineSeries* lineSeries{ nullptr };
         int currentY;
     };
 
-    std::map<int, GraphInfo> m_gpuGraphs;
+    QListWidget* m_listWidget{nullptr};
 
-    QComboBox* m_comboBoxActiveGraph{ nullptr };
+    //cpu
+    QWidget* m_cpuWidget{nullptr};
+    QTableWidget* m_cpuTableWidget{ nullptr };
+    QStackedWidget* m_cpuStackedWidget{ nullptr };
+    std::map<int, GraphInfo> m_cpuGraphs;
+    std::map<int, QString> m_cpuTableInfos;
+    QComboBox* m_cpuComboBoxActiveGraph{ nullptr };
+
+    const QStringList CpuGraphTitles
+    {
+        "CpuUsage",
+        "CurrentMaxFrequency",
+        "Frequencies",
+        "AsicPower",
+        "Voltage",
+        "Temperature",
+        "FanSpeed",
+    };
+
+    //std::vector<double> singleCoreLoads;
+
+    //gpu
+    QWidget* m_gpuWidget{nullptr};
+    QTableWidget* m_gpuTableWidget{ nullptr };
+    QStackedWidget* m_gpuStackedWidget{ nullptr };
+    std::map<int, GraphInfo> m_gpuGraphs;
+    std::map<int, QString> m_gpuTableInfos;
+    QComboBox* m_gpuComboBoxActiveGraph{ nullptr };
 
     const QStringList GpuGraphTitles
     {
@@ -63,12 +83,22 @@ private:
 
     QTimer* timer{nullptr};
 
-    double cpuTotalLoad{0.0};
-    std::map<int, QString> m_gpuTableInfos;
+    double m_cpuTotalLoad{0.0};
+
+    //memory
+    QWidget* m_memoryWidget{ nullptr };
+    QChartView* m_memoryChartView{ nullptr };
+    QChart* m_memoryChart{ nullptr };
+    QLineSeries* m_memoryLineSeries{ nullptr };
+
+    uint32_t m_memoryTotalSize{ 0 };
+    uint32_t m_memoryUsedSize{ 0 };  
 
 public slots:
+    void slotCpuDynamicInfo(const Globals::CpuDynamicInfo& dynamicInfo);
     void slotGpuDynamicInfo(const Globals::GpuDynamicInfo& dynamicInfo);
-    void slotCPUTotalLoad(const double& val);
+    void slotTotalMemory(const uint32_t& val);
+    void slotUsedMemory(const uint32_t& val);
 
 private slots:
     void showSelectionWidget();

@@ -1,10 +1,39 @@
 #pragma once
 
 #include <string>
+#include <vector>
 
 class Globals
 {
 public:
+    struct CpuStaticInfo
+    {
+        std::string cpuBrand{ "" };
+        uint8_t processorCount{ 0 };
+        uint8_t threadCount{ 0 };
+        uint32_t baseFrequency{ 0 };
+        uint32_t maxFrequency{ 0 };
+        uint32_t l1CacheSize{ 0 }; //size in KB
+        uint32_t l2CacheSize{ 0 }; //size in KB
+        uint32_t l3CacheSize{ 0 }; //size in KB
+    };
+
+    struct CpuDynamicInfo
+    {
+        double cpuTotalLoad{ 0 };
+        std::vector<double> singleCoreLoads;
+        uint8_t cpuMaxFrequencyIndex{ 0 };
+        std::vector<uint32_t> cpuFrequencies;
+
+        uint16_t cpuVoltage{ 0 }; // Current voltage in mV
+        uint16_t cpuPower{ 0 }; //in Watt
+        uint16_t cpuAsicPower{ 0 }; //in Watt
+
+        uint8_t cpuTemperature{ 0 };
+
+        uint16_t cpuFanSpeed{ 0 }; // Current fan RPM value
+    };
+
     struct GpuStaticInfo
     {
         std::string chipDesigner{ "" };
@@ -39,5 +68,17 @@ public:
 
         uint16_t gpuFanSpeed{ 0 }; // Current fan RPM value
         uint8_t gpuFanSpeedPercent{ 0 }; // Current ratio of fan RPM and max RPM
+    };
+
+    struct MemoryStaticInfo
+    {
+        uint32_t totalVirtualMemory{0};
+        uint32_t totalPhysicalMemory{0};
+    };
+
+    struct MemoryDynamicInfo
+    {
+        uint32_t usedVirtualMemory{0};
+        uint32_t usedPhysicalMemory{0};
     };
 };

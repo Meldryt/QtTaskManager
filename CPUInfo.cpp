@@ -1,8 +1,33 @@
 #include "CpuInfo.h"
 
 #ifdef _WIN32
-#include <intrin.h>
+//#include <intrin.h>
+//#include <powerbase.h>
+//#include <processthreadsapi.h>
+//#include <winternl.h>
+#include <PowrProf.h>
+#pragma comment(lib, "Powrprof.lib")
 #endif
+
+//#include <iphlpapi.h>
+//#include <wtsapi32.h>
+//#include <Winsvc.h>
+//#include <PowrProf.h>
+
+// Link with Iphlpapi.lib
+//#pragma comment(lib, "IPHLPAPI.lib")
+
+typedef struct _MIB_UDP6TABLE_OWNER_PID {
+} MIB_UDP6TABLE_OWNER_PID, * PMIB_UDP6TABLE_OWNER_PID;
+
+typedef struct _PROCESSOR_POWER_INFORMATION {
+    ULONG Number;
+    ULONG MaxMhz;
+    ULONG CurrentMhz;
+    ULONG MhzLimit;
+    ULONG MaxIdleState;
+    ULONG CurrentIdleState;
+} PROCESSOR_POWER_INFORMATION, * PPROCESSOR_POWER_INFORMATION;
 
 CpuInfo::CpuInfo()
 {
@@ -43,8 +68,19 @@ void CpuInfo::init()
 #endif
 }
 
+const Globals::CpuStaticInfo& CpuInfo::getStaticInfo() const
+{
+    return staticInfo;
+}
+
+const Globals::CpuDynamicInfo& CpuInfo::getDynamicInfo() const
+{
+    return dynamicInfo;
+}
+
 void CpuInfo::update()
 {
+    readFrequency();
     fetchDynamicInfo();
 }
 
@@ -191,6 +227,7 @@ void CpuInfo::fetchStaticInfoWindows()
     staticInfo.l1CacheSize = processorL1CacheSize/1024;
     staticInfo.l2CacheSize = processorL2CacheSize/1024;
     staticInfo.l3CacheSize = processorL3CacheSize/1024;
+    dynamicInfo.cpuFrequencies.resize(logicalProcessorCount);
 }
 #else
 void CpuInfo::fetchStaticInfoLinux()
@@ -236,13 +273,64 @@ void CpuInfo::fetchDynamicInfoLinux()
 }
 #endif
 
+/*
+* Return CPU frequency.
+*/
 
-const CpuInfo::CpuStaticInfo &CpuInfo::getStaticInfo() const
+void CpuInfo::readFrequency()
 {
-    return staticInfo;
-}
+    NTSTATUS ret;
+    size_t size;
+    LPBYTE pBuffer = NULL;
+    unsigned int num_cpus;
+    SYSTEM_INFO system_info;
+    system_info.dwNumberOfProcessors = 0;
 
-const CpuInfo::CpuDynamicInfo &CpuInfo::getDynamicInfo() const
-{
-    return dynamicInfo;
+    // Get the number of CPUs.
+    GetSystemInfo(&system_info);
+    if (system_info.dwNumberOfProcessors == 0)
+        num_cpus = 1;
+    else
+        num_cpus = system_info.dwNumberOfProcessors;
+
+    // Allocate size.
+    size = num_cpus * sizeof(PROCESSOR_POWER_INFORMATION);
+    pBuffer = (BYTE*)LocalAlloc(LPTR, size);
+    if (!pBuffer) {
+    }
+
+    // Syscall.
+    ret = CallNtPowerInformation(
+        ProcessorInformation, NULL, 0, pBuffer, size);
+    if (ret != 0) {
+    }
+
+    PPROCESSOR_POWER_INFORMATION pppi = (PPROCESSOR_POWER_INFORMATION)pBuffer;
+    uint32_t maxFrequency{ 0 };
+    dynamicInfo.cpuMaxFrequencyIndex = 0;
+
+    for (size_t i = 0; i < num_cpus; i++)
+    {
+        dynamicInfo.cpuFrequencies[i] = pppi->CurrentMhz;
+        if (maxFrequency > pppi->CurrentMhz)
+        {
+            dynamicInfo.cpuMaxFrequencyIndex = i;
+            maxFrequency = pppi->CurrentMhz;
+        }
+        //std::cout << "Power levels for Processor #" << pppi->Number << "\n"
+        //    "MaxMhz: " << pppi->MaxMhz << "\n"
+        //    "CurrentMhz: " << pppi->CurrentMhz << "\n"
+        //    "MhzLimit: " << pppi->MhzLimit << "\n"
+        //    "MaxIdleState: " << pppi->MaxIdleState << "\n"
+        //    "CurrentIdleState: " << pppi->CurrentIdleState << "\n"
+        //    << std::endl;
+
+        pppi++;
+    }
+
+    // Results.
+    //ppi = (PROCESSOR_POWER_INFORMATION*)pBuffer;
+    //max = ppi->MaxMhz;
+    //current = ppi->CurrentMhz;
+    LocalFree(pBuffer);
 }

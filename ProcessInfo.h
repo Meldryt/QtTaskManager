@@ -42,16 +42,19 @@ public:
 
     ProcessInfo();
 
+    void setProcessorCount(uint8_t newProcessorCount);
+    const std::map<uint32_t, Process> &getProcessMap() const;
+
     void update();
+
+private:
 
 #ifdef _WIN32
     BOOL EnumWindowsProc(HWND hwnd);
     static BOOL CALLBACK StaticEnumWindowsProc(HWND hwnd, LPARAM lParam);
 #else
 #endif
-    void setProcessorCount(uint8_t newProcessorCount);
 
-    const std::map<uint32_t, Process> &getProcessMap() const;
 
 private:
 
@@ -74,6 +77,6 @@ private:
 
     QElapsedTimer* elapsedTimer{nullptr};
 
-    uint8_t processorCount{0};
+    uint8_t m_processorCount{0};
 };
 
