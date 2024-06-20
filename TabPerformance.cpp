@@ -136,15 +136,18 @@ void TabPerformance::initCpuGraphs()
 {
     for (int i = 0; i < CpuGraphTitles.size(); ++i)
     {
-        m_cpuGraphs[i].lineSeries = new QLineSeries();
         m_cpuGraphs[i].chart = new QChart();
         m_cpuGraphs[i].chart->legend()->hide();
-        m_cpuGraphs[i].chart->addSeries(m_cpuGraphs[i].lineSeries);
-        m_cpuGraphs[i].chart->createDefaultAxes();
+
+        if (i != CpuCoreUsagesGraphIndex && i != CpuFrequenciesGraphIndex)
+        {
+            m_cpuGraphs[i].lineSeries = new QLineSeries();
+            m_cpuGraphs[i].chart->addSeries(m_cpuGraphs[i].lineSeries);
+            m_cpuGraphs[i].chart->createDefaultAxes();
+        }
 
         m_cpuGraphs[i].chartView = new QChartView(m_cpuGraphs[i].chart);
         m_cpuGraphs[i].chartView->setRenderHint(QPainter::Antialiasing);
-
         m_cpuStackedWidget->addWidget(m_cpuGraphs[i].chartView);
     }
 
@@ -160,9 +163,14 @@ void TabPerformance::initCpuGraphs()
     m_cpuGraphs[index].chart->axes(Qt::Vertical).back()->setRange(0, 5000);
     ++index;
 
+    //CoreUsages
+    //m_cpuGraphs[index].chart->axes(Qt::Horizontal).back()->setRange(0, 60);
+    //m_cpuGraphs[index].chart->axes(Qt::Vertical).back()->setRange(0, 100);
+    ++index;
+
     //Frequencies
-    m_cpuGraphs[index].chart->axes(Qt::Horizontal).back()->setRange(0, 60);
-    m_cpuGraphs[index].chart->axes(Qt::Vertical).back()->setRange(0, 5000);
+    //m_cpuGraphs[index].chart->axes(Qt::Horizontal).back()->setRange(0, 60);
+    //m_cpuGraphs[index].chart->axes(Qt::Vertical).back()->setRange(0, 5000);
     ++index;
 
     //AsicPower
@@ -189,10 +197,12 @@ void TabPerformance::initGpuGraphs()
 {
     for (int i = 0; i < GpuGraphTitles.size(); ++i)
     {
-        m_gpuGraphs[i].lineSeries = new QLineSeries();
         m_gpuGraphs[i].chart = new QChart();
         m_gpuGraphs[i].chart->legend()->hide();
+
+        m_gpuGraphs[i].lineSeries = new QLineSeries();
         m_gpuGraphs[i].chart->addSeries(m_gpuGraphs[i].lineSeries);
+
         m_gpuGraphs[i].chart->createDefaultAxes();
 
         m_gpuGraphs[i].chartView = new QChartView(m_gpuGraphs[i].chart);
@@ -254,23 +264,68 @@ void TabPerformance::processCpu()
 {
     for (int i = 0; i < m_cpuGraphs.size(); ++i)
     {
-        QList<QPointF> points = m_cpuGraphs[i].lineSeries->points();
+        if (i != CpuCoreUsagesGraphIndex && i != CpuFrequenciesGraphIndex)
+        {
+            QList<QPointF> points = m_cpuGraphs[i].lineSeries->points();
+            if (!points.empty())
+            {
+                m_cpuGraphs[i].lineSeries->clear();
+                for (uint8_t j = 0; j < points.size(); ++j)
+                {
+                    points[j].setX(points.at(j).x() - 1);
+                }
+                if (points.first().x() < 0)
+                {
+                    points.removeFirst();
+                }
+                m_cpuGraphs[i].lineSeries->append(points);
+            }
+
+            double x = 60;
+            m_cpuGraphs[i].lineSeries->append(x, m_cpuGraphs[i].currentY);
+        }
+    }
+
+    for (int i = 0; i < m_cpuCoreUsagesGraphs.size(); ++i)
+    {
+        QList<QPointF> points = m_cpuCoreUsagesGraphs[i].lineSeries->points();
         if (!points.empty())
         {
-            m_cpuGraphs[i].lineSeries->clear();
-            for (uint8_t i = 0; i < points.size(); ++i)
+            m_cpuCoreUsagesGraphs[i].lineSeries->clear();
+            for (uint8_t j = 0; j < points.size(); ++j)
             {
-                points[i].setX(points.at(i).x() - 1);
+                points[j].setX(points.at(j).x() - 1);
             }
             if (points.first().x() < 0)
             {
                 points.removeFirst();
             }
-            m_cpuGraphs[i].lineSeries->append(points);
+            m_cpuCoreUsagesGraphs[i].lineSeries->append(points);
         }
 
         double x = 60;
-        m_cpuGraphs[i].lineSeries->append(x, m_cpuGraphs[i].currentY);
+        m_cpuCoreUsagesGraphs[i].lineSeries->append(x, m_cpuCoreUsagesGraphs[i].currentY);
+    }
+
+    for (int i = 0; i < m_cpuFrequenciesGraphs.size(); ++i)
+    {
+        QList<QPointF> points = m_cpuFrequenciesGraphs[i].lineSeries->points();
+        if (!points.empty())
+        {
+            m_cpuFrequenciesGraphs[i].lineSeries->clear();
+            for (uint8_t j = 0; j < points.size(); ++j)
+            {
+                points[j].setX(points.at(j).x() - 1);
+            }
+            if (points.first().x() < 0)
+            {
+                points.removeFirst();
+            }
+            m_cpuFrequenciesGraphs[i].lineSeries->append(points);
+        }
+
+        double x = 60;
+        m_cpuFrequenciesGraphs[i].lineSeries->append(x, m_cpuFrequenciesGraphs[i].currentY);
     }
 
     m_cpuGraphs[m_cpuComboBoxActiveGraph->currentIndex()].chartView->repaint();
@@ -289,9 +344,9 @@ void TabPerformance::processGpu()
         if (!points.empty())
         {
             m_gpuGraphs[i].lineSeries->clear();
-            for (uint8_t i = 0; i < points.size(); ++i)
+            for (uint8_t j = 0; j < points.size(); ++j)
             {
-                points[i].setX(points.at(i).x() - 1);
+                points[j].setX(points.at(j).x() - 1);
             }
             if (points.first().x() < 0)
             {
@@ -339,9 +394,9 @@ void TabPerformance::slotCpuDynamicInfo(const Globals::CpuDynamicInfo& dynamicIn
 {
     int index = 0;
 
-
-    m_cpuGraphs[index++].currentY = dynamicInfo.cpuTotalLoad;
-    m_cpuGraphs[index++].currentY = dynamicInfo.cpuFrequencies[dynamicInfo.cpuMaxFrequencyIndex];
+    m_cpuGraphs[index++].currentY = dynamicInfo.cpuTotalUsage;
+    m_cpuGraphs[index++].currentY = dynamicInfo.cpuCurrentMaxFrequency;
+    m_cpuGraphs[index++].currentY = 0;// dynamicInfo.cpuUsages
     m_cpuGraphs[index++].currentY = 0;// dynamicInfo.cpuFrequencies
     m_cpuGraphs[index++].currentY = 0;// dynamicInfo.cpuAsicPower;
     m_cpuGraphs[index++].currentY = 0;// dynamicInfo.cpuVoltage;
@@ -351,6 +406,50 @@ void TabPerformance::slotCpuDynamicInfo(const Globals::CpuDynamicInfo& dynamicIn
     for (int i = 0; i < m_cpuGraphs.size(); ++i)
     {
         m_cpuTableInfos[i] = CpuGraphTitles.at(i) + ": " + QString::number(m_cpuGraphs[i].currentY);
+    }
+
+    if (m_cpuCoreUsagesGraphs.empty())
+    {
+        m_cpuGraphs[CpuCoreUsagesGraphIndex].chart->removeAllSeries();
+
+        for (int i = 0; i < dynamicInfo.cpuThreadUsages.size(); ++i)
+        {
+            LineSeriesInfo lineSeriesInfo;
+            lineSeriesInfo.lineSeries = new QLineSeries();
+            lineSeriesInfo.currentY = 0;
+            m_cpuGraphs[CpuCoreUsagesGraphIndex].chart->addSeries(lineSeriesInfo.lineSeries);
+            m_cpuCoreUsagesGraphs.push_back(lineSeriesInfo);
+        }
+        m_cpuGraphs[CpuCoreUsagesGraphIndex].chart->createDefaultAxes();
+        m_cpuGraphs[CpuCoreUsagesGraphIndex].chart->axes(Qt::Horizontal).back()->setRange(0, 60);
+        m_cpuGraphs[CpuCoreUsagesGraphIndex].chart->axes(Qt::Vertical).back()->setRange(0, 5000);
+    }
+
+    if (m_cpuFrequenciesGraphs.empty())
+    {
+        m_cpuGraphs[CpuFrequenciesGraphIndex].chart->removeAllSeries();
+
+        for (int i = 0; i < dynamicInfo.cpuFrequencies.size(); ++i)
+        {
+            LineSeriesInfo lineSeriesInfo;
+            lineSeriesInfo.lineSeries = new QLineSeries();
+            lineSeriesInfo.currentY = 0;
+            m_cpuGraphs[CpuFrequenciesGraphIndex].chart->addSeries(lineSeriesInfo.lineSeries);
+            m_cpuFrequenciesGraphs.push_back(lineSeriesInfo);
+        }
+        m_cpuGraphs[CpuFrequenciesGraphIndex].chart->createDefaultAxes();
+        m_cpuGraphs[CpuFrequenciesGraphIndex].chart->axes(Qt::Horizontal).back()->setRange(0, 60);
+        m_cpuGraphs[CpuFrequenciesGraphIndex].chart->axes(Qt::Vertical).back()->setRange(0, 5000);
+    }
+
+    for (int i = 0; i < m_cpuCoreUsagesGraphs.size(); ++i)
+    {
+        m_cpuCoreUsagesGraphs[i].currentY = dynamicInfo.cpuThreadUsages[i];
+    }
+
+    for (int i = 0; i < m_cpuFrequenciesGraphs.size(); ++i)
+    {
+        m_cpuFrequenciesGraphs[i].currentY = dynamicInfo.cpuFrequencies[i];
     }
 }
 

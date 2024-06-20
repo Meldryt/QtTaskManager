@@ -105,22 +105,22 @@ void ProcessInfo::updateProcessUsage(const HANDLE& processHandle, Process& proce
 
     memcpy(&sys, &fsys, sizeof(FILETIME));
     memcpy(&user, &fuser, sizeof(FILETIME));
-    percent = (sys.QuadPart - processInfo.lastSysCPU.QuadPart) +
-        (user.QuadPart - processInfo.lastUserCPU.QuadPart);
-    percent /= (now.QuadPart - processInfo.lastCPU.QuadPart);
+    percent = (sys.QuadPart - processInfo.lastSysCpu.QuadPart) +
+        (user.QuadPart - processInfo.lastUserCpu.QuadPart);
+    percent /= (now.QuadPart - processInfo.lastCpu.QuadPart);
     percent /= m_processorCount;
-    processInfo.lastCPU = now;
-    processInfo.lastUserCPU = user;
-    processInfo.lastSysCPU = sys;
-    double currentUsedCPULoad = std::ceil( percent * 10000.0) / 100.0;
-    processInfo.usedCPULoadSum += currentUsedCPULoad;
-    ++processInfo.usedCPULoadCounter;
-    //processInfo.usedCPULoad = processInfo.usedCPULoadSum/processInfo.usedCPULoadCounter;
-    if(processInfo.usedCPULoadCounter == 3)
+    processInfo.lastCpu = now;
+    processInfo.lastUserCpu = user;
+    processInfo.lastSysCpu = sys;
+    double currentUsedCpuLoad = std::ceil( percent * 10000.0) / 100.0;
+    processInfo.usedCpuLoadSum += currentUsedCpuLoad;
+    ++processInfo.usedCpuLoadCounter;
+    //processInfo.usedCpuLoad = processInfo.usedCpuLoadSum/processInfo.usedCpuLoadCounter;
+    if(processInfo.usedCpuLoadCounter == 3)
     {
-        processInfo.usedCPULoad = processInfo.usedCPULoadSum/processInfo.usedCPULoadCounter;
-        processInfo.usedCPULoadSum = processInfo.usedCPULoad;
-        processInfo.usedCPULoadCounter = 1;
+        processInfo.usedCpuLoad = processInfo.usedCpuLoadSum/processInfo.usedCpuLoadCounter;
+        processInfo.usedCpuLoadSum = processInfo.usedCpuLoad;
+        processInfo.usedCpuLoadCounter = 1;
     }
 }
 

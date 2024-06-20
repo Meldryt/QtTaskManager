@@ -52,6 +52,7 @@ private:
     {
         "CpuUsage",
         "CurrentMaxFrequency",
+        "CoreUsages",
         "Frequencies",
         "AsicPower",
         "Voltage",
@@ -59,7 +60,16 @@ private:
         "FanSpeed",
     };
 
-    //std::vector<double> singleCoreLoads;
+    const uint8_t CpuCoreUsagesGraphIndex = 2;
+    const uint8_t CpuFrequenciesGraphIndex = 3;
+
+    struct LineSeriesInfo
+    {
+        QLineSeries* lineSeries{ nullptr };
+        int currentY;
+    };
+    std::vector<LineSeriesInfo> m_cpuCoreUsagesGraphs;
+    std::vector<LineSeriesInfo> m_cpuFrequenciesGraphs;
 
     //gpu
     QWidget* m_gpuWidget{nullptr};

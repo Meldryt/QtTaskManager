@@ -11,7 +11,7 @@ TabProcesses::TabProcesses(QWidget *parent) : QWidget(parent)
     tableProcesses = new QTableWidget(this);
     tableProcesses->setColumnCount(5);
     QStringList headerNames;
-    headerNames << "Name" << "FileName" << "FilePath" << "Memory Usage" << "CPU Usage" << "Disk Usage" << "Network Usage" << "GPU Usage";
+    headerNames << "Name" << "FileName" << "FilePath" << "Memory Usage" << "Cpu Usage" << "Disk Usage" << "Network Usage" << "GPU Usage";
     tableProcesses->setHorizontalHeaderLabels(headerNames);
     tableProcesses->verticalHeader()->hide();
     tableProcesses->setColumnWidth(0,200);
@@ -93,7 +93,7 @@ void TabProcesses::updateTable()
         }
         uint64_t usedPhysicalMemory = (process.usedPhysicalMemory)/(1024*1024);
         tableProcesses->item(tableRow, 3)->setText(QString::number(usedPhysicalMemory) + " MB");
-        tableProcesses->item(tableRow, 4)->setText(QString::number(process.usedCPULoad, 'f', 2) + " %");
+        tableProcesses->item(tableRow, 4)->setText(QString::number(process.usedCpuLoad, 'f', 2) + " %");
         //uint64_t usedVirtualMemory = (process.usedVirtualMemory)/(1024*1024);
         //tableProcesses->setItem(tableRow, 4, new QTableWidgetItem(QString::number(usedVirtualMemory) + " MB"));
     }
@@ -108,7 +108,7 @@ void TabProcesses::updateTotalInfo()
 //    tableProcesses->item(0, 3)->setText(QString::number(usedPhysicalMemory) + " / " +
 //                                        QString::number(totalPhysicalMemory) + " MB");
 
-//    QString text = QString::number(int(dynamicSystemInfo.totalCPULoad)) + " (";
+//    QString text = QString::number(int(dynamicSystemInfo.totalCpuLoad)) + " (";
 //    for(uint8_t i = 0;i<dynamicSystemInfo.singleCoreLoads.size();++i)
 //    {
 //        text += QString::number(int(dynamicSystemInfo.singleCoreLoads[i])) + " | ";
@@ -150,7 +150,7 @@ void TabProcesses::slotProcesses(const std::map<uint32_t, ProcessInfo::Process>&
         {
             it->usedPhysicalMemory = process->second.usedPhysicalMemory;
             it->usedVirtualMemory = process->second.usedVirtualMemory;
-            it->usedCPULoad = process->second.usedCPULoad;
+            it->usedCpuLoad = process->second.usedCpuLoad;
             it->timestamp = process->second.timestamp;
         }
 
@@ -188,9 +188,9 @@ void TabProcesses::sortTable()
     case SortMode::SortMemoryUsageLow:
         sortMemoryUsage();
         break;
-    case SortMode::SortCPUUsageHigh:
-    case SortMode::SortCPUUsageLow:
-        sortCPUUsage();
+    case SortMode::SortCpuUsageHigh:
+    case SortMode::SortCpuUsageLow:
+        sortCpuUsage();
         break;
     default:
         break;
@@ -220,13 +220,13 @@ void TabProcesses::setSortMode(int headerIndex)
     }
     else if(headerIndex == 4)
     {
-        if(sortMode == SortMode::SortCPUUsageHigh)
+        if(sortMode == SortMode::SortCpuUsageHigh)
         {
-            sortMode = SortMode::SortCPUUsageLow;
+            sortMode = SortMode::SortCpuUsageLow;
         }
         else
         {
-            sortMode = SortMode::SortCPUUsageHigh;
+            sortMode = SortMode::SortCpuUsageHigh;
         }
     }
 
@@ -289,14 +289,14 @@ bool compareMemoryLower(const ProcessInfo::Process& first, const ProcessInfo::Pr
     return first.usedPhysicalMemory < second.usedPhysicalMemory;
 }
 
-bool compareCPUHigher(const ProcessInfo::Process& first, const ProcessInfo::Process& second)
+bool compareCpuHigher(const ProcessInfo::Process& first, const ProcessInfo::Process& second)
 {
-    return first.usedCPULoad > second.usedCPULoad;
+    return first.usedCpuLoad > second.usedCpuLoad;
 }
 
-bool compareCPULower(const ProcessInfo::Process& first, const ProcessInfo::Process& second)
+bool compareCpuLower(const ProcessInfo::Process& first, const ProcessInfo::Process& second)
 {
-    return first.usedCPULoad < second.usedCPULoad;
+    return first.usedCpuLoad < second.usedCpuLoad;
 }
 
 void TabProcesses::sortNames()
@@ -321,14 +321,14 @@ void TabProcesses::sortMemoryUsage()
     }
 }
 
-void TabProcesses::sortCPUUsage()
+void TabProcesses::sortCpuUsage()
 {
-    if(sortMode == SortMode::SortCPUUsageHigh)
+    if(sortMode == SortMode::SortCpuUsageHigh)
     {
-        std::sort(processList.begin(),processList.end(),compareCPUHigher);
+        std::sort(processList.begin(),processList.end(),compareCpuHigher);
     }
-    else if(sortMode == SortMode::SortCPUUsageLow)
+    else if(sortMode == SortMode::SortCpuUsageLow)
     {
-        std::sort(processList.begin(),processList.end(),compareCPULower);
+        std::sort(processList.begin(),processList.end(),compareCpuLower);
     }
 }

@@ -23,14 +23,14 @@ public:
 
         uint64_t usedPhysicalMemory{0};
         uint64_t usedVirtualMemory{0};
-        double usedCPULoad{0.0};
-        double usedCPULoadSum{0.0};
-        uint8_t usedCPULoadCounter{0};
+        double usedCpuLoad{0.0};
+        double usedCpuLoadSum{0.0};
+        uint8_t usedCpuLoadCounter{0};
 
 #ifdef _WIN32
-        ULARGE_INTEGER lastCPU{0};
-        ULARGE_INTEGER lastSysCPU{0};
-        ULARGE_INTEGER lastUserCPU{0};
+        ULARGE_INTEGER lastCpu{0};
+        ULARGE_INTEGER lastSysCpu{0};
+        ULARGE_INTEGER lastUserCpu{0};
 #else
         uint32_t lastCPU{0};
         uint32_t lastSysCPU{0};

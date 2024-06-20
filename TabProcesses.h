@@ -17,8 +17,8 @@ public:
         SortFileName,
         SortMemoryUsageHigh,
         SortMemoryUsageLow,
-        SortCPUUsageHigh,
-        SortCPUUsageLow,
+        SortCpuUsageHigh,
+        SortCpuUsageLow,
         NoSort
     };
 
@@ -31,7 +31,7 @@ private:
     void sortNames();
     void sortFileNames();
     void sortMemoryUsage();
-    void sortCPUUsage();
+    void sortCpuUsage();
     void setSortMode(int headerIndex);
 
     QTableWidget* tableProcesses{nullptr};

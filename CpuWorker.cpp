@@ -27,16 +27,16 @@ void CpuWorker::stop()
 
 void CpuWorker::update()
 { 
-    //QElapsedTimer elapsedTimer;
-    //qint64 elapsedTime;
+    QElapsedTimer elapsedTimer;
+    qint64 elapsedTime;
 
-    //elapsedTimer.start();
+    elapsedTimer.start();
 
     m_cpuInfo->update();
 
-    //elapsedTime = elapsedTimer.elapsed();
+    elapsedTime = elapsedTimer.elapsed();
 
-    //qDebug() << "CpuWorker::update(): " << elapsedTime;
+    qDebug() << "CpuWorker::update(): " << elapsedTime;
 
     emit signalDynamicInfo(m_cpuInfo->getDynamicInfo());
 }

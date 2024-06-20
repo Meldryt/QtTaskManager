@@ -20,11 +20,13 @@ public:
 
     struct CpuDynamicInfo
     {
-        double cpuTotalLoad{ 0 };
-        std::vector<double> singleCoreLoads;
-        uint8_t cpuMaxFrequencyIndex{ 0 };
-        std::vector<uint32_t> cpuFrequencies;
+        double cpuTotalUsage{ 0 };
+        std::vector<double> coreUsages;
 
+        uint16_t cpuCurrentMaxFrequency{ 0 };
+        std::vector<uint16_t> cpuFrequencies;
+        std::vector<double> cpuThreadUsages;
+        
         uint16_t cpuVoltage{ 0 }; // Current voltage in mV
         uint16_t cpuPower{ 0 }; //in Watt
         uint16_t cpuAsicPower{ 0 }; //in Watt
