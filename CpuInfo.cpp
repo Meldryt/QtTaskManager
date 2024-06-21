@@ -5,6 +5,12 @@
 #include <QVariant>
 #include <QObject>
 
+#include "external/RyzenMasterMonitoringSDK/include/ICPUEx.h"
+#include "external/RyzenMasterMonitoringSDK/include/IPlatform.h"
+#include "external/RyzenMasterMonitoringSDK/include/IDeviceManager.h"
+#include "external/RyzenMasterMonitoringSDK/include/IBIOSEx.h"
+
+
 #ifdef _WIN32
 //#include <intrin.h>
 //#include <powerbase.h>
@@ -21,11 +27,21 @@
 
 // Link with Iphlpapi.lib
 //#pragma comment(lib, "IPHLPAPI.lib")
+#include <PdhMsg.h>
+#include <intrin.h>
 
 #include <comdef.h>
 #include <comutil.h>
 #include <iostream>
 #pragma comment(lib, "wbemuuid.lib")
+
+//#include "ICPUEx.h"
+//#include "IPlatform.h"
+//#include "IDeviceManager.h"
+//#include "IBIOSEx.h"
+
+#pragma comment(lib, "Device.lib")
+#pragma comment(lib, "Platform.lib")
 
 //#include <Wbemidl.h>
 
@@ -162,7 +178,10 @@ CpuInfo::CpuInfo()
 
 void CpuInfo::init()
 {
+    initAmdRyzenMaster();
+
     setupWmi();
+    
     fetchStaticInfo();
 
 //todo: necessary to split? move this to function.
@@ -190,11 +209,72 @@ void CpuInfo::init()
 
         singleCPUQueries.push_back(singleCPUQuery);
         singleCPUCounters.push_back(singleCPUCounter);
-        dynamicInfo.coreUsages.push_back(0.0);
     }
+
+    dynamicInfo.cpuCoreUsages.resize(staticInfo.processorCount);
+    dynamicInfo.cpuCoreFrequencies.resize(staticInfo.processorCount);
+    //SYSTEM_INFO siSysInfo;
+    //GetNativeSystemInfo(&siSysInfo);
+    //m_cpuCount = siSysInfo.dwNumberOfProcessors;
+
+    //std::wstring kProcessorFrequency =
+    //    L"\\Processor Information(_Total)\\Processor Frequency";
+    //std::wstring kProcessorPerformance =
+    //    L"\\Processor Information(_Total)\\% Processor Performance";
+    //L"\\Processor Information(0,0)\\Processor Frequency",
+
+    if (PdhOpenQueryW(nullptr, 0, &m_cpuQueryFreq) == ERROR_SUCCESS)
+    {
+        if (PdhAddEnglishCounterW(m_cpuQueryFreq, L"\\Processor Information(_Total)\\Processor Frequency",
+            0, &m_cpuFreqCounter) != ERROR_SUCCESS)
+        {
+            m_cpuFreqCounter = nullptr;
+        }
+    }
+    else
+    {
+        m_cpuQueryFreq = nullptr;
+    }
+
+    if (PdhOpenQueryW(nullptr, 0, &m_cpuQueryPerformance) == ERROR_SUCCESS)
+    {
+        if (PdhAddEnglishCounterW(m_cpuQueryPerformance, L"\\Processor Information(_Total)\\% Processor Performance",
+            0, &m_cpuPerformanceCounter) != ERROR_SUCCESS)
+        {
+            m_cpuPerformanceCounter = nullptr;
+        }
+    }
+    else
+    {
+        m_cpuQueryPerformance = nullptr;
+    }
+
     
 #else
 #endif
+}
+
+void CpuInfo::initAmdRyzenMaster()
+{
+    bool bRetCode = false;
+    IPlatform& rPlatform = GetPlatform();
+    bRetCode = rPlatform.Init();
+    if (!bRetCode)
+    {
+        //_tprintf(_T("Platform init failed\n"));
+        return;
+    }
+    IDeviceManager& rDeviceManager = rPlatform.GetIDeviceManager();
+    m_amdCpuDevice = (ICPUEx*)rDeviceManager.GetDevice(dtCPU, 0);
+    //m_amdCpuBiosDevice = (IBIOSEx*)rDeviceManager.GetDevice(dtBIOS, 0);
+    if (!m_amdCpuDevice)
+    {
+        qDebug() << "Could not init amd devices.";
+    }
+    else
+    {
+        m_useRyzenCpuParameters = true;
+    }
 }
 
 const Globals::CpuStaticInfo& CpuInfo::getStaticInfo() const
@@ -209,7 +289,16 @@ const Globals::CpuDynamicInfo& CpuInfo::getDynamicInfo() const
 
 void CpuInfo::update()
 {
-    readFrequency();
+    //readWmiFrequency();
+    if (m_useRyzenCpuParameters)
+    {
+        readRyzenCpuParameters();
+    }
+    else
+    {
+        readPdhFrequency();
+    }
+     
     fetchDynamicInfo();
 }
 
@@ -384,7 +473,8 @@ void CpuInfo::fetchStaticInfoWindows()
     staticInfo.l1CacheSize = processorL1CacheSize/1024;
     staticInfo.l2CacheSize = processorL2CacheSize/1024;
     staticInfo.l3CacheSize = processorL3CacheSize/1024;
-    dynamicInfo.cpuFrequencies.resize(logicalProcessorCount);
+
+    dynamicInfo.cpuThreadFrequencies.resize(logicalProcessorCount);
     dynamicInfo.cpuThreadUsages.resize(logicalProcessorCount);
 }
 #else
@@ -421,7 +511,7 @@ void CpuInfo::fetchDynamicInfoWindows()
     {
         PdhCollectQueryData(singleCPUQueries[i]);
         PdhGetFormattedCounterValue(singleCPUCounters[i], PDH_FMT_DOUBLE, NULL, &counterVal);
-        dynamicInfo.coreUsages[i] = counterVal.doubleValue;
+        dynamicInfo.cpuCoreUsages[i] = counterVal.doubleValue;
     }
 }
 #else
@@ -431,12 +521,85 @@ void CpuInfo::fetchDynamicInfoLinux()
 }
 #endif
 
+void CpuInfo::readPdhFrequency()
+{
+    uint32_t baseFrequency = 0;
+    // Get CPU frequency, scaled to MHz.
+    if (m_cpuFreqCounter && PdhCollectQueryData(m_cpuQueryFreq) == ERROR_SUCCESS)
+    {
+        PDH_RAW_COUNTER cnt;
+        DWORD cntType;
+        if (PdhGetRawCounterValue(m_cpuFreqCounter, &cntType, &cnt) == ERROR_SUCCESS &&
+            (cnt.CStatus == PDH_CSTATUS_VALID_DATA || cnt.CStatus == PDH_CSTATUS_NEW_DATA))
+        {
+            baseFrequency = (cnt.FirstValue);
+        }
+    }
+
+    if (m_cpuPerformanceCounter && PdhCollectQueryData(m_cpuQueryPerformance) == ERROR_SUCCESS)
+    {
+        PDH_FMT_COUNTERVALUE cnt;
+        DWORD cntType;
+
+        if (PdhGetFormattedCounterValue(m_cpuPerformanceCounter, PDH_FMT_DOUBLE, &cntType, &cnt) == ERROR_SUCCESS &&
+            (cnt.CStatus == PDH_CSTATUS_VALID_DATA || cnt.CStatus == PDH_CSTATUS_NEW_DATA))
+        {
+            dynamicInfo.cpuMaxFrequency = baseFrequency * (cnt.doubleValue / 100.0);
+        }
+    }
+}
+
+//@note: from https://www.amd.com/de/developer/ryzen-master-monitoring-sdk.html
+//The API call(GetCPUParameters) included in this SDK should only be called once per second to avoid impacting the load on the SMU.Calls made faster may impact the results.
+void CpuInfo::readRyzenCpuParameters()
+{
+    //BSTR query = SysAllocString(L"SELECT * FROM MSAcpi_ThermalZoneTemperature");
+
+    //auto thermalZoneTemperature = query(L"MSAcpi_ThermalZoneTemperature", L"InstanceName,CurrentTemperature");
+    //auto thermalZoneTemperature = query(L"MSAcpi_ThermalZoneTemperature", L"*");
+    //if (!thermalZoneTemperature.empty()) {
+    //    //return;
+    //    const double temperature = std::stod(thermalZoneTemperature[0]);
+    //    dynamicInfo.cpuTemperature = temperature;
+    //}
+
+    if (m_amdCpuDevice)
+    {
+        CPUParameters stData;
+        int iRet = m_amdCpuDevice->GetCPUParameters(stData);
+        if (!iRet)
+        {
+            dynamicInfo.cpuTemperature = stData.dTemperature;
+            //dynamicInfo.cpuPower = stData.fVDDCR_VDD_Power;
+            dynamicInfo.cpuPower = stData.fPPTValue;
+            dynamicInfo.cpuSocPower = stData.fVDDCR_SOC_Power;
+            //dynamicInfo.cpuMaxFrequency = stData.fCCLK_Fmax;
+
+            double maxFrequency = 0.0;
+            for (int i = 0; i < stData.stFreqData.uLength; i++)
+            {
+                if (stData.stFreqData.dFreq[i] != 0)
+                {
+                    dynamicInfo.cpuCoreFrequencies[i] = stData.stFreqData.dFreq[i];
+                    if (dynamicInfo.cpuCoreFrequencies[i] > maxFrequency)
+                    {
+                        maxFrequency = dynamicInfo.cpuCoreFrequencies[i];
+                    }
+                }
+            }
+            dynamicInfo.cpuMaxFrequency = maxFrequency;
+            //qDebug() << "stData.fVDDCR_VDD_Power: " << stData.fVDDCR_VDD_Power << " stData.fVDDCR_SOC_Power: " << stData.fVDDCR_SOC_Power; //null
+            //qDebug() << " stData.fPPTValue: " << stData.fPPTValue << " stData.fPPTLimit: " << stData.fPPTLimit << " stData.fCCLK_Fmax: " << stData.fCCLK_Fmax << " stData.dPeakSpeed: " << stData.dPeakSpeed;
+        }       
+    }
+}
+
 /*
 * Return CPU frequency.
 */
 //@note: CallNtPowerInformation does not give current frequency anymore since Windows 10 21H1 (19043)
 
-void CpuInfo::readFrequency()
+void CpuInfo::readWmiFrequency()
 {
 
     //auto percentProcessorPerformanceTotal = query(L"Win32_PerfFormattedData_Counters_ProcessorInformation",
@@ -475,17 +638,17 @@ void CpuInfo::readFrequency()
     {
         const double performance = std::stod(percentProcessorPerformance[i]) / 100;
         uint16_t currentFrequency = std::round(staticInfo.baseFrequency * performance);
-        dynamicInfo.cpuFrequencies[i] = currentFrequency;
+        dynamicInfo.cpuThreadFrequencies[i] = currentFrequency;
         if (currentFrequency > maxFrequency)
         {
             maxFrequency = currentFrequency;
         }
 
-        const double usage = std::stod(percentProcessorUtility[i]) * 100;
+        const double usage = std::stod(percentProcessorUtility[i]);// *100;
         dynamicInfo.cpuThreadUsages[i] = usage;
     }
 
-    dynamicInfo.cpuCurrentMaxFrequency = maxFrequency;
+    dynamicInfo.cpuMaxFrequency = maxFrequency;
 }
 
 bool CpuInfo::executeQuery(const std::wstring& query) {
@@ -502,29 +665,15 @@ bool CpuInfo::executeQueryAsync(const std::wstring& query) {
 
 bool CpuInfo::setupWmi()
 {
-    auto res = CoInitializeSecurity(nullptr, -1, nullptr, nullptr, RPC_C_AUTHN_LEVEL_DEFAULT, RPC_C_IMP_LEVEL_IMPERSONATE,
-        nullptr, EOAC_NONE, nullptr);
-    //if (!SUCCEEDED(res)) {
-    //    throw std::runtime_error("error initializing WMI");
-    //}
-    res &= CoInitializeEx(nullptr, COINIT_MULTITHREADED);
-    //if (!SUCCEEDED(res)) {
-    //    throw std::runtime_error("error initializing WMI");
-    //}
-    res &= CoCreateInstance(CLSID_WbemLocator, nullptr, CLSCTX_INPROC_SERVER, IID_IWbemLocator, (LPVOID*)&locator);
-    if (!SUCCEEDED(res)) {
+    HRESULT hr = CoInitializeEx(0, COINIT_MULTITHREADED);
+    hr = CoInitializeSecurity(NULL, -1, NULL, NULL, RPC_C_AUTHN_LEVEL_DEFAULT, RPC_C_IMP_LEVEL_IMPERSONATE, NULL, EOAC_NONE, NULL);
+    hr = CoCreateInstance(CLSID_WbemLocator, NULL, CLSCTX_INPROC_SERVER, IID_IWbemLocator, (LPVOID*)&locator);
+    hr = locator->ConnectServer(_bstr_t("root\\wmi"), NULL, NULL, 0, NULL, 0, 0, &service);//_bstr_t("ROOT\\CIMV2")
+    hr = CoSetProxyBlanket(service, RPC_C_AUTHN_WINNT, RPC_C_AUTHZ_NONE, NULL, RPC_C_AUTHN_LEVEL_CALL, RPC_C_IMP_LEVEL_IMPERSONATE, NULL, EOAC_NONE);
+    if (!SUCCEEDED(hr)) {
         throw std::runtime_error("error initializing WMI");
     }
-    if (locator) {
-        res &= locator->ConnectServer(_bstr_t("ROOT\\CIMV2"), nullptr, nullptr, nullptr, 0, nullptr, nullptr, &service);
-        if (service)
-            res &= CoSetProxyBlanket(service, RPC_C_AUTHN_WINNT, RPC_C_AUTHZ_NONE, nullptr, RPC_C_AUTHN_LEVEL_CALL,
-                RPC_C_IMP_LEVEL_IMPERSONATE, nullptr, EOAC_NONE);
-    }
-
-    if (!SUCCEEDED(res)) {
-        throw std::runtime_error("error initializing WMI");
-    }
+    return true;
 }
 
 inline std::string wstring_to_std_string(const std::wstring& ws) {
@@ -589,7 +738,8 @@ std::vector<std::string> CpuInfo::query(const std::wstring& wmi_class, const std
     if (count == 1)
     {
         ULONG u_return = 0;
-        IWbemClassObject* obj = nullptr;
+        //IWbemClassObject* obj = nullptr;
+        IWbemClassObject* obj = (IWbemClassObject*)malloc(sizeof(IWbemClassObject));
         long timeout = WBEM_INFINITE;//WBEM_INFINITE
         while (enumerator) {
             //elapsedTimer.start();
@@ -597,7 +747,7 @@ std::vector<std::string> CpuInfo::query(const std::wstring& wmi_class, const std
             //elapsedTime = elapsedTimer.elapsed();
 
             //qDebug() << "CpuWorker::query()2: " << elapsedTime;
-            if (!u_return) {
+            if (!u_return || !obj) {
                 break;
             }
             VARIANT vt_prop;

@@ -15,6 +15,9 @@
 
 #include <Globals.h>
 
+class ICPUEx;
+class IBIOSEx;
+
 class CpuInfo
 {
 public:
@@ -32,6 +35,8 @@ private:
     void fetchStaticInfoWindows();
 
     bool setupWmi();
+    void initAmdRyzenMaster();
+
     bool executeQuery(const std::wstring& query);
     bool executeQueryAsync(const std::wstring& query);
 
@@ -49,21 +54,36 @@ private:
 #else
     void fetchDynamicInfoLinux();
 #endif
-
-    void readFrequency();
+    void readPdhFrequency();
+    void readRyzenCpuParameters();
+    void readWmiFrequency();
 
     Globals::CpuStaticInfo staticInfo;
     Globals::CpuDynamicInfo dynamicInfo;
 
 #ifdef _WIN32
+    //pdh
     PDH_HQUERY totalCPUQuery;
     PDH_HCOUNTER totalCPUCounter;
     std::vector<PDH_HQUERY> singleCPUQueries;
     std::vector<PDH_HCOUNTER> singleCPUCounters;
 
-    IWbemLocator* locator = nullptr;
-    IWbemServices* service = nullptr;
-    IEnumWbemClassObject* enumerator = nullptr;
+    PDH_HQUERY m_cpuQueryFreq;
+    PDH_HCOUNTER m_cpuFreqCounter;
+
+    PDH_HQUERY m_cpuQueryPerformance;
+    PDH_HCOUNTER m_cpuPerformanceCounter;
+    
+    //wmi
+    IWbemLocator* locator{ nullptr };
+    IWbemServices* service{ nullptr };
+    IEnumWbemClassObject* enumerator{ nullptr };
+
+    //amd ryzen master sdk
+    ICPUEx* m_amdCpuDevice{ nullptr };
+    IBIOSEx* m_amdCpuBiosDevice{ nullptr };
+
+    bool m_useRyzenCpuParameters{ false };
 #else
 
 #endif

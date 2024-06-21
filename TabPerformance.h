@@ -51,25 +51,29 @@ private:
     const QStringList CpuGraphTitles
     {
         "CpuUsage",
-        "CurrentMaxFrequency",
-        "CoreUsages",
-        "Frequencies",
-        "AsicPower",
+        "MaxFrequency",
+        "CpuPower",
+        "CpuSocPower",
         "Voltage",
         "Temperature",
         "FanSpeed",
+        "CoreUsages",
+        "CoreFrequencies",
+        "ThreadUsages",
+        "ThreadFrequencies",
     };
 
-    const uint8_t CpuCoreUsagesGraphIndex = 2;
-    const uint8_t CpuFrequenciesGraphIndex = 3;
+    const uint8_t CpuCoreUsagesGraphIndex = 7;
+    const uint8_t CpuCoreFrequenciesGraphIndex = 8;
+    const uint8_t CpuThreadUsagesGraphIndex = 9;
+    const uint8_t CpuThreadFrequenciesGraphIndex = 10;
 
     struct LineSeriesInfo
     {
         QLineSeries* lineSeries{ nullptr };
         int currentY;
     };
-    std::vector<LineSeriesInfo> m_cpuCoreUsagesGraphs;
-    std::vector<LineSeriesInfo> m_cpuFrequenciesGraphs;
+    std::vector<std::vector<LineSeriesInfo>> m_cpuMultiLines;
 
     //gpu
     QWidget* m_gpuWidget{nullptr};

@@ -21,17 +21,19 @@ public:
     struct CpuDynamicInfo
     {
         double cpuTotalUsage{ 0 };
-        std::vector<double> coreUsages;
 
-        uint16_t cpuCurrentMaxFrequency{ 0 };
-        std::vector<uint16_t> cpuFrequencies;
+        std::vector<double> cpuCoreUsages;
+        std::vector<double> cpuCoreFrequencies;
+
+        uint16_t cpuMaxFrequency{ 0 };
+        std::vector<uint16_t> cpuThreadFrequencies;
         std::vector<double> cpuThreadUsages;
         
         uint16_t cpuVoltage{ 0 }; // Current voltage in mV
-        uint16_t cpuPower{ 0 }; //in Watt
-        uint16_t cpuAsicPower{ 0 }; //in Watt
+        double cpuPower{ 0 }; //in Watt
+        double cpuSocPower{ 0 }; //in Watt
 
-        uint8_t cpuTemperature{ 0 };
+        double cpuTemperature{ 0 };
 
         uint16_t cpuFanSpeed{ 0 }; // Current fan RPM value
     };

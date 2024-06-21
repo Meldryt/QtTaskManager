@@ -2,6 +2,9 @@ cmake_minimum_required(VERSION 3.5)
 
 project(QtTaskManager VERSION 0.1 LANGUAGES CXX)
 
+option(RYZEN_MASTER_SDK_ON "Use Downloaded Ryzen Master Monitoring SDK" OFF)
+set(RYZEN_MASTER_SDK_PATH "${CMAKE_CURRENT_SOURCE_DIR}/external/RyzenMasterMonitoringSDK" CACHE PATH "Path to Downloaded Ryzen Master Monitoring SDK")
+
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 set(CMAKE_AUTOUIC ON)
@@ -61,6 +64,28 @@ set(PROJECT_SOURCES
     external/ADLX/SDK/ADLXHelper/Windows/Cpp/ADLXHelper.cpp
     external/ADLX/SDK/platform/Windows/WinAPIs.cpp
 )
+
+# if user wants to get CPU temperature from AMD CPU, detect AMD Ryzen Master SDK (Cannot download from Github because EULA)
+if(${RYZEN_MASTER_SDK_ON})
+    if(NOT CMAKE_HOST_SYSTEM_PROCESSOR MATCHES "(AMD|x86_)64")
+        message (FATAL_ERROR "AMD Ryzen Master SDK only supports 64-bit system!")
+    endif()
+    if(NOT EXISTS "${RYZEN_MASTER_SDK_PATH}")
+        message (FATAL_ERROR "You must download Ryzen Master SDK & copy RyzenMasterMonitoringSDK to external!")
+    endif()
+    add_custom_command (
+    OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/Platform.dll
+    COMMAND ${CMAKE_COMMAND} -E copy
+            ${RYZEN_MASTER_SDK_PATH}/bin/Platform.dll
+            ${CMAKE_CURRENT_BINARY_DIR}/Platform.dll)
+    add_custom_command (
+    OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/Device.dll
+    COMMAND ${CMAKE_COMMAND} -E copy
+            ${RYZEN_MASTER_SDK_PATH}/bin/Device.dll
+            ${CMAKE_CURRENT_BINARY_DIR}/Device.dll)
+    link_libraries (${RYZEN_MASTER_SDK_PATH}/lib/Device.lib 
+                    ${RYZEN_MASTER_SDK_PATH}/lib/Platform.lib)
+endif()
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
     qt_add_executable(QtTaskManager
