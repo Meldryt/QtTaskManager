@@ -94,6 +94,11 @@ void ProcessInfo::updateProcessesUsage()
 
 void ProcessInfo::updateProcessUsage(const HANDLE& processHandle, Process& processInfo)
 {
+    if (m_processorCount == 0)
+    {
+        return;
+    }
+
     FILETIME ftime, fsys, fuser;
     ULARGE_INTEGER now, sys, user;
     double percent;

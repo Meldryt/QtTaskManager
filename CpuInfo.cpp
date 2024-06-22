@@ -10,7 +10,7 @@
 #include "external/RyzenMasterMonitoringSDK/include/IDeviceManager.h"
 #include "external/RyzenMasterMonitoringSDK/include/IBIOSEx.h"
 
-
+#include <system_error>
 #ifdef _WIN32
 //#include <intrin.h>
 //#include <powerbase.h>
@@ -178,13 +178,12 @@ CpuInfo::CpuInfo()
 
 void CpuInfo::init()
 {
-    initAmdRyzenMaster();
-
-    setupWmi();
-    
     fetchStaticInfo();
+}
 
-//todo: necessary to split? move this to function.
+void CpuInfo::initPdh()
+{
+    //todo: necessary to split? move this to function.
 #ifdef _WIN32
     PdhOpenQuery(NULL, 0, &totalCPUQuery);
     std::string text = "\\Processor(_Total)\\% Processor Time";
@@ -194,11 +193,11 @@ void CpuInfo::init()
     PdhAddEnglishCounter(totalCPUQuery, sw, 0, &totalCPUCounter);
     PdhCollectQueryData(totalCPUQuery);
 
-    for(uint8_t i=0;i<staticInfo.processorCount;++i)
+    for (uint8_t i = 0; i < staticInfo.processorCount; ++i)
     {
         PDH_HQUERY singleCPUQuery;
         PDH_HCOUNTER singleCPUCounter;
-        text = "\\Processor("+std::to_string(i)+")\\% Processor Time";
+        text = "\\Processor(" + std::to_string(i) + ")\\% Processor Time";
         ws = std::wstring(text.begin(), text.end());
         sw = ws.c_str();
 
@@ -249,7 +248,7 @@ void CpuInfo::init()
         m_cpuQueryPerformance = nullptr;
     }
 
-    
+
 #else
 #endif
 }
@@ -289,7 +288,6 @@ const Globals::CpuDynamicInfo& CpuInfo::getDynamicInfo() const
 
 void CpuInfo::update()
 {
-    //readWmiFrequency();
     if (m_useRyzenCpuParameters)
     {
         readRyzenCpuParameters();
@@ -298,7 +296,11 @@ void CpuInfo::update()
     {
         readPdhFrequency();
     }
-     
+
+    if (m_useWmi)
+    {
+        readDynamicInfoWmi();
+    }
     fetchDynamicInfo();
 }
 
@@ -323,43 +325,21 @@ DWORD CountSetBits(ULONG_PTR bitMask)
 
 void CpuInfo::fetchStaticInfo()
 {
-#ifdef _WIN32
-    fetchStaticInfoWindows();
-#else
-    fetchStaticInfoLinux();
-#endif
+    readSystemInfo();
 
-    auto cpuName = query(L"Win32_Processor", L"Name");
-    if (cpuName.empty()) {
-        return;
+    if (m_useWmi)
+    {
+        initWmi();
+        readStaticInfoWmi();
     }
 
-    auto cpuManufacturer = query(L"Win32_Processor", L"Manufacturer");
-    if (cpuManufacturer.empty()) {
-        return;
-    }
+    initPdh();
 
-    auto cpuNumberOfCores = query(L"Win32_Processor", L"NumberOfCores");
-    if (cpuNumberOfCores.empty()) {
-        return;
-    }
-
-    auto cpuNumberOfLogicalProcessors = query(L"Win32_Processor", L"NumberOfLogicalProcessors");
-    if (cpuNumberOfLogicalProcessors.empty()) {
-        return;
-    }
-
-    auto percentofMaximumFrequency = query(L"Win32_Processor", L"MaxClockSpeed");
-    if (percentofMaximumFrequency.empty()) {
-        return;
-    }
-
-    uint32_t baseFrequency = std::stoi(percentofMaximumFrequency[0]);
-    staticInfo.baseFrequency = baseFrequency;
+    initAmdRyzenMaster();
 }
 
 #ifdef _WIN32
-void CpuInfo::fetchStaticInfoWindows()
+void CpuInfo::readSystemInfo()
 {
     int CpuInfo[4] = {-1};
     unsigned nExIds, i =  0;
@@ -553,16 +533,6 @@ void CpuInfo::readPdhFrequency()
 //The API call(GetCPUParameters) included in this SDK should only be called once per second to avoid impacting the load on the SMU.Calls made faster may impact the results.
 void CpuInfo::readRyzenCpuParameters()
 {
-    //BSTR query = SysAllocString(L"SELECT * FROM MSAcpi_ThermalZoneTemperature");
-
-    //auto thermalZoneTemperature = query(L"MSAcpi_ThermalZoneTemperature", L"InstanceName,CurrentTemperature");
-    //auto thermalZoneTemperature = query(L"MSAcpi_ThermalZoneTemperature", L"*");
-    //if (!thermalZoneTemperature.empty()) {
-    //    //return;
-    //    const double temperature = std::stod(thermalZoneTemperature[0]);
-    //    dynamicInfo.cpuTemperature = temperature;
-    //}
-
     if (m_amdCpuDevice)
     {
         CPUParameters stData;
@@ -576,6 +546,11 @@ void CpuInfo::readRyzenCpuParameters()
             //dynamicInfo.cpuMaxFrequency = stData.fCCLK_Fmax;
 
             double maxFrequency = 0.0;
+            if (dynamicInfo.cpuCoreFrequencies.empty())
+            {
+                dynamicInfo.cpuCoreFrequencies.resize(stData.stFreqData.uLength);
+            }
+
             for (int i = 0; i < stData.stFreqData.uLength; i++)
             {
                 if (stData.stFreqData.dFreq[i] != 0)
@@ -594,6 +569,91 @@ void CpuInfo::readRyzenCpuParameters()
     }
 }
 
+//@note: check available wmi classes with WMI Explorer (https://github.com/vinaypamnani/wmie2)
+//normally network source is "ROOT\\CIMV2" or "ROOT\\WMI"
+//some classes might not be available like "Win32_FanSpeed"
+//also using wmi + query is very slow (measured ~250ms per call)
+bool CpuInfo::initWmi()
+{
+    HRESULT hr;
+    //hr = CoInitialize(NULL);
+    //if (!SUCCEEDED(hr)) {
+    //    qWarning() << "CoInitialize with COINIT_MULTITHREADED failed!";
+    //}
+    hr = CoInitializeEx(0, COINIT_MULTITHREADED); //COINIT_APARTMENTTHREADED
+    if (!SUCCEEDED(hr)) {
+        qWarning() << "CoInitializeEx failed! reason: " << std::system_category().message(hr).c_str();
+    }
+    hr = CoInitializeSecurity(NULL, -1, NULL, NULL, RPC_C_AUTHN_LEVEL_DEFAULT, RPC_C_IMP_LEVEL_IMPERSONATE, NULL, EOAC_NONE, NULL);
+    if (!SUCCEEDED(hr)) {
+        qWarning() << "CoInitializeSecurity failed! reason: " << std::system_category().message(hr).c_str();
+    }
+    hr = CoCreateInstance(CLSID_WbemLocator, NULL, CLSCTX_INPROC_SERVER, IID_IWbemLocator, (LPVOID*)&locator);
+    if (!SUCCEEDED(hr)) {
+        qWarning() << "CoCreateInstance failed! reason: " << std::system_category().message(hr).c_str();
+    }
+    hr = locator->ConnectServer(_bstr_t("ROOT\\CIMV2"), NULL, NULL, 0, NULL, 0, 0, &service);//_bstr_t("ROOT\\CIMV2") //;_bstr_t("ROOT\\WMI")
+    if (!SUCCEEDED(hr)) {
+        qWarning() << "ConnectServer failed! reason: " << std::system_category().message(hr).c_str();
+    }
+    hr = CoSetProxyBlanket(service, RPC_C_AUTHN_WINNT, RPC_C_AUTHZ_NONE, NULL, RPC_C_AUTHN_LEVEL_CALL, RPC_C_IMP_LEVEL_IMPERSONATE, NULL, EOAC_NONE);
+    if (!SUCCEEDED(hr)) {
+        qWarning() << "CoSetProxyBlanket failed! reason: " << std::system_category().message(hr).c_str();
+    }
+
+    auto percentProcessorPerformance = query(L"Win32_PerfFormattedData_Counters_ProcessorInformation", L"PercentProcessorPerformance");
+    auto percentProcessorUtility = query(L"Win32_PerfFormattedData_Counters_ProcessorInformation", L"PercentProcessorUtility");
+    if (!percentProcessorPerformance.empty() && !percentProcessorUtility.empty()) {
+        m_isWmiFrequencyInfoAvailable = true;
+    }
+
+    auto fanInfo = query(L"Win32_Fan", L"*");
+    if (!fanInfo.empty()) {
+        m_isWmiFanInfoAvailable = true;
+    }
+
+    return true;
+}
+
+void CpuInfo::readStaticInfoWmi()
+{
+    auto cpuName = query(L"Win32_Processor", L"Name");
+    if (!cpuName.empty()) {
+
+    }
+
+    auto cpuManufacturer = query(L"Win32_Processor", L"Manufacturer");
+    if (!cpuManufacturer.empty()) {
+
+    }
+
+    auto cpuNumberOfCores = query(L"Win32_Processor", L"NumberOfCores");
+    if (!cpuNumberOfCores.empty()) {
+
+    }
+
+    auto cpuNumberOfLogicalProcessors = query(L"Win32_Processor", L"NumberOfLogicalProcessors");
+    if (!cpuNumberOfLogicalProcessors.empty()) {
+
+    }
+
+    auto percentofMaximumFrequency = query(L"Win32_Processor", L"MaxClockSpeed");
+    if (!percentofMaximumFrequency.empty()) {
+
+    }
+
+    uint32_t baseFrequency = std::stoi(percentofMaximumFrequency[0]);
+    staticInfo.baseFrequency = baseFrequency;
+}
+
+void CpuInfo::readDynamicInfoWmi()
+{
+    readWmiFrequency();
+    readWmiFanSpeed();
+    
+    //readThermalZoneTemperature();
+}
+
 /*
 * Return CPU frequency.
 */
@@ -601,30 +661,31 @@ void CpuInfo::readRyzenCpuParameters()
 
 void CpuInfo::readWmiFrequency()
 {
-
+    if (m_isWmiFrequencyInfoAvailable)
+    {
+        return;
+    }
     //auto percentProcessorPerformanceTotal = query(L"Win32_PerfFormattedData_Counters_ProcessorInformation",
     //    L"PercentProcessorPerformance", L"Name = '_Total'");
     //if (percentProcessorPerformanceTotal.empty()) {
     //    return;
     //}
 
-    auto percentProcessorPerformance = query(L"Win32_PerfFormattedData_Counters_ProcessorInformation",
-        L"PercentProcessorPerformance", L"NOT Name LIKE '%_Total\'", 16);
-    //if (percentProcessorPerformance.empty()) {
-    //    //return;
-    //}
-
     //auto percentProcessorUtility = query(L"Win32_PerfFormattedData_Counters_ProcessorInformation",
     //    L"PercentProcessorUtility");
-    //if (percentProcessorUtility.empty()) {
-    //    return;
+    //if (!percentProcessorUtility.empty()) {
     //}
 
     //auto percentProcessorUtilityTotal = query(L"Win32_PerfFormattedData_Counters_ProcessorInformation",
     //    L"PercentProcessorUtility", L"Name = '_Total'");
-    //if (percentProcessorUtilityTotal.empty()) {
-    //    return;
+    //if (!percentProcessorUtilityTotal.empty()) {
     //}
+
+    auto percentProcessorPerformance = query(L"Win32_PerfFormattedData_Counters_ProcessorInformation",
+        L"PercentProcessorPerformance", L"NOT Name LIKE '%_Total\'", 16);
+    if (percentProcessorPerformance.empty()) {
+        return;
+    }
 
     auto percentProcessorUtility = query(L"Win32_PerfFormattedData_Counters_ProcessorInformation",
         L"PercentProcessorUtility", L"NOT Name LIKE '%_Total\'", 16);
@@ -651,6 +712,46 @@ void CpuInfo::readWmiFrequency()
     dynamicInfo.cpuMaxFrequency = maxFrequency;
 }
 
+void CpuInfo::readWmiFanSpeed()
+{
+    if (m_isWmiFanInfoAvailable)
+    {
+        return;
+    }
+
+    auto availability = query(L"Win32_Fan", L"Availability");
+    if (!availability.empty()) {
+
+    }
+
+    auto activeCooling = query(L"Win32_Fan", L"ActiveCooling");
+    if (!activeCooling.empty()) {
+
+    }
+
+    auto desiredSpeed = query(L"Win32_Fan", L"DesiredSpeed");
+    if (!desiredSpeed.empty()) {
+
+    }
+
+    auto configManagerErrorCode = query(L"Win32_Fan", L"ConfigManagerErrorCode");
+    if (!configManagerErrorCode.empty()) {
+
+    }
+}
+
+void CpuInfo::readThermalZoneTemperature()
+{
+    //BSTR query = SysAllocString(L"SELECT * FROM MSAcpi_ThermalZoneTemperature");
+    //auto thermalZoneTemperature = query(L"MSAcpi_ThermalZoneTemperature", L"InstanceName,CurrentTemperature");
+    //auto thermalZoneTemperature = query(L"MSAcpi_ThermalZoneTemperature", L"*");
+    //if (!thermalZoneTemperature.empty()) {
+    //    //return;
+    //    const double temperature = std::stod(thermalZoneTemperature[0]);
+    //    dynamicInfo.cpuTemperature = temperature;
+    //}
+}
+
 bool CpuInfo::executeQuery(const std::wstring& query) {
     if (service == nullptr) return false;
     return SUCCEEDED(service->ExecQuery(bstr_t(L"WQL"), bstr_t(std::wstring(query.begin(), query.end()).c_str()),
@@ -661,19 +762,6 @@ bool CpuInfo::executeQueryAsync(const std::wstring& query) {
     if (service == nullptr || sink == nullptr) return false;
     return SUCCEEDED(service->ExecQueryAsync(bstr_t(L"WQL"), bstr_t(std::wstring(query.begin(), query.end()).c_str()),
         WBEM_FLAG_FORWARD_ONLY | WBEM_FLAG_RETURN_IMMEDIATELY, nullptr, sink));
-}
-
-bool CpuInfo::setupWmi()
-{
-    HRESULT hr = CoInitializeEx(0, COINIT_MULTITHREADED);
-    hr = CoInitializeSecurity(NULL, -1, NULL, NULL, RPC_C_AUTHN_LEVEL_DEFAULT, RPC_C_IMP_LEVEL_IMPERSONATE, NULL, EOAC_NONE, NULL);
-    hr = CoCreateInstance(CLSID_WbemLocator, NULL, CLSCTX_INPROC_SERVER, IID_IWbemLocator, (LPVOID*)&locator);
-    hr = locator->ConnectServer(_bstr_t("root\\wmi"), NULL, NULL, 0, NULL, 0, 0, &service);//_bstr_t("ROOT\\CIMV2")
-    hr = CoSetProxyBlanket(service, RPC_C_AUTHN_WINNT, RPC_C_AUTHZ_NONE, NULL, RPC_C_AUTHN_LEVEL_CALL, RPC_C_IMP_LEVEL_IMPERSONATE, NULL, EOAC_NONE);
-    if (!SUCCEEDED(hr)) {
-        throw std::runtime_error("error initializing WMI");
-    }
-    return true;
 }
 
 inline std::string wstring_to_std_string(const std::wstring& ws) {
@@ -738,8 +826,8 @@ std::vector<std::string> CpuInfo::query(const std::wstring& wmi_class, const std
     if (count == 1)
     {
         ULONG u_return = 0;
-        //IWbemClassObject* obj = nullptr;
-        IWbemClassObject* obj = (IWbemClassObject*)malloc(sizeof(IWbemClassObject));
+        IWbemClassObject* obj = nullptr;
+        //IWbemClassObject* obj = (IWbemClassObject*)malloc(sizeof(IWbemClassObject));
         long timeout = WBEM_INFINITE;//WBEM_INFINITE
         while (enumerator) {
             //elapsedTimer.start();

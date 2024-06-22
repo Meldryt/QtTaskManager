@@ -31,10 +31,18 @@ public:
 
 private:
     void fetchStaticInfo();
-#ifdef _WIN32
-    void fetchStaticInfoWindows();
 
-    bool setupWmi();
+    void readSystemInfo();
+
+    bool initWmi();
+    void readStaticInfoWmi();
+    void readDynamicInfoWmi();
+    void readWmiFrequency();
+    void readWmiFanSpeed();
+    void readThermalZoneTemperature();
+
+    void initPdh();
+
     void initAmdRyzenMaster();
 
     bool executeQuery(const std::wstring& query);
@@ -45,9 +53,7 @@ private:
     std::vector<std::string> query(const std::wstring& wmi_class, const std::wstring& field, const std::wstring& filter = L"", const ULONG count = 1);
     void queryAsync(const std::wstring& wmi_class, const std::wstring& field, const std::wstring& filter = L"", const ULONG count = 1);
 
-#else
     void fetchStaticInfoLinux();
-#endif
     void fetchDynamicInfo();
 #ifdef _WIN32
     void fetchDynamicInfoWindows();
@@ -56,7 +62,6 @@ private:
 #endif
     void readPdhFrequency();
     void readRyzenCpuParameters();
-    void readWmiFrequency();
 
     Globals::CpuStaticInfo staticInfo;
     Globals::CpuDynamicInfo dynamicInfo;
@@ -84,6 +89,11 @@ private:
     IBIOSEx* m_amdCpuBiosDevice{ nullptr };
 
     bool m_useRyzenCpuParameters{ false };
+
+    bool m_useWmi{ false };
+    bool m_isWmiFrequencyInfoAvailable{ false };
+    bool m_isWmiFanInfoAvailable{ false };
+
 #else
 
 #endif

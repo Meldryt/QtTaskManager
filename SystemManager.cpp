@@ -21,10 +21,10 @@ SystemManager::SystemManager(QWidget* parent) : QTabWidget(parent)
     m_timer->setSingleShot(false);
     QObject::connect(m_timer, &QTimer::timeout, this, &SystemManager::update);
 
-    m_processWorker = std::make_unique<ProcessWorker>(500, this);
-    m_cpuWorker = std::make_unique<CpuWorker>(1000, this);
-    m_gpuWorker = std::make_unique<GpuWorker>(500, this);
-    m_memoryWorker = std::make_unique<MemoryWorker>(500, this);
+    m_processWorker = std::make_unique<ProcessWorker>(500);
+    m_cpuWorker = std::make_unique<CpuWorker>(1000);
+    m_gpuWorker = std::make_unique<GpuWorker>(500);
+    m_memoryWorker = std::make_unique<MemoryWorker>(500);
 
     m_worker.push_back(m_processWorker.get());
     m_worker.push_back(m_cpuWorker.get());
