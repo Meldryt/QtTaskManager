@@ -698,7 +698,7 @@ void CpuInfo::readWmiFrequency()
     for (size_t i = 0; i < staticInfo.threadCount; i++)
     {
         const double performance = std::stod(percentProcessorPerformance[i]) / 100;
-        uint16_t currentFrequency = std::round(staticInfo.baseFrequency * performance);
+        double currentFrequency = staticInfo.baseFrequency * performance;
         dynamicInfo.cpuThreadFrequencies[i] = currentFrequency;
         if (currentFrequency > maxFrequency)
         {

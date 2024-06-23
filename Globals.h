@@ -26,7 +26,7 @@ public:
         std::vector<double> cpuCoreFrequencies;
 
         uint16_t cpuMaxFrequency{ 0 };
-        std::vector<uint16_t> cpuThreadFrequencies;
+        std::vector<double> cpuThreadFrequencies;
         std::vector<double> cpuThreadUsages;
         
         uint16_t cpuVoltage{ 0 }; // Current voltage in mV
