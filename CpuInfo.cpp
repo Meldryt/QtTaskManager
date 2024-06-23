@@ -813,28 +813,16 @@ std::vector<std::string> CpuInfo::query(const std::wstring& wmi_class, const std
         return {};
     }
 
-    elapsedTime = elapsedTimer.elapsed();
-
-    qDebug() << "CpuWorker::query()1: " << elapsedTime;
-
-    elapsedTimer.start();
-
     std::vector<std::string> result;
-
-    //ManagementObjectSearcher managementObjectSearcher = new ManagementObjectSearcher("SELECT Caption FROM Win32_OperatingSystem");
 
     if (count == 1)
     {
         ULONG u_return = 0;
         IWbemClassObject* obj = nullptr;
-        //IWbemClassObject* obj = (IWbemClassObject*)malloc(sizeof(IWbemClassObject));
         long timeout = WBEM_INFINITE;//WBEM_INFINITE
         while (enumerator) {
-            //elapsedTimer.start();
             enumerator->Next(timeout, count, &obj, &u_return);
-            //elapsedTime = elapsedTimer.elapsed();
 
-            //qDebug() << "CpuWorker::query()2: " << elapsedTime;
             if (!u_return || !obj) {
                 break;
             }
@@ -843,9 +831,6 @@ std::vector<std::string> CpuInfo::query(const std::wstring& wmi_class, const std
             if (SUCCEEDED(hr)) {
                 if (vt_prop.vt == VT_BSTR)
                 {
-                    //result.push_back(wstring_to_std_string(vt_prop.bstrVal));
-                    //assert(bs != nullptr);
-                    //std::wstring ws(vt_prop.bstrVal, SysStringLen(vt_prop.bstrVal));
                     char* text = _com_util::ConvertBSTRToString(vt_prop.bstrVal);
                     result.push_back(text);
                 }
@@ -854,10 +839,14 @@ std::vector<std::string> CpuInfo::query(const std::wstring& wmi_class, const std
                     std::string str = std::to_string(vt_prop.uintVal);
                     result.push_back(str);
                 }
-                else
+                else if (vt_prop.vt == VT_UI8)
                 {
                     std::string str = std::to_string(vt_prop.ullVal);
                     result.push_back(str);
+                }
+                else
+                {
+                    qWarning() << "CpuInfo::query: Unhandled Type " << vt_prop.vt;
                 }
             }
             VariantClear(&vt_prop);
@@ -911,18 +900,13 @@ std::vector<std::string> CpuInfo::query(const std::wstring& wmi_class, const std
 
     elapsedTime = elapsedTimer.elapsed();
 
-    qDebug() << "CpuWorker::query()2: " << elapsedTime;
+    qDebug() << "CpuWorker::query(): " << elapsedTime;
 
     return result;
 }
 
-void CpuInfo::queryAsync(const std::wstring& wmi_class, const std::wstring& field, const std::wstring& filter, const ULONG count) {
-
-    QElapsedTimer elapsedTimer;
-    qint64 elapsedTime;
-
-    elapsedTimer.start();
-
+void CpuInfo::queryAsync(const std::wstring& wmi_class, const std::wstring& field, const std::wstring& filter, const ULONG count) 
+{
     std::wstring filter_string;
     if (!filter.empty()) {
         filter_string.append(L" WHERE " + filter);
@@ -932,8 +916,4 @@ void CpuInfo::queryAsync(const std::wstring& wmi_class, const std::wstring& fiel
     if (!success) {
         return;
     }
-
-    elapsedTime = elapsedTimer.elapsed();
-
-    qDebug() << "CpuWorker::query()1: " << elapsedTime;
 }

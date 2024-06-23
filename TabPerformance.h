@@ -11,6 +11,7 @@
 #include <QComboBox>
 #include <QTableWidget>
 #include <QStackedWidget>
+#include <QGroupBox>
 
 #include <Globals.h>
 
@@ -35,7 +36,9 @@ private:
         QChartView* chartView{ nullptr };
         QChart* chart{ nullptr };
         QLineSeries* lineSeries{ nullptr };
+        double value;
         int currentY;
+        QString unit;
     };
 
     QListWidget* m_listWidget{nullptr};
@@ -44,10 +47,12 @@ private:
     QWidget* m_cpuWidget{nullptr};
     QTableWidget* m_cpuTableWidget{ nullptr };
     QStackedWidget* m_cpuStackedWidget{ nullptr };
+    QGroupBox* m_cpuGroupBoxActiveGraph{ nullptr };
+    QLabel* m_cpuLabelActiveGraph{ nullptr };
+    QComboBox* m_cpuComboBoxActiveGraph{ nullptr };
     std::map<int, GraphInfo> m_cpuGraphs;
     std::map<int, QString> m_cpuTableInfos;
-    QComboBox* m_cpuComboBoxActiveGraph{ nullptr };
-
+    
     const QStringList CpuGraphTitles
     {
         "CpuUsage",
@@ -79,9 +84,11 @@ private:
     QWidget* m_gpuWidget{nullptr};
     QTableWidget* m_gpuTableWidget{ nullptr };
     QStackedWidget* m_gpuStackedWidget{ nullptr };
+    QGroupBox* m_gpuGroupBoxActiveGraph{ nullptr };
+    QLabel* m_gpuLabelActiveGraph{ nullptr };
+    QComboBox* m_gpuComboBoxActiveGraph{ nullptr };
     std::map<int, GraphInfo> m_gpuGraphs;
     std::map<int, QString> m_gpuTableInfos;
-    QComboBox* m_gpuComboBoxActiveGraph{ nullptr };
 
     const QStringList GpuGraphTitles
     {
