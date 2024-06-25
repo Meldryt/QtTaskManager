@@ -2,10 +2,10 @@
 #include "GpuInfoNVidia.h"
 #include "GpuInfoAmd.h"
 
-#include <QtGui/QOpenGLFunctions>
-#include <QtGui/QOffscreenSurface>
-#include <QtGui/QOpenGLContext>
-#include <QtGui/QOpenGLFunctions>
+//#include <QtGui/QOpenGLFunctions>
+//#include <QtGui/QOffscreenSurface>
+//#include <QtGui/QOpenGLContext>
+//#include <QtGui/QOpenGLFunctions>
 #include <QDebug>
 
 GpuInfo::GpuInfo()
@@ -35,17 +35,9 @@ void GpuInfo::update()
 
 void GpuInfo::detectGpu()
 {
-    QOpenGLContext context;
-    context.create();
-
-    QOffscreenSurface surface;
-    surface.create();
-    context.makeCurrent(&surface);
-
-    QOpenGLFunctions* gl = context.functions();
-
-    const std::string vendor = reinterpret_cast<const char*>(gl->glGetString(GL_VENDOR));
-    const std::string renderer = reinterpret_cast<const char*>(gl->glGetString(GL_RENDERER));
+    //todo: find another place to get graphics card vendor, without creating offscreen widget in another thread
+    const std::string vendor = "AMD";
+    const std::string renderer = "AMD";
 
     m_staticInfo.gpuModel = renderer;
     //const std::string version = reinterpret_cast<const char*>(gl->glGetString(GL_VERSION));

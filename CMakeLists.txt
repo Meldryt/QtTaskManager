@@ -14,8 +14,8 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets Charts Concurrent )
-find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets Charts Concurrent)
+find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets Charts Concurrent OpenGLWidgets)
+find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets Charts Concurrent OpenGLWidgets)
 
 set(PROJECT_SOURCES
     Globals.h
@@ -58,6 +58,12 @@ set(PROJECT_SOURCES
     MemoryWorker.h
     Worker.h
     Worker.cpp
+    CpuBenchmarkWidget.h
+    CpuBenchmarkWidget.cpp
+    GpuBenchmarkWidget.h
+    GpuBenchmarkWidget.cpp
+    GlWidget.cpp
+	GlWidget.h
     MainWindow.ui
 
     external/ADLX/SDK/ADLXHelper/Windows/Cpp/ADLXHelper.h
@@ -113,6 +119,8 @@ endif()
 target_link_libraries(QtTaskManager
     PRIVATE Qt${QT_VERSION_MAJOR}::Widgets
     Qt${QT_VERSION_MAJOR}::Charts
+    Qt${QT_VERSION_MAJOR}::OpenGLWidgets
+    Opengl32
     #d3d11
     #d3dcompiler
     pdh

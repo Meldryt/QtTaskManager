@@ -551,7 +551,7 @@ void CpuInfo::readRyzenCpuParameters()
                 dynamicInfo.cpuCoreFrequencies.resize(stData.stFreqData.uLength);
             }
 
-            for (int i = 0; i < stData.stFreqData.uLength; i++)
+            for (unsigned int i = 0; i < stData.stFreqData.uLength; i++)
             {
                 if (stData.stFreqData.dFreq[i] != 0)
                 {

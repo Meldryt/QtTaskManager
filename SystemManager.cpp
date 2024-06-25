@@ -12,9 +12,11 @@ SystemManager::SystemManager(QWidget* parent) : QTabWidget(parent)
     m_tabHardware = new TabHardware(parent);
     m_tabProcesses = new TabProcesses(parent);
     m_tabPerformance = new TabPerformance(parent);
+    //m_dockWidget = new QDockWidget("Benchmark",parent);
     addTab(m_tabProcesses, QString("Processes"));
     addTab(m_tabPerformance, QString("Performance"));
     addTab(m_tabHardware, QString("Hardware"));
+    addTab(m_dockWidget, QString("Benchmark"));
 
     m_timer = new QTimer(this);
     m_timer->setInterval(500);

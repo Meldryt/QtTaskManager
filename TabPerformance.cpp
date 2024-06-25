@@ -5,6 +5,7 @@
 #include <QPoint>
 #include <QHeaderView>
 #include <QGraphicsLayout>
+#include <QDockWidget>
 
 TabPerformance::TabPerformance(QWidget *parent) : QWidget{parent}
 {
@@ -74,6 +75,9 @@ void TabPerformance::initCpuWidgets()
         m_cpuStackedWidget, &QStackedWidget::setCurrentIndex);
 
     QGridLayout* cpuWidgetLayout = new QGridLayout(m_cpuWidget);
+    //QDockWidget* dockWidget = new QDockWidget("Benchmark", m_cpuWidget);
+    //dockWidget->setFloating(false);
+    //cpuWidgetLayout->addWidget(dockWidget, 0, 0);
     cpuWidgetLayout->addWidget(m_cpuGroupBoxActiveGraph, 0, 1);
     cpuWidgetLayout->addWidget(m_cpuTableWidget, 1, 0);
     cpuWidgetLayout->addWidget(m_cpuStackedWidget, 1, 1);
@@ -120,14 +124,18 @@ void TabPerformance::initGpuWidgets()
     QObject::connect(m_gpuComboBoxActiveGraph, &QComboBox::currentIndexChanged,
         m_gpuStackedWidget, &QStackedWidget::setCurrentIndex);
 
+    m_gpuBenchmarkWidget = new GpuBenchmarkWidget(m_gpuWidget);
+
     QGridLayout* gpuWidgetLayout = new QGridLayout(m_gpuWidget);
     gpuWidgetLayout->addWidget(m_gpuGroupBoxActiveGraph, 0, 1);
     gpuWidgetLayout->addWidget(m_gpuTableWidget, 1, 0);
-    gpuWidgetLayout->addWidget(m_gpuStackedWidget, 1, 1); 
+    gpuWidgetLayout->addWidget(m_gpuStackedWidget, 1, 1);
+    gpuWidgetLayout->addWidget(m_gpuBenchmarkWidget, 1, 2);
     gpuWidgetLayout->setRowStretch(0, 1);
     gpuWidgetLayout->setRowStretch(1, 10);
     gpuWidgetLayout->setColumnStretch(0, 1);
     gpuWidgetLayout->setColumnStretch(1, 2);
+    gpuWidgetLayout->setColumnStretch(2, 2);
     m_gpuWidget->setLayout(gpuWidgetLayout);
 
     initGpuGraphs();
