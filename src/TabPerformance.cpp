@@ -124,18 +124,18 @@ void TabPerformance::initGpuWidgets()
     QObject::connect(m_gpuComboBoxActiveGraph, &QComboBox::currentIndexChanged,
         m_gpuStackedWidget, &QStackedWidget::setCurrentIndex);
 
-    m_gpuBenchmarkWidget = new GpuBenchmarkWidget(m_gpuWidget);
+    //m_gpuBenchmarkWidget = new GpuBenchmarkWidget(m_gpuWidget);
 
     QGridLayout* gpuWidgetLayout = new QGridLayout(m_gpuWidget);
     gpuWidgetLayout->addWidget(m_gpuGroupBoxActiveGraph, 0, 1);
     gpuWidgetLayout->addWidget(m_gpuTableWidget, 1, 0);
     gpuWidgetLayout->addWidget(m_gpuStackedWidget, 1, 1);
-    gpuWidgetLayout->addWidget(m_gpuBenchmarkWidget, 1, 2);
+    //gpuWidgetLayout->addWidget(m_gpuBenchmarkWidget, 1, 2);
     gpuWidgetLayout->setRowStretch(0, 1);
     gpuWidgetLayout->setRowStretch(1, 10);
     gpuWidgetLayout->setColumnStretch(0, 1);
     gpuWidgetLayout->setColumnStretch(1, 2);
-    gpuWidgetLayout->setColumnStretch(2, 2);
+    //gpuWidgetLayout->setColumnStretch(2, 2);
     m_gpuWidget->setLayout(gpuWidgetLayout);
 
     initGpuGraphs();

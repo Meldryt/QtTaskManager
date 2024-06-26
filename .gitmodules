@@ -1,0 +1,3 @@
+[submodule "external/ADLX"]
+	path = external/ADLX
+	url = git@github.com:GPUOpen-LibrariesAndSDKs/ADLX.git

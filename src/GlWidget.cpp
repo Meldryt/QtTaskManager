@@ -211,7 +211,7 @@ GlWidget::GlWidget(QWidget *parent)
 
     m_timer = new QElapsedTimer();
     //elapsed = 0;
-    setFixedSize(600, 600);
+    setFixedSize(m_windowSizeX, m_windowSizeY);
     setMouseTracking(true); //trigger mouse move events, even if no button is pressed
 
     m_repaintTimer = new QTimer(this);

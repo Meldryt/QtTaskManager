@@ -174,6 +174,10 @@ typedef struct _PROCESSOR_POWER_INFORMATION {
 CpuInfo::CpuInfo()
 {
     sink = new QuerySink(enumerator);
+
+#ifdef HAS_RYZEN_MASTER_SDK
+    m_useRyzenCpuParameters = true;
+#endif
 }
 
 void CpuInfo::init()

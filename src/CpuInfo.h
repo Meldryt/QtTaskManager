@@ -13,7 +13,7 @@
 #include "sys/sysinfo.h"
 #endif
 
-#include <Globals.h>
+#include "Globals.h"
 
 class ICPUEx;
 class IBIOSEx;

@@ -137,6 +137,25 @@ void GpuInfoNVidia::fetchStaticInfo()
 
     (*NvAPI_GPU_GetFullName)( gpuHandles[0], gpuName );
     m_staticInfo.gpuModel = gpuName;
+
+    //NvU32 DriverVersion;
+    //NvAPI_ShortString BuildBranchString;
+    //if (NvAPI_SYS_GetDriverAndBranchVersion(&DriverVersion, BuildBranchString) == NVAPI_OK)
+    //{
+    //    printf("DriverVersion: %u\n", DriverVersion);
+    //    printf("BuildBranchString: %s\n", BuildBranchString);
+    //}
+
+    //IDXGIAdapter* adapter = ...
+    //    LARGE_INTEGER i;
+    //if (SUCCEEDED(adapter->CheckInterfaceSupport(__uuidof(IDXGIDevice), &i)))
+    //{
+    //    printf("User mode driver version: %u.%u.%u.%u\n",
+    //        i.QuadPart >> 48,
+    //        (i.QuadPart >> 32) & 0xFFFF,
+    //        (i.QuadPart >> 16) & 0xFFFF,
+    //        i.QuadPart & 0xFFFF);
+    //}
 }
 
 /*

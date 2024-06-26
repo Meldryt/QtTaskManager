@@ -3,7 +3,7 @@
 #include <QObject>
 #include <string>
 
-#include <Globals.h>
+#include "Globals.h"
 
 class GpuInfoNVidia;
 class GpuInfoAmd;

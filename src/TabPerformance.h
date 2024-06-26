@@ -15,7 +15,7 @@
 #include <QGraphicsLayout>
 
 #include "Globals.h"
-#include "GpuBenchmarkWidget.h"
+//#include "GpuBenchmarkWidget.h"
 
 class TabPerformance : public QWidget
 {
@@ -82,7 +82,7 @@ private:
 
     QListWidget* m_listWidget{nullptr};
 
-    GpuBenchmarkWidget* m_gpuBenchmarkWidget{ nullptr };
+    //GpuBenchmarkWidget* m_gpuBenchmarkWidget{ nullptr };
 
     //cpu
     QWidget* m_cpuWidget{nullptr};

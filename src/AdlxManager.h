@@ -7,7 +7,7 @@
 #include <vector>
 #include <string>
 
-#include <Globals.h>
+#include "Globals.h"
 
 // Use ADLX namespace
 using namespace adlx;

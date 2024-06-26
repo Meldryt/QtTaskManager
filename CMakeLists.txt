@@ -2,7 +2,6 @@ cmake_minimum_required(VERSION 3.5)
 
 project(QtTaskManager VERSION 0.1 LANGUAGES CXX)
 
-option(RYZEN_MASTER_SDK_ON "Use Downloaded Ryzen Master Monitoring SDK" OFF)
 set(RYZEN_MASTER_SDK_PATH "${CMAKE_CURRENT_SOURCE_DIR}/external/RyzenMasterMonitoringSDK" CACHE PATH "Path to Downloaded Ryzen Master Monitoring SDK")
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
@@ -18,53 +17,53 @@ find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets Charts Concurrent Open
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets Charts Concurrent OpenGLWidgets)
 
 set(PROJECT_SOURCES
-    Globals.h
-    AdlxManager.h
-    AdlxManager.cpp
-    CpuInfo.h
-    CpuInfo.cpp
-    DevicesInfo.h
-    DevicesInfo.cpp
-    GpuInfo.h
-    GpuInfo.cpp
-    GpuInfoNVidia.h
-    GpuInfoNVidia.cpp
-    GpuInfoAmd.h
-    GpuInfoAmd.cpp
-    MemoryInfo.h
-    MemoryInfo.cpp
-    ProcessInfo.h
-    ProcessInfo.cpp
-    SystemManager.cpp
-    SystemManager.h
-    main.cpp
-    MainWindow.cpp
-    MainWindow.h
-    TabApps.cpp
-    TabApps.h
-    TabHardware.cpp
-    TabHardware.h
-    TabProcesses.cpp
-    TabProcesses.h
-    TabPerformance.cpp
-    TabPerformance.h
-    ProcessWorker.cpp
-    ProcessWorker.h
-    CpuWorker.cpp
-    CpuWorker.h
-    GpuWorker.cpp
-    GpuWorker.h
-    MemoryWorker.cpp
-    MemoryWorker.h
-    Worker.h
-    Worker.cpp
-    CpuBenchmarkWidget.h
-    CpuBenchmarkWidget.cpp
-    GpuBenchmarkWidget.h
-    GpuBenchmarkWidget.cpp
-    GlWidget.cpp
-	GlWidget.h
-    MainWindow.ui
+    src/Globals.h
+    src/AdlxManager.h
+    src/AdlxManager.cpp
+    src/CpuInfo.h
+    src/CpuInfo.cpp
+    src/DevicesInfo.h
+    src/DevicesInfo.cpp
+    src/GpuInfo.h
+    src/GpuInfo.cpp
+    src/GpuInfoNVidia.h
+    src/GpuInfoNVidia.cpp
+    src/GpuInfoAmd.h
+    src/GpuInfoAmd.cpp
+    src/MemoryInfo.h
+    src/MemoryInfo.cpp
+    src/ProcessInfo.h
+    src/ProcessInfo.cpp
+    src/SystemManager.cpp
+    src/SystemManager.h
+    src/main.cpp
+    src/MainWindow.cpp
+    src/MainWindow.h
+    src/TabApps.cpp
+    src/TabApps.h
+    src/TabHardware.cpp
+    src/TabHardware.h
+    src/TabProcesses.cpp
+    src/TabProcesses.h
+    src/TabPerformance.cpp
+    src/TabPerformance.h
+    src/ProcessWorker.cpp
+    src/ProcessWorker.h
+    src/CpuWorker.cpp
+    src/CpuWorker.h
+    src/GpuWorker.cpp
+    src/GpuWorker.h
+    src/MemoryWorker.cpp
+    src/MemoryWorker.h
+    src/Worker.h
+    src/Worker.cpp
+    src/CpuBenchmarkWidget.h
+    src/CpuBenchmarkWidget.cpp
+    src/GpuBenchmarkWidget.h
+    src/GpuBenchmarkWidget.cpp
+    src/GlWidget.cpp
+	src/GlWidget.h
+    src/MainWindow.ui
 
     external/ADLX/SDK/ADLXHelper/Windows/Cpp/ADLXHelper.h
     external/ADLX/SDK/ADLXHelper/Windows/Cpp/ADLXHelper.cpp
@@ -72,12 +71,9 @@ set(PROJECT_SOURCES
 )
 
 # if user wants to get CPU temperature from AMD CPU, detect AMD Ryzen Master SDK (Cannot download from Github because EULA)
-if(${RYZEN_MASTER_SDK_ON})
+if(EXISTS "${RYZEN_MASTER_SDK_PATH}")
     if(NOT CMAKE_HOST_SYSTEM_PROCESSOR MATCHES "(AMD|x86_)64")
         message (FATAL_ERROR "AMD Ryzen Master SDK only supports 64-bit system!")
-    endif()
-    if(NOT EXISTS "${RYZEN_MASTER_SDK_PATH}")
-        message (FATAL_ERROR "You must download Ryzen Master SDK & copy RyzenMasterMonitoringSDK to external!")
     endif()
     add_custom_command (
     OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/Platform.dll
@@ -91,6 +87,9 @@ if(${RYZEN_MASTER_SDK_ON})
             ${CMAKE_CURRENT_BINARY_DIR}/Device.dll)
     link_libraries (${RYZEN_MASTER_SDK_PATH}/lib/Device.lib 
                     ${RYZEN_MASTER_SDK_PATH}/lib/Platform.lib)
+    add_definitions ( -DHAS_RYZEN_MASTER_SDK )
+else()
+    message (WARNING "If you want to read Ryzen Cpu Infos you must download Ryzen Master SDK & copy RyzenMasterMonitoringSDK to external!")
 endif()
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
@@ -116,6 +115,10 @@ else()
     endif()
 endif()
 
+target_include_directories(QtTaskManager PUBLIC
+    external/AGS_SDK/ags_lib/inc
+)
+
 target_link_libraries(QtTaskManager
     PRIVATE Qt${QT_VERSION_MAJOR}::Widgets
     Qt${QT_VERSION_MAJOR}::Charts
@@ -127,6 +130,9 @@ target_link_libraries(QtTaskManager
     Setupapi
     #PortableDeviceGuids
     #-lPdh
+    #Device
+    #Platform
+    #amd_ags_x64
 )
 
 set_target_properties(QtTaskManager PROPERTIES

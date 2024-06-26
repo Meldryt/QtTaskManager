@@ -24,5 +24,7 @@ public:
     void fetchDynamicInfo();
 
 private:
+    void initAgs();
+
     AdlxManager* m_adlxManager{ nullptr };
 };

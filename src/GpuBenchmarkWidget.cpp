@@ -9,7 +9,7 @@ GpuBenchmarkWidget::GpuBenchmarkWidget(QWidget *parent) : QWidget{parent}
     QGridLayout *layout = new QGridLayout(this);
     layout->addWidget(m_glWidget,0,0);
     setLayout(layout);
-
+    //resize(800, 600);
     //connect(listWidget,&QListWidget::itemSelectionChanged, this, &TabHardware::showSelectionWidget);
 }
 
