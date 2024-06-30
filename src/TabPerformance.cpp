@@ -173,7 +173,7 @@ void TabPerformance::initCpuGraphs()
     m_cpuGraphs[index++] = new GraphInfo(QString("W"), 60, 300); //CpuPower
     m_cpuGraphs[index++] = new GraphInfo(QString("W"), 60, 300); //CpuSocPower
     m_cpuGraphs[index++] = new GraphInfo(QString("mV"), 60, 2000); //Voltage
-    m_cpuGraphs[index++] = new GraphInfo(QString::fromLatin1("�C"), 60, 150); //Temperature
+    m_cpuGraphs[index++] = new GraphInfo(QString::fromLatin1("C"), 60, 150); //Temperature
     m_cpuGraphs[index++] = new GraphInfo(QString("RPM"), 60, 10000); //FanSpeed
     m_cpuGraphs[index++] = new GraphInfo(QString("%"), 60, 100, true); //CoreUsages
     m_cpuGraphs[index++] = new GraphInfo(QString("MHz"), 60, 5000, true); //CoreFrequencies
@@ -198,8 +198,8 @@ void TabPerformance::initGpuGraphs()
     m_gpuGraphs[index++] = new GraphInfo(QString("W"), 60, 500);                //GPU Power
     m_gpuGraphs[index++] = new GraphInfo(QString("W"), 60, 500);                //TotalBoardPower
     m_gpuGraphs[index++] = new GraphInfo(QString("mV"), 60, 2000);              //GPU Voltage
-    m_gpuGraphs[index++] = new GraphInfo(QString::fromLatin1("�C"), 60, 150);   //Temperature
-    m_gpuGraphs[index++] = new GraphInfo(QString::fromLatin1("�C"), 60, 150);   //Hotspot Temperature
+    m_gpuGraphs[index++] = new GraphInfo(QString::fromLatin1("C"), 60, 150);   //Temperature
+    m_gpuGraphs[index++] = new GraphInfo(QString::fromLatin1("C"), 60, 150);   //Hotspot Temperature
     m_gpuGraphs[index++] = new GraphInfo(QString::fromLatin1("RPM"), 60, 10000);//Fan Speed
     m_gpuGraphs[index++] = new GraphInfo(QString("%"), 60, 100);                //Fan Usage
 
