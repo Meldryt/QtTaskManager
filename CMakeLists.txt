@@ -39,14 +39,14 @@ set(PROJECT_SOURCES
     src/main.cpp
     src/MainWindow.cpp
     src/MainWindow.h
-    src/TabApps.cpp
-    src/TabApps.h
     src/TabHardware.cpp
     src/TabHardware.h
     src/TabProcesses.cpp
     src/TabProcesses.h
     src/TabPerformance.cpp
     src/TabPerformance.h
+    src/TabBenchmark.cpp
+    src/TabBenchmark.h
     src/ProcessWorker.cpp
     src/ProcessWorker.h
     src/CpuWorker.cpp
@@ -57,10 +57,6 @@ set(PROJECT_SOURCES
     src/MemoryWorker.h
     src/Worker.h
     src/Worker.cpp
-    src/CpuBenchmarkWidget.h
-    src/CpuBenchmarkWidget.cpp
-    src/GpuBenchmarkWidget.h
-    src/GpuBenchmarkWidget.cpp
     src/GlWidget.cpp
 	src/GlWidget.h
     src/MainWindow.ui
@@ -70,30 +66,8 @@ set(PROJECT_SOURCES
     external/ADLX/SDK/platform/Windows/WinAPIs.cpp
 )
 
-# if user wants to get CPU temperature from AMD CPU, detect AMD Ryzen Master SDK (Cannot download from Github because EULA)
-if(EXISTS "${RYZEN_MASTER_SDK_PATH}")
-    if(NOT CMAKE_HOST_SYSTEM_PROCESSOR MATCHES "(AMD|x86_)64")
-        message (FATAL_ERROR "AMD Ryzen Master SDK only supports 64-bit system!")
-    endif()
-    add_custom_command (
-    OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/Platform.dll
-    COMMAND ${CMAKE_COMMAND} -E copy
-            ${RYZEN_MASTER_SDK_PATH}/bin/Platform.dll
-            ${CMAKE_CURRENT_BINARY_DIR}/Platform.dll)
-    add_custom_command (
-    OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/Device.dll
-    COMMAND ${CMAKE_COMMAND} -E copy
-            ${RYZEN_MASTER_SDK_PATH}/bin/Device.dll
-            ${CMAKE_CURRENT_BINARY_DIR}/Device.dll)
-    link_libraries (${RYZEN_MASTER_SDK_PATH}/lib/Device.lib 
-                    ${RYZEN_MASTER_SDK_PATH}/lib/Platform.lib)
-    add_definitions ( -DHAS_RYZEN_MASTER_SDK )
-else()
-    message (WARNING "If you want to read Ryzen Cpu Infos you must download Ryzen Master SDK & copy RyzenMasterMonitoringSDK to external!")
-endif()
-
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
-    qt_add_executable(QtTaskManager
+    qt_add_executable(${PROJECT_NAME}
         MANUAL_FINALIZATION
         ${PROJECT_SOURCES}
     )
@@ -103,39 +77,58 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
 # For more information, see https://doc.qt.io/qt-6/qt-add-executable.html#target-creation
 else()
     if(ANDROID)
-        add_library(QtTaskManager SHARED
+        add_library(${PROJECT_NAME} SHARED
             ${PROJECT_SOURCES}
         )
 # Define properties for Android with Qt 5 after find_package() calls as:
 #    set(ANDROID_PACKAGE_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/android")
     else()
-        add_executable(QtTaskManager
+        add_executable(${PROJECT_NAME}
             ${PROJECT_SOURCES}
         )
     endif()
 endif()
 
-target_include_directories(QtTaskManager PUBLIC
+# if user wants to get CPU temperature from AMD CPU, detect AMD Ryzen Master SDK (Cannot download from Github because EULA)
+if(EXISTS "${RYZEN_MASTER_SDK_PATH}")
+    if(NOT CMAKE_HOST_SYSTEM_PROCESSOR MATCHES "(AMD|x86_)64")
+        message (FATAL_ERROR "AMD Ryzen Master SDK only supports 64-bit system!")
+    endif()
+    add_custom_command (TARGET ${PROJECT_NAME} PRE_BUILD
+    #OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/Platform.dll
+    COMMAND ${CMAKE_COMMAND} -E copy
+            ${RYZEN_MASTER_SDK_PATH}/bin/Platform.dll
+            $<TARGET_FILE_DIR:${PROJECT_NAME}>/.)
+    add_custom_command (TARGET ${PROJECT_NAME} PRE_BUILD
+    #OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/Device.dll
+    COMMAND ${CMAKE_COMMAND} -E copy
+            ${RYZEN_MASTER_SDK_PATH}/bin/Device.dll
+            $<TARGET_FILE_DIR:${PROJECT_NAME}>/.)
+    target_link_libraries(${PROJECT_NAME} PRIVATE
+            ${RYZEN_MASTER_SDK_PATH}/lib/Device.lib 
+            ${RYZEN_MASTER_SDK_PATH}/lib/Platform.lib)
+    add_definitions ( -DHAS_RYZEN_MASTER_SDK )
+else()
+    message (WARNING "If you want to read Ryzen Cpu Infos you must download Ryzen Master SDK & copy RyzenMasterMonitoringSDK to external!")
+endif()
+
+target_include_directories(${PROJECT_NAME} PRIVATE
     external/AGS_SDK/ags_lib/inc
+    external/nvapi
 )
 
-target_link_libraries(QtTaskManager
-    PRIVATE Qt${QT_VERSION_MAJOR}::Widgets
+target_link_libraries(${PROJECT_NAME} PRIVATE
+    Qt${QT_VERSION_MAJOR}::Widgets
     Qt${QT_VERSION_MAJOR}::Charts
     Qt${QT_VERSION_MAJOR}::OpenGLWidgets
     Opengl32
-    #d3d11
-    #d3dcompiler
     pdh
     Setupapi
-    #PortableDeviceGuids
-    #-lPdh
-    #Device
-    #Platform
-    #amd_ags_x64
+    debug ${CMAKE_CURRENT_SOURCE_DIR}/external/AGS_SDK/ags_lib/lib/amd_ags_x64_2022_MDd.lib
+    optimized ${CMAKE_CURRENT_SOURCE_DIR}/external/AGS_SDK/ags_lib/lib/amd_ags_x64_2022_MD.lib
 )
 
-set_target_properties(QtTaskManager PROPERTIES
+set_target_properties(${PROJECT_NAME} PROPERTIES
     MACOSX_BUNDLE_GUI_IDENTIFIER my.example.com
     MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION}
     MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}
@@ -143,10 +136,10 @@ set_target_properties(QtTaskManager PROPERTIES
     WIN32_EXECUTABLE TRUE
 )
 
-install(TARGETS QtTaskManager
+install(TARGETS ${PROJECT_NAME}
     BUNDLE DESTINATION .
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
 
 if(QT_VERSION_MAJOR EQUAL 6)
-    qt_finalize_executable(QtTaskManager)
+    qt_finalize_executable(${PROJECT_NAME})
 endif()

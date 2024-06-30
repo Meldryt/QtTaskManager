@@ -12,16 +12,13 @@ SystemManager::SystemManager(QWidget* parent) : QTabWidget(parent)
     m_tabHardware = new TabHardware(parent);
     m_tabProcesses = new TabProcesses(parent);
     m_tabPerformance = new TabPerformance(parent);
+    m_tabBenchmark = new TabBenchmark(parent);
+
     //m_dockWidget = new QDockWidget("Benchmark",parent);
     addTab(m_tabProcesses, QString("Processes"));
     addTab(m_tabPerformance, QString("Performance"));
     addTab(m_tabHardware, QString("Hardware"));
-    addTab(m_dockWidget, QString("Benchmark"));
-
-    m_timer = new QTimer(this);
-    m_timer->setInterval(500);
-    m_timer->setSingleShot(false);
-    QObject::connect(m_timer, &QTimer::timeout, this, &SystemManager::update);
+    addTab(m_tabBenchmark, QString("Benchmark"));
 
     m_processWorker = std::make_unique<ProcessWorker>(500);
     m_cpuWorker = std::make_unique<CpuWorker>(1000);
@@ -93,6 +90,11 @@ SystemManager::SystemManager(QWidget* parent) : QTabWidget(parent)
         m_workerThreads[i]->start();
     }
 
+    m_timer = new QTimer(this);
+    m_timer->setInterval(500);
+    m_timer->setSingleShot(false);
+    QObject::connect(m_timer, &QTimer::timeout, this, &SystemManager::update);
+
     m_timer->start();
 }
 
@@ -150,5 +152,5 @@ void SystemManager::update()
         m_dynamicInfoMemoryChanged = false;
     }
 
-    qDebug() << "SystemManager::update(): ";
+    //qDebug() << "SystemManager::update(): ";
 }

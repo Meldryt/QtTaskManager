@@ -75,7 +75,7 @@ private:
 
     std::map<uint32_t, Process> m_processMap;
 
-    QElapsedTimer* elapsedTimer{nullptr};
+    QElapsedTimer* m_elapsedTimer{nullptr};
 
     uint8_t m_processorCount{0};
 };

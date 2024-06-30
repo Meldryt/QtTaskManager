@@ -24,6 +24,5 @@ protected:
 
 private:
     QTimer* m_timer{nullptr};
-
 };
 

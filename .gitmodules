@@ -4,3 +4,6 @@
 [submodule "external/AGS_SDK"]
 	path = external/AGS_SDK
 	url = git@github.com:GPUOpen-LibrariesAndSDKs/AGS_SDK.git
+[submodule "external/nvapi"]
+	path = external/nvapi
+	url = git@github.com:NVIDIA/nvapi.git

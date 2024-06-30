@@ -35,14 +35,6 @@
 #include <iostream>
 #pragma comment(lib, "wbemuuid.lib")
 
-//#include "ICPUEx.h"
-//#include "IPlatform.h"
-//#include "IDeviceManager.h"
-//#include "IBIOSEx.h"
-
-#pragma comment(lib, "Device.lib")
-#pragma comment(lib, "Platform.lib")
-
 //#include <Wbemidl.h>
 
 class QuerySink : public IWbemObjectSink
@@ -185,6 +177,34 @@ void CpuInfo::init()
     fetchStaticInfo();
 }
 
+const Globals::CpuStaticInfo& CpuInfo::getStaticInfo() const
+{
+    return staticInfo;
+}
+
+const Globals::CpuDynamicInfo& CpuInfo::getDynamicInfo() const
+{
+    return dynamicInfo;
+}
+
+void CpuInfo::update()
+{
+    if (m_useRyzenCpuParameters)
+    {
+        readDynamicInfoRyzenMaster();
+    }
+    else
+    {
+        readPdhFrequency();
+    }
+
+    if (m_useWmi)
+    {
+        readDynamicInfoWmi();
+    }
+    fetchDynamicInfo();
+}
+
 void CpuInfo::initPdh()
 {
     //todo: necessary to split? move this to function.
@@ -257,7 +277,7 @@ void CpuInfo::initPdh()
 #endif
 }
 
-void CpuInfo::initAmdRyzenMaster()
+void CpuInfo::initRyzenMaster()
 {
     bool bRetCode = false;
     IPlatform& rPlatform = GetPlatform();
@@ -269,10 +289,11 @@ void CpuInfo::initAmdRyzenMaster()
     }
     IDeviceManager& rDeviceManager = rPlatform.GetIDeviceManager();
     m_amdCpuDevice = (ICPUEx*)rDeviceManager.GetDevice(dtCPU, 0);
-    //m_amdCpuBiosDevice = (IBIOSEx*)rDeviceManager.GetDevice(dtBIOS, 0);
+    m_amdCpuBiosDevice = (IBIOSEx*)rDeviceManager.GetDevice(dtBIOS, 0);
     if (!m_amdCpuDevice)
     {
         qDebug() << "Could not init amd devices.";
+        return;
     }
     else
     {
@@ -280,33 +301,222 @@ void CpuInfo::initAmdRyzenMaster()
     }
 }
 
-const Globals::CpuStaticInfo& CpuInfo::getStaticInfo() const
+void CpuInfo::readStaticInfoRyzenMaster()
 {
-    return staticInfo;
+    int iRet;
+
+    if (m_amdCpuBiosDevice)
+    {
+        const wchar_t* biosVersion = m_amdCpuBiosDevice->GetVersion();
+        if (biosVersion)
+        {
+            qDebug() << "CpuInfo::readStaticInfoRyzenMaster(): IBIOSEx::GetVersion(): " << QString::fromWCharArray(biosVersion);
+        }
+
+        const wchar_t* biosVendor = m_amdCpuBiosDevice->GetVendor();
+        if (biosVendor)
+        {
+            qDebug() << "CpuInfo::readStaticInfoRyzenMaster(): IBIOSEx::GetVendor(): " << QString::fromWCharArray(biosVendor);
+        }
+
+        const wchar_t* biosDate = m_amdCpuBiosDevice->GetDate();
+        if (biosDate)
+        {
+            qDebug() << "CpuInfo::readStaticInfoRyzenMaster(): IBIOSEx::GetDate(): " << QString::fromWCharArray(biosDate);
+        }
+    }
+
+    if (m_amdCpuDevice)
+    {
+        const wchar_t* cpuName = m_amdCpuDevice->GetName();
+        if (cpuName)
+        {
+            qDebug() << "CpuInfo::readStaticInfoRyzenMaster(): ICPUEx::GetName(): " << QString::fromWCharArray(cpuName);
+        }
+
+        const wchar_t* cpuDescription = m_amdCpuDevice->GetDescription();
+        if (cpuDescription)
+        {
+            qDebug() << "CpuInfo::readStaticInfoRyzenMaster(): ICPUEx::GetDescription(): " << QString::fromWCharArray(cpuDescription);
+        }
+
+        const wchar_t* cpuVendor = m_amdCpuDevice->GetVendor();
+        if (cpuVendor)
+        {
+            qDebug() << "CpuInfo::readStaticInfoRyzenMaster(): ICPUEx::GetVendor(): " << QString::fromWCharArray(cpuVendor);
+        }
+
+        const wchar_t* cpuRole = m_amdCpuDevice->GetRole();
+        if (cpuRole)
+        {
+            qDebug() << "CpuInfo::readStaticInfoRyzenMaster(): ICPUEx::GetRole(): " << QString::fromWCharArray(cpuRole);
+        }
+
+        const wchar_t* cpuClassName = m_amdCpuDevice->GetClassName();
+        if (cpuClassName)
+        {
+            qDebug() << "CpuInfo::readStaticInfoRyzenMaster(): ICPUEx::GetClassName(): " << QString::fromWCharArray(cpuClassName);
+        }
+
+        const AOD_DEVICE_TYPE deviceType = m_amdCpuDevice->GetType();
+        qDebug() << "CpuInfo::readStaticInfoRyzenMaster(): ICPUEx::GetType(): " << static_cast<int>(deviceType);
+
+        const unsigned long cpuIndex = m_amdCpuDevice->GetIndex();
+        qDebug() << "CpuInfo::readStaticInfoRyzenMaster(): ICPUEx::GetIndex(): " << cpuIndex;
+
+        CACHE_INFO l1DataCache;
+        iRet = m_amdCpuDevice->GetL1DataCache(l1DataCache);
+        if (!iRet)
+        {
+            qDebug() << "CpuInfo::readStaticInfoRyzenMaster(): ICPUEx::GetL1DataCache(): " << l1DataCache.fSize;
+        }
+
+        CACHE_INFO l1InstructionCache;
+        iRet = m_amdCpuDevice->GetL1InstructionCache(l1InstructionCache);
+        if (!iRet)
+        {
+            qDebug() << "CpuInfo::readStaticInfoRyzenMaster(): ICPUEx::GetL1InstructionCache(): " << l1InstructionCache.fSize;
+        }
+
+        CACHE_INFO l2Cache;
+        iRet = m_amdCpuDevice->GetL2Cache(l2Cache);
+        if (!iRet)
+        {
+            qDebug() << "CpuInfo::readStaticInfoRyzenMaster(): ICPUEx::GetL2Cache(): " << l2Cache.fSize;
+        }
+
+        CACHE_INFO l3Cache;
+        iRet = m_amdCpuDevice->GetL3Cache(l3Cache);
+        if (!iRet)
+        {
+            qDebug() << "CpuInfo::readStaticInfoRyzenMaster(): ICPUEx::GetL3Cache(): " << l3Cache.fSize;
+        }
+
+        unsigned int coreCount;
+        iRet = m_amdCpuDevice->GetCoreCount(coreCount);
+        if (!iRet)
+        {
+            qDebug() << "CpuInfo::readStaticInfoRyzenMaster(): ICPUEx::GetCoreCount(): " << coreCount;
+        }
+
+        unsigned int corePark;
+        iRet = m_amdCpuDevice->GetCorePark(corePark);
+        if (!iRet)
+        {
+            qDebug() << "CpuInfo::readStaticInfoRyzenMaster(): ICPUEx::GetCorePark(): " << corePark;
+        }
+
+        const wchar_t* cpuPackage = m_amdCpuDevice->GetPackage();
+        if (cpuPackage)
+        {
+            qDebug() << "CpuInfo::readStaticInfoRyzenMaster(): ICPUEx::GetPackage(): " << QString::fromWCharArray(cpuPackage);
+        }
+
+        std::wstring str;
+        iRet = m_amdCpuDevice->GetChipsetName(str.data());
+        if (!iRet)
+        {
+            qDebug() << "CpuInfo::readStaticInfoRyzenMaster(): ICPUEx::GetChipsetName(): " << QString::fromWCharArray(str.c_str());
+        }
+    }
 }
 
-const Globals::CpuDynamicInfo& CpuInfo::getDynamicInfo() const
+void CpuInfo::readDynamicInfoRyzenMaster()
 {
-    return dynamicInfo;
+    readRyzenDynamicCpuInfo();
+    //readRyzenDynamicBiosInfo();
 }
 
-void CpuInfo::update()
+//@note: from https://www.amd.com/de/developer/ryzen-master-monitoring-sdk.html
+//The API call(GetCPUParameters) included in this SDK should only be called once per second to avoid impacting the load on the SMU.Calls made faster may impact the results.
+void CpuInfo::readRyzenDynamicCpuInfo()
 {
-    if (m_useRyzenCpuParameters)
+    if (m_amdCpuDevice)
     {
-        readRyzenCpuParameters();
-    }
-    else
-    {
-        readPdhFrequency();
-    }
+        CPUParameters stData;
+        int iRet = m_amdCpuDevice->GetCPUParameters(stData);
+        if (!iRet)
+        {
+            dynamicInfo.cpuTemperature = stData.dTemperature;
+            //dynamicInfo.cpuPower = stData.fVDDCR_VDD_Power;
+            dynamicInfo.cpuPower = stData.fPPTValue;
+            dynamicInfo.cpuSocPower = stData.fVDDCR_SOC_Power;
+            //dynamicInfo.cpuMaxFrequency = stData.fCCLK_Fmax;
 
-    if (m_useWmi)
-    {
-        readDynamicInfoWmi();
+            double maxFrequency = 0.0;
+            if (dynamicInfo.cpuCoreFrequencies.empty())
+            {
+                dynamicInfo.cpuCoreFrequencies.resize(stData.stFreqData.uLength);
+            }
+
+            for (unsigned int i = 0; i < stData.stFreqData.uLength; i++)
+            {
+                if (stData.stFreqData.dFreq[i] != 0)
+                {
+                    dynamicInfo.cpuCoreFrequencies[i] = stData.stFreqData.dFreq[i];
+                    if (dynamicInfo.cpuCoreFrequencies[i] > maxFrequency)
+                    {
+                        maxFrequency = dynamicInfo.cpuCoreFrequencies[i];
+                    }
+                }
+            }
+            staticInfo.baseFrequency = stData.fCCLK_Fmax; //is this correct?
+            dynamicInfo.cpuMaxFrequency = maxFrequency;
+            //qDebug() << "stData.fVDDCR_VDD_Power: " << stData.fVDDCR_VDD_Power << " stData.fVDDCR_SOC_Power: " << stData.fVDDCR_SOC_Power; //null
+            //qDebug() << " stData.fPPTValue: " << stData.fPPTValue << " stData.fPPTLimit: " << stData.fPPTLimit << " stData.fCCLK_Fmax: " << stData.fCCLK_Fmax << " stData.dPeakSpeed: " << stData.dPeakSpeed;
+        }
     }
-    fetchDynamicInfo();
 }
+
+void CpuInfo::readRyzenDynamicBiosInfo()
+{ 
+    if (m_amdCpuBiosDevice)
+    {
+        int iRet;
+        unsigned short memVDDIO;
+        iRet = m_amdCpuBiosDevice->GetMemVDDIO(memVDDIO);
+        if (!iRet)
+        {
+            qDebug() << "CpuInfo::readRyzenDynamicBiosInfo(): IBIOSEx::GetMemVDDIO(): " << memVDDIO;
+        }
+
+        unsigned short currentMemClock;
+        iRet = m_amdCpuBiosDevice->GetCurrentMemClock(currentMemClock);
+        if (!iRet)
+        {
+            qDebug() << "CpuInfo::readRyzenDynamicBiosInfo(): IBIOSEx::GetCurrentMemClock(): " << currentMemClock;
+        }
+
+        unsigned char memCtrlTcl;
+        iRet = m_amdCpuBiosDevice->GetMemCtrlTcl(memCtrlTcl);
+        if (!iRet)
+        {
+            qDebug() << "CpuInfo::readRyzenDynamicBiosInfo(): IBIOSEx::GetMemCtrlTcl(): " << memCtrlTcl;
+        }
+
+        unsigned char memCtrlTrcdrd;
+        iRet = m_amdCpuBiosDevice->GetMemCtrlTrcdrd(memCtrlTrcdrd);
+        if (!iRet)
+        {
+            qDebug() << "CpuInfo::readRyzenDynamicBiosInfo(): IBIOSEx::GetMemCtrlTrcdrd(): " << memCtrlTrcdrd;
+        }
+
+        unsigned char memCtrlTras;
+        iRet = m_amdCpuBiosDevice->GetMemCtrlTras(memCtrlTras);
+        if (!iRet)
+        {
+            qDebug() << "CpuInfo::readRyzenDynamicBiosInfo(): IBIOSEx::GetMemCtrlTras(): " << memCtrlTras;
+        }
+
+        unsigned char memCtrlTrp;
+        iRet = m_amdCpuBiosDevice->GetMemCtrlTrp(memCtrlTrp);
+        if (!iRet)
+        {
+            qDebug() << "CpuInfo::readRyzenDynamicBiosInfo(): IBIOSEx::GetMemCtrlTrp(): " << memCtrlTrp;
+        }
+    }
+}
+
 
 #ifdef _WIN32
 // Helper function to count set bits in the processor mask.
@@ -338,8 +548,10 @@ void CpuInfo::fetchStaticInfo()
     }
 
     initPdh();
+    readPdhBaseFrequency();
 
-    initAmdRyzenMaster();
+    initRyzenMaster();
+    readStaticInfoRyzenMaster();
 }
 
 #ifdef _WIN32
@@ -505,9 +717,8 @@ void CpuInfo::fetchDynamicInfoLinux()
 }
 #endif
 
-void CpuInfo::readPdhFrequency()
+void CpuInfo::readPdhBaseFrequency()
 {
-    uint32_t baseFrequency = 0;
     // Get CPU frequency, scaled to MHz.
     if (m_cpuFreqCounter && PdhCollectQueryData(m_cpuQueryFreq) == ERROR_SUCCESS)
     {
@@ -516,10 +727,13 @@ void CpuInfo::readPdhFrequency()
         if (PdhGetRawCounterValue(m_cpuFreqCounter, &cntType, &cnt) == ERROR_SUCCESS &&
             (cnt.CStatus == PDH_CSTATUS_VALID_DATA || cnt.CStatus == PDH_CSTATUS_NEW_DATA))
         {
-            baseFrequency = (cnt.FirstValue);
+            staticInfo.baseFrequency = (cnt.FirstValue);
         }
     }
+}
 
+void CpuInfo::readPdhFrequency()
+{
     if (m_cpuPerformanceCounter && PdhCollectQueryData(m_cpuQueryPerformance) == ERROR_SUCCESS)
     {
         PDH_FMT_COUNTERVALUE cnt;
@@ -528,48 +742,8 @@ void CpuInfo::readPdhFrequency()
         if (PdhGetFormattedCounterValue(m_cpuPerformanceCounter, PDH_FMT_DOUBLE, &cntType, &cnt) == ERROR_SUCCESS &&
             (cnt.CStatus == PDH_CSTATUS_VALID_DATA || cnt.CStatus == PDH_CSTATUS_NEW_DATA))
         {
-            dynamicInfo.cpuMaxFrequency = baseFrequency * (cnt.doubleValue / 100.0);
+            dynamicInfo.cpuMaxFrequency = staticInfo.baseFrequency * (cnt.doubleValue / 100.0);
         }
-    }
-}
-
-//@note: from https://www.amd.com/de/developer/ryzen-master-monitoring-sdk.html
-//The API call(GetCPUParameters) included in this SDK should only be called once per second to avoid impacting the load on the SMU.Calls made faster may impact the results.
-void CpuInfo::readRyzenCpuParameters()
-{
-    if (m_amdCpuDevice)
-    {
-        CPUParameters stData;
-        int iRet = m_amdCpuDevice->GetCPUParameters(stData);
-        if (!iRet)
-        {
-            dynamicInfo.cpuTemperature = stData.dTemperature;
-            //dynamicInfo.cpuPower = stData.fVDDCR_VDD_Power;
-            dynamicInfo.cpuPower = stData.fPPTValue;
-            dynamicInfo.cpuSocPower = stData.fVDDCR_SOC_Power;
-            //dynamicInfo.cpuMaxFrequency = stData.fCCLK_Fmax;
-
-            double maxFrequency = 0.0;
-            if (dynamicInfo.cpuCoreFrequencies.empty())
-            {
-                dynamicInfo.cpuCoreFrequencies.resize(stData.stFreqData.uLength);
-            }
-
-            for (unsigned int i = 0; i < stData.stFreqData.uLength; i++)
-            {
-                if (stData.stFreqData.dFreq[i] != 0)
-                {
-                    dynamicInfo.cpuCoreFrequencies[i] = stData.stFreqData.dFreq[i];
-                    if (dynamicInfo.cpuCoreFrequencies[i] > maxFrequency)
-                    {
-                        maxFrequency = dynamicInfo.cpuCoreFrequencies[i];
-                    }
-                }
-            }
-            dynamicInfo.cpuMaxFrequency = maxFrequency;
-            //qDebug() << "stData.fVDDCR_VDD_Power: " << stData.fVDDCR_VDD_Power << " stData.fVDDCR_SOC_Power: " << stData.fVDDCR_SOC_Power; //null
-            //qDebug() << " stData.fPPTValue: " << stData.fPPTValue << " stData.fPPTLimit: " << stData.fPPTLimit << " stData.fCCLK_Fmax: " << stData.fCCLK_Fmax << " stData.dPeakSpeed: " << stData.dPeakSpeed;
-        }       
     }
 }
 

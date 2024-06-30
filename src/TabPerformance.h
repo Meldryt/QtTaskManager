@@ -41,6 +41,7 @@ private:
         QChartView* chartView{ nullptr };
         QChart* chart{ nullptr };
         std::vector<QLineSeries*> lineSeries;
+        std::vector<QVector<QPointF>> points;
 
         std::vector<double> values{ 0.0 };
         
@@ -69,6 +70,7 @@ private:
             if (!multiLines)
             {
                 this->lineSeries.push_back(new QLineSeries());
+                this->lineSeries.back()->setUseOpenGL(true);
                 this->chart->addSeries(this->lineSeries.at(0));
                 this->chart->createDefaultAxes();
 
@@ -76,6 +78,8 @@ private:
                 this->chart->axes(Qt::Vertical).back()->setRange(0, axisMax);
 
                 this->values.resize(1);
+
+                this->points.push_back(QVector<QPointF>());
             }
         }
     };
@@ -109,6 +113,22 @@ private:
         "ThreadFrequencies",
     };
 
+    const QStringList GpuGraphTitles
+    {
+        "GPU Usage",
+        "VRAM Usage",
+        "GPU Clockspeed",
+        "VRAM Clockspeed",
+        "VRAM Used",
+        "GPU Power",
+        "TotalBoardPower",
+        "GPU Voltage",
+        "Temperature",
+        "Hotspot Temperature",
+        "Fan Speed",
+        "Fan Usage",
+    };
+
     const uint8_t CpuMultiGraphsStartIndex = 7;
 
     //gpu
@@ -120,18 +140,6 @@ private:
     QComboBox* m_gpuComboBoxActiveGraph{ nullptr };
     std::map<int, GraphInfo*> m_gpuGraphs;
     std::map<int, QString> m_gpuTableInfos;
-
-    const QStringList GpuGraphTitles
-    {
-        "GraphicsUsage",
-        "GraphicsClock",
-        "MemoryClock",
-        "AsicPower",
-        "Voltage",
-        "Temperature",
-        "HotspotTemperature",
-        "FanSpeed",
-    };
 
     QTimer* timer{nullptr};
 

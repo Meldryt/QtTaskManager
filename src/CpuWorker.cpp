@@ -9,11 +9,15 @@ CpuWorker::CpuWorker(int timerInterval, QObject *parent)
     : Worker{ timerInterval, parent}
 {
     m_cpuInfo = std::make_unique<CpuInfo>();
+
+    m_elapsedTimer = new QElapsedTimer();
 }
 
 void CpuWorker::start()
 {   
     Worker::start();
+
+    m_elapsedTimer->start();
 
     m_cpuInfo->init();
 
@@ -29,14 +33,16 @@ void CpuWorker::update()
 { 
     QElapsedTimer elapsedTimer;
     qint64 elapsedTime;
-
     elapsedTimer.start();
 
     m_cpuInfo->update();
 
-    elapsedTime = elapsedTimer.elapsed();
-
-    qDebug() << "CpuWorker::update(): " << elapsedTime;
-
     emit signalDynamicInfo(m_cpuInfo->getDynamicInfo());
+
+    elapsedTime = elapsedTimer.nsecsElapsed() / 1000000;
+
+    if (elapsedTime >= 10)
+    {
+        qDebug() << "CpuWorker::update(): " << elapsedTime << " ms";
+    }
 }

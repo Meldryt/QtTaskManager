@@ -43,7 +43,11 @@ private:
 
     void initPdh();
 
-    void initAmdRyzenMaster();
+    void initRyzenMaster();
+    void readStaticInfoRyzenMaster();
+    void readDynamicInfoRyzenMaster();
+    void readRyzenDynamicCpuInfo();
+    void readRyzenDynamicBiosInfo();
 
     bool executeQuery(const std::wstring& query);
     bool executeQueryAsync(const std::wstring& query);
@@ -60,8 +64,8 @@ private:
 #else
     void fetchDynamicInfoLinux();
 #endif
+    void readPdhBaseFrequency();
     void readPdhFrequency();
-    void readRyzenCpuParameters();
 
     Globals::CpuStaticInfo staticInfo;
     Globals::CpuDynamicInfo dynamicInfo;

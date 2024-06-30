@@ -6,6 +6,7 @@
 #include <QHeaderView>
 #include <QGraphicsLayout>
 #include <QDockWidget>
+#include <QElapsedTimer>
 
 TabPerformance::TabPerformance(QWidget *parent) : QWidget{parent}
 {
@@ -35,7 +36,7 @@ TabPerformance::TabPerformance(QWidget *parent) : QWidget{parent}
     showSelectionWidget();
 
     timer = new QTimer(this);
-    timer->setInterval(1000);
+    timer->setInterval(500);
     connect(timer, &QTimer::timeout, this, &TabPerformance::process);
     timer->start();
 }
@@ -165,13 +166,6 @@ void TabPerformance::initMemoryWidgets()
 
 void TabPerformance::initCpuGraphs()
 {
-    //if (i < CpuCoreUsagesGraphIndex)
-    //{
-    //    m_cpuGraphs[i].lineSeries = new QLineSeries();
-    //    m_cpuGraphs[i].chart->addSeries(m_cpuGraphs[i].lineSeries);
-    //    m_cpuGraphs[i].chart->createDefaultAxes();
-    //}
-
     int index = 0;
 
     m_cpuGraphs[index++] = new GraphInfo(QString("%"), 60, 100); //CpuUsage
@@ -179,7 +173,7 @@ void TabPerformance::initCpuGraphs()
     m_cpuGraphs[index++] = new GraphInfo(QString("W"), 60, 300); //CpuPower
     m_cpuGraphs[index++] = new GraphInfo(QString("W"), 60, 300); //CpuSocPower
     m_cpuGraphs[index++] = new GraphInfo(QString("mV"), 60, 2000); //Voltage
-    m_cpuGraphs[index++] = new GraphInfo(QString::fromLatin1("°C"), 60, 150); //Temperature
+    m_cpuGraphs[index++] = new GraphInfo(QString::fromLatin1("ï¿½C"), 60, 150); //Temperature
     m_cpuGraphs[index++] = new GraphInfo(QString("RPM"), 60, 10000); //FanSpeed
     m_cpuGraphs[index++] = new GraphInfo(QString("%"), 60, 100, true); //CoreUsages
     m_cpuGraphs[index++] = new GraphInfo(QString("MHz"), 60, 5000, true); //CoreFrequencies
@@ -196,14 +190,18 @@ void TabPerformance::initGpuGraphs()
 {
     int index = 0;
 
-    m_gpuGraphs[index++] = new GraphInfo(QString("%"), 60, 100); //GraphicsUsage
-    m_gpuGraphs[index++] = new GraphInfo(QString("MHz"), 60, 5000); //GraphicsClock
-    m_gpuGraphs[index++] = new GraphInfo(QString("MHz"), 60, 4000); //MemoryClock
-    m_gpuGraphs[index++] = new GraphInfo(QString("W"), 60, 500); //GraphicsPower
-    m_gpuGraphs[index++] = new GraphInfo(QString("mV"), 60, 2000); //Voltage
-    m_gpuGraphs[index++] = new GraphInfo(QString::fromLatin1("°C"), 60, 150); //Temperature
-    m_gpuGraphs[index++] = new GraphInfo(QString::fromLatin1("°C"), 60, 150); //HotspotTemperature
-    m_gpuGraphs[index++] = new GraphInfo(QString::fromLatin1("RPM"), 60, 10000); //FanSpeed
+    m_gpuGraphs[index++] = new GraphInfo(QString("%"), 60, 100);                //GPU Usage
+    m_gpuGraphs[index++] = new GraphInfo(QString("%"), 60, 100);                //VRAM Usage
+    m_gpuGraphs[index++] = new GraphInfo(QString("MHz"), 60, 5000);             //GPU Clockspeed
+    m_gpuGraphs[index++] = new GraphInfo(QString("MHz"), 60, 4000);             //VRAM Clockspeed
+    m_gpuGraphs[index++] = new GraphInfo(QString("MB"), 60, 3000);              //VRAM Used
+    m_gpuGraphs[index++] = new GraphInfo(QString("W"), 60, 500);                //GPU Power
+    m_gpuGraphs[index++] = new GraphInfo(QString("W"), 60, 500);                //TotalBoardPower
+    m_gpuGraphs[index++] = new GraphInfo(QString("mV"), 60, 2000);              //GPU Voltage
+    m_gpuGraphs[index++] = new GraphInfo(QString::fromLatin1("ï¿½C"), 60, 150);   //Temperature
+    m_gpuGraphs[index++] = new GraphInfo(QString::fromLatin1("ï¿½C"), 60, 150);   //Hotspot Temperature
+    m_gpuGraphs[index++] = new GraphInfo(QString::fromLatin1("RPM"), 60, 10000);//Fan Speed
+    m_gpuGraphs[index++] = new GraphInfo(QString("%"), 60, 100);                //Fan Usage
 
     for (int i = 0; i < GpuGraphTitles.size(); ++i)
     {
@@ -213,9 +211,24 @@ void TabPerformance::initGpuGraphs()
 
 void TabPerformance::process()
 {
+    QElapsedTimer elapsedTimer;
+    qint64 elapsedTime;
+    elapsedTimer.start();
+
+    setUpdatesEnabled(false);
+
     processCpu();
     processGpu();
     processMemory();
+
+    setUpdatesEnabled(true);
+
+    elapsedTime = elapsedTimer.nsecsElapsed() / 1000000;
+
+    if (elapsedTime >= 10)
+    {
+        qDebug() << "TabPerformance::process(): " << elapsedTime << " ms";
+    }
 }
 
 void TabPerformance::processCpu()
@@ -226,28 +239,28 @@ void TabPerformance::processCpu()
         for (int lineSeriesIndex = 0; lineSeriesIndex < graphInfo->lineSeries.size(); ++lineSeriesIndex)
         {
             QLineSeries* lineSeries = graphInfo->lineSeries.at(lineSeriesIndex);
-            QList<QPointF> points = lineSeries->points();
+            QVector<QPointF>& points = graphInfo->points.at(lineSeriesIndex);
+            const size_t pointSize = points.size();
+
             if (!points.empty())
             {
-                lineSeries->clear();
-                for (uint8_t j = 0; j < points.size(); ++j)
+                for (uint8_t j = 0; j < pointSize; ++j)
                 {
-                    points[j].setX(points.at(j).x() - 1);
+                    points[j].setX(points[j].x() - 1);
                 }
                 if (points.first().x() < 0)
                 {
                     points.removeFirst();
                 }
-                lineSeries->append(points);
             }
 
-            double x = 60;
-            int currentY = 0;
+            double currentY = 0.0;
             if (!graphInfo->values.empty())
             {
                 currentY = std::round(graphInfo->values.at(lineSeriesIndex));
             }
-            lineSeries->append(x, currentY);
+            points.append({ 60.0, currentY });
+            lineSeries->replace(points);
         }
     }
 
@@ -267,28 +280,28 @@ void TabPerformance::processGpu()
         for (int lineSeriesIndex = 0; lineSeriesIndex < graphInfo->lineSeries.size(); ++lineSeriesIndex)
         {
             QLineSeries* lineSeries = graphInfo->lineSeries.at(lineSeriesIndex);
-            QList<QPointF> points = lineSeries->points();
+            QVector<QPointF>& points = graphInfo->points.at(lineSeriesIndex);
+            const size_t pointSize = points.size();
+
             if (!points.empty())
             {
-                lineSeries->clear();
-                for (uint8_t j = 0; j < points.size(); ++j)
+                for (uint8_t j = 0; j < pointSize; ++j)
                 {
-                    points[j].setX(points.at(j).x() - 1);
+                    points[j].setX(points[j].x() - 1);
                 }
                 if (points.first().x() < 0)
                 {
                     points.removeFirst();
                 }
-                lineSeries->append(points);
             }
 
-            double x = 60;
-            int currentY = 0;
+            double currentY = 0.0;
             if (!graphInfo->values.empty())
             {
                 currentY = std::round(graphInfo->values.at(lineSeriesIndex));
             }
-            lineSeries->append(x, currentY);
+            points.append({ 60.0, currentY });
+            lineSeries->replace(points);
         }
     }
 
@@ -331,6 +344,7 @@ void TabPerformance::updateCpuMultiGraphs(const Globals::CpuDynamicInfo& dynamic
     if (m_cpuGraphs[index]->lineSeries.empty() && !dynamicInfo.cpuCoreUsages.empty())
     {
         m_cpuGraphs[index]->lineSeries.resize(dynamicInfo.cpuCoreUsages.size());
+        m_cpuGraphs[index]->points.resize(m_cpuGraphs[index]->lineSeries.size());
         m_cpuGraphs[index]->values.clear();
         initGraphs.push_back(index);
     }
@@ -340,6 +354,7 @@ void TabPerformance::updateCpuMultiGraphs(const Globals::CpuDynamicInfo& dynamic
     if (m_cpuGraphs[index]->lineSeries.empty() && !dynamicInfo.cpuCoreFrequencies.empty())
     {
         m_cpuGraphs[index]->lineSeries.resize(dynamicInfo.cpuCoreFrequencies.size());
+        m_cpuGraphs[index]->points.resize(m_cpuGraphs[index]->lineSeries.size());
         m_cpuGraphs[index]->values.clear();
         initGraphs.push_back(index);
     }
@@ -349,6 +364,7 @@ void TabPerformance::updateCpuMultiGraphs(const Globals::CpuDynamicInfo& dynamic
     if (m_cpuGraphs[index]->lineSeries.empty() && !dynamicInfo.cpuThreadUsages.empty())
     {
         m_cpuGraphs[index]->lineSeries.resize(dynamicInfo.cpuThreadUsages.size());
+        m_cpuGraphs[index]->points.resize(m_cpuGraphs[index]->lineSeries.size());
         m_cpuGraphs[index]->values.clear();
         initGraphs.push_back(index);
     }
@@ -358,6 +374,7 @@ void TabPerformance::updateCpuMultiGraphs(const Globals::CpuDynamicInfo& dynamic
     if (m_cpuGraphs[index]->lineSeries.empty() && !dynamicInfo.cpuThreadFrequencies.empty())
     {
         m_cpuGraphs[index]->lineSeries.resize(dynamicInfo.cpuThreadFrequencies.size());
+        m_cpuGraphs[index]->points.resize(m_cpuGraphs[index]->lineSeries.size());
         m_cpuGraphs[index]->values.clear();
         initGraphs.push_back(index);
     }
@@ -391,8 +408,6 @@ void TabPerformance::slotCpuDynamicInfo(const Globals::CpuDynamicInfo& dynamicIn
 
     updateCpuMultiGraphs(dynamicInfo);
 
-    //chart->removeAllSeries();
-
     for (int i = 0; i < m_cpuGraphs.size(); ++i)
     {
         if (m_cpuGraphs[i]->values.size() == 1)
@@ -405,8 +420,7 @@ void TabPerformance::slotCpuDynamicInfo(const Globals::CpuDynamicInfo& dynamicIn
             {
                 m_cpuTableInfos[i] += QString::number(static_cast<int>(std::round(m_cpuGraphs[i]->values[j]))) + " | ";
             }
-        }
-        
+        }  
     }
 }
 
@@ -414,14 +428,18 @@ void TabPerformance::slotGpuDynamicInfo(const Globals::GpuDynamicInfo& dynamicIn
 {
     int index = 0;
 
-    m_gpuGraphs[index++]->values[0] = dynamicInfo.gpuGraphicsUsage;
-    m_gpuGraphs[index++]->values[0] = dynamicInfo.gpuGraphicsClock;
-    m_gpuGraphs[index++]->values[0] = dynamicInfo.gpuMemoryClock;
-    m_gpuGraphs[index++]->values[0] = dynamicInfo.gpuGraphicsPower;
-    m_gpuGraphs[index++]->values[0] = dynamicInfo.gpuGraphicsVoltage;
+    m_gpuGraphs[index++]->values[0] = dynamicInfo.gpuUsage;
+    m_gpuGraphs[index++]->values[0] = dynamicInfo.gpuVramUsage;
+    m_gpuGraphs[index++]->values[0] = dynamicInfo.gpuClockSpeed;
+    m_gpuGraphs[index++]->values[0] = dynamicInfo.gpuVramClockSpeed;
+    m_gpuGraphs[index++]->values[0] = dynamicInfo.gpuVramUsed;
+    m_gpuGraphs[index++]->values[0] = dynamicInfo.gpuPower;
+    m_gpuGraphs[index++]->values[0] = dynamicInfo.gpuTotalBoardPower;
+    m_gpuGraphs[index++]->values[0] = dynamicInfo.gpuVoltage;
     m_gpuGraphs[index++]->values[0] = dynamicInfo.gpuTemperature;
-    m_gpuGraphs[index++]->values[0] = dynamicInfo.gpuTemperatureHotspot;
+    m_gpuGraphs[index++]->values[0] = dynamicInfo.gpuHotspotTemperature;
     m_gpuGraphs[index++]->values[0] = dynamicInfo.gpuFanSpeed;
+    m_gpuGraphs[index++]->values[0] = dynamicInfo.gpuFanSpeedUsage;
 
     for (int i = 0; i < m_gpuGraphs.size(); ++i)
     {

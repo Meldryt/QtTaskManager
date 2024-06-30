@@ -1,0 +1,9 @@
+*.png
+*.tga
+*.hgt
+*.bin
+*.ipch
+*.opendb
+*.tlog
+*.bak
+build/

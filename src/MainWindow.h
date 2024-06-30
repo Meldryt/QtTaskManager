@@ -3,8 +3,6 @@
 #include <QMainWindow>
 #include "SystemManager.h"
 
-#include "GpuBenchmarkWidget.h"
-
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
 QT_END_NAMESPACE
@@ -20,7 +18,4 @@ public:
 private:
     Ui::MainWindow *ui{nullptr};
     SystemManager* systemManager{nullptr};
-
-    QWindow* m_benchmarkWindow{ nullptr };
-    GpuBenchmarkWidget* m_gpuBenchmarkWidget{ nullptr };
 };

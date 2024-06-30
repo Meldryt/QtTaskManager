@@ -11,17 +11,6 @@ class TabProcesses : public QWidget
 public:
     TabProcesses(QWidget *parent = nullptr);
 
-    enum class SortMode : uint8_t
-    {
-        SortProcessName = 0,
-        SortFileName,
-        SortMemoryUsageHigh,
-        SortMemoryUsageLow,
-        SortCpuUsageHigh,
-        SortCpuUsageLow,
-        NoSort
-    };
-
 private:
     void process();
     void updateTable();
@@ -34,12 +23,35 @@ private:
     void sortCpuUsage();
     void setSortMode(int headerIndex);
 
-    QTableWidget* tableProcesses{nullptr};
-    QTimer* timer{nullptr};
+    enum class SortMode : uint8_t
+    {
+        SortProcessName = 0,
+        SortFileName,
+        SortMemoryUsageHigh,
+        SortMemoryUsageLow,
+        SortCpuUsageHigh,
+        SortCpuUsageLow,
+        NoSort
+    };
 
-    std::vector<ProcessInfo::Process> processList;
+    const QStringList TableHeaderNames
+    {
+        "Name",
+        "FileName",
+        "FilePath",
+        "Memory Usage",
+        "Cpu Usage",
+        "Disk Usage",
+        "Network Usage",
+        "Gpu Usage",
+    };
 
-    SortMode sortMode{SortMode::NoSort};
+    QTableWidget* m_tableProcesses{nullptr};
+    QTimer* m_timer{nullptr};
+
+    std::vector<ProcessInfo::Process> m_processList;
+
+    SortMode m_sortMode{SortMode::NoSort};
 
 public slots:
     void slotProcesses(const std::map<uint32_t, ProcessInfo::Process>& processMap);

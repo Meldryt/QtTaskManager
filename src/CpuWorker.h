@@ -4,6 +4,8 @@
 
 #include "Globals.h"
 
+#include <QElapsedTimer>
+
 class CpuInfo;
 
 class CpuWorker : public Worker
@@ -23,5 +25,6 @@ signals:
 
 private:
     std::unique_ptr<CpuInfo> m_cpuInfo{nullptr};
+    QElapsedTimer* m_elapsedTimer{ nullptr };
 };
 

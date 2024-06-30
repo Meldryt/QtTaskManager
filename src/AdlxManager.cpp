@@ -31,10 +31,15 @@ bool AdlxManager::init()
     // Initialize ADLX
     res = g_ADLXHelp.Initialize();
 
-    if (ADLX_SUCCEEDED(res))
+    if (!ADLX_SUCCEEDED(res))
     {
+        qDebug() << "\tg_ADLXHelp initialize failed";
+    }
+    else
+    {
+        m_initialized = true;
+
         // Get Performance Monitoring services
-        //IADLXPerformanceMonitoringServicesPtr perfMonitoringService;
         ADLX_RESULT res = g_ADLXHelp.GetSystemServices()->GetPerformanceMonitoringServices(&m_perfMonitoringService);
         if (ADLX_SUCCEEDED(res))
         {
@@ -61,7 +66,9 @@ bool AdlxManager::init()
                 qDebug() << "\tGet GPU list failed";
         }
         else
+        {
             qDebug() << "\tGet performance monitoring services failed";
+        }
     }
     //else
     //    return WaitAndExit("\tg_ADLXHelp initialize failed", 0);
@@ -75,7 +82,43 @@ bool AdlxManager::init()
 
 bool AdlxManager::fetchStaticInfo()
 {
-    //ShowCurrentAllMetrics(m_perfMonitoringService, m_oneGPU);
+    if (!m_initialized)
+    {
+        return false;
+    }
+
+    // Get Performance Monitoring services
+    //IADLXPerformanceMonitoringServicesPtr perfMonitoringService;
+    ADLX_RESULT res = g_ADLXHelp.GetSystemServices()->GetPerformanceMonitoringServices(&m_perfMonitoringService);
+    if (ADLX_SUCCEEDED(res))
+    {
+        IADLXGPUListPtr gpus;
+        // Get GPU list
+        res = g_ADLXHelp.GetSystemServices()->GetGPUs(&gpus);
+        if (ADLX_SUCCEEDED(res))
+        {
+            // Use the first GPU in the list
+            //IADLXGPUPtr oneGPU;
+            res = gpus->At(gpus->Begin(), &m_oneGPU);
+            if (ADLX_SUCCEEDED(res))
+            {
+                ShowGPUInfo();
+                //// Display main menu options
+                //MainMenu();
+                //// Get and execute the choice
+                //MenuControl(perfMonitoringService, oneGPU);
+            }
+            else
+                qDebug() << "\tGet particular GPU failed";
+        }
+        else
+            qDebug() << "\tGet GPU list failed";
+    }
+    else
+    {
+        qDebug() << "\tGet performance monitoring services failed";
+    }
+        
 	return true;
 }
 
@@ -185,6 +228,11 @@ void AdlxManager::ShowGPUInfo()
 // Show current all metrics
 void AdlxManager::ShowCurrentAllMetrics(IADLXPerformanceMonitoringServicesPtr perfMonitoringServices, IADLXGPUPtr oneGPU)
 {
+    if (!m_initialized)
+    {
+        return;
+    }
+
     // Get system metrics support
     IADLXSystemMetricsSupportPtr systemMetricsSupport;
     ADLX_RESULT res2 = perfMonitoringServices->GetSupportedSystemMetrics(&systemMetricsSupport);
@@ -231,6 +279,8 @@ void AdlxManager::ShowCurrentAllMetrics(IADLXPerformanceMonitoringServicesPtr pe
             ShowGPUFanSpeed(gpuMetricsSupport, gpuMetrics);
             ShowGPUVRAM(gpuMetricsSupport, gpuMetrics);
             ShowGPUVoltage(gpuMetricsSupport, gpuMetrics);
+            ShowGPUTotalBoardPower(gpuMetricsSupport, gpuMetrics);
+            ShowGPUIntakeTemperature(gpuMetricsSupport, gpuMetrics);
             //qDebug() << std::noboolalpha;
         }
         // Get current FPS metrics
@@ -340,7 +390,7 @@ void AdlxManager::ShowGPUUsage(IADLXGPUMetricsSupportPtr gpuMetricsSupport, IADL
             adlx_double usage = 0;
             res = gpuMetrics->GPUUsage(&usage);
             if (ADLX_SUCCEEDED(res))
-                m_dynamicInfo.gpuGraphicsUsage = usage;
+                m_dynamicInfo.gpuUsage = usage;
         }
     }
 }
@@ -359,7 +409,7 @@ void AdlxManager::ShowGPUClockSpeed(IADLXGPUMetricsSupportPtr gpuMetricsSupport,
             adlx_int gpuClock = 0;
             res = gpuMetrics->GPUClockSpeed(&gpuClock);
             if (ADLX_SUCCEEDED(res))
-                m_dynamicInfo.gpuGraphicsClock = gpuClock;
+                m_dynamicInfo.gpuClockSpeed = gpuClock;
         }
     }
 }
@@ -378,12 +428,12 @@ void AdlxManager::ShowGPUVRAMClockSpeed(IADLXGPUMetricsSupportPtr gpuMetricsSupp
             adlx_int memoryClock = 0;
             res = gpuMetrics->GPUVRAMClockSpeed(&memoryClock);
             if (ADLX_SUCCEEDED(res))
-                m_dynamicInfo.gpuMemoryClock = memoryClock;
+                m_dynamicInfo.gpuVramClockSpeed = memoryClock;
         }
     }
 }
 
-// Show GPU temperature(°C)
+// Show GPU temperature(ï¿½C)
 void AdlxManager::ShowGPUTemperature(IADLXGPUMetricsSupportPtr gpuMetricsSupport, IADLXGPUMetricsPtr gpuMetrics)
 {
     adlx_bool supported = false;
@@ -402,7 +452,7 @@ void AdlxManager::ShowGPUTemperature(IADLXGPUMetricsSupportPtr gpuMetricsSupport
     }
 }
 
-// Show GPU hotspot temperature(°C)
+// Show GPU hotspot temperature(ï¿½C)
 void AdlxManager::ShowGPUHotspotTemperature(IADLXGPUMetricsSupportPtr gpuMetricsSupport, IADLXGPUMetricsPtr gpuMetrics)
 {
     adlx_bool supported = false;
@@ -416,7 +466,7 @@ void AdlxManager::ShowGPUHotspotTemperature(IADLXGPUMetricsSupportPtr gpuMetrics
             adlx_double hotspotTemperature = 0;
             res = gpuMetrics->GPUHotspotTemperature(&hotspotTemperature);
             if (ADLX_SUCCEEDED(res))
-                m_dynamicInfo.gpuTemperatureHotspot = hotspotTemperature;
+                m_dynamicInfo.gpuHotspotTemperature = hotspotTemperature;
         }
     }
 }
@@ -435,7 +485,7 @@ void AdlxManager::ShowGPUPower(IADLXGPUMetricsSupportPtr gpuMetricsSupport, IADL
             adlx_double power = 0;
             res = gpuMetrics->GPUPower(&power);
             if (ADLX_SUCCEEDED(res))
-                m_dynamicInfo.gpuGraphicsPower = power;
+                m_dynamicInfo.gpuPower = power;
         }
     }
 }
@@ -473,7 +523,11 @@ void AdlxManager::ShowGPUVRAM(IADLXGPUMetricsSupportPtr gpuMetricsSupport, IADLX
             adlx_int VRAM = 0;
             res = gpuMetrics->GPUVRAM(&VRAM);
             if (ADLX_SUCCEEDED(res))
-                m_dynamicInfo.gpuMemoryUsage = VRAM;
+            {
+                m_dynamicInfo.gpuVramUsed = VRAM;
+                m_dynamicInfo.gpuVramUsage = (static_cast<double>(m_dynamicInfo.gpuVramUsed) / m_staticInfo.memorySize) * 100.0;
+            }
+            
         }
     }
 }
@@ -492,7 +546,46 @@ void AdlxManager::ShowGPUVoltage(IADLXGPUMetricsSupportPtr gpuMetricsSupport, IA
             adlx_int voltage = 0;
             res = gpuMetrics->GPUVoltage(&voltage);
             if (ADLX_SUCCEEDED(res))
-                m_dynamicInfo.gpuGraphicsVoltage = voltage;
+                m_dynamicInfo.gpuVoltage = voltage;
+        }
+    }
+}
+
+// Show GPU Total Board Power(W)
+void AdlxManager::ShowGPUTotalBoardPower(IADLXGPUMetricsSupportPtr gpuMetricsSupport, IADLXGPUMetricsPtr gpuMetrics)
+{
+    adlx_bool supported = false;
+    // Get if the GPU voltage is supported
+    ADLX_RESULT res = gpuMetricsSupport->IsSupportedGPUTotalBoardPower(&supported);
+    if (ADLX_SUCCEEDED(res))
+    {
+        //qDebug() << "Get if the GPU voltage is supported: " << supported;
+        if (supported)
+        {
+            adlx_double power = 0;
+            res = gpuMetrics->GPUTotalBoardPower(&power);
+            if (ADLX_SUCCEEDED(res))
+                m_dynamicInfo.gpuTotalBoardPower = power;
+        }
+    }
+}
+
+// Display GPU intake temperature(in Â°C)
+void AdlxManager::ShowGPUIntakeTemperature (IADLXGPUMetricsSupportPtr gpuMetricsSupport, IADLXGPUMetricsPtr gpuMetrics)
+{
+    adlx_bool supported = false;
+
+    // Display the GPU temperature support status
+    ADLX_RESULT res = gpuMetricsSupport->IsSupportedGPUIntakeTemperature (&supported);
+    if (ADLX_SUCCEEDED (res))
+    {
+        //qDebug() << "GPU intake temperature support status: " << supported;
+        if (supported)
+        {
+            adlx_double temperature = 0;
+            res = gpuMetrics->GPUIntakeTemperature (&temperature);
+            //if (ADLX_SUCCEEDED (res))
+            //    qDebug() << "The GPU intake temperature is: " << temperature << g_degree;
         }
     }
 }

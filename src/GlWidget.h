@@ -22,10 +22,16 @@ signals:
 public slots:
 
 protected:
+    //void mousePressEvent(QMouseEvent* e) override;
+    void mouseReleaseEvent(QMouseEvent* e) override;
+    void timerEvent(QTimerEvent* e) override;
+
     void initializeGL() override;
     void resizeGL(int w, int h) override;
     void paintGL() override;
-    void mouseReleaseEvent(QMouseEvent* event);
+    //void paintEvent(QPaintEvent* event) override;
+
+    //void mouseReleaseEvent(QMouseEvent* event);
     void mouseMoveEvent(QMouseEvent* event);
 
 private:
@@ -50,6 +56,7 @@ private:
 
     void createMatrices(const uint32_t newInstances);
     void animate();
+    void rotateCamera();
 
     std::map<ProgramType, ProgramInfo> m_programs;
 
@@ -59,7 +66,7 @@ private:
     double m_aspectRatio{ 1.0 };
     uint16_t m_windowSizeX{ 800 };
     uint16_t m_windowSizeY{ 600 };
-    QVector3D m_cameraPosition{ 0.0f, 0.0f, -60.0f };
+    QVector3D m_cameraPosition{ 0.0f, 10.0f, -70.0f };
     QPoint m_mousePosition{ 0,0 };
 
     //QOpenGLShader* m_shader{ nullptr };
@@ -69,7 +76,8 @@ private:
     QOpenGLPaintDevice* m_device{ nullptr };
 
     QMatrix4x4 m_cameraMatrix;
-    float m_angle{ 0 };
+    float m_objectRotationAngle{ 0 };
+    float m_cameraRotationAngle{ 0 };
     std::vector<QMatrix4x4> m_instancesMatrix;
     const uint32_t m_initialInstanceCount{ 20000 };
     uint32_t m_newInstancesPerTick{ 0 };
@@ -77,7 +85,7 @@ private:
     QOpenGLVertexArrayObject m_instancesVao;
     //GLint m_matrixUniform{ 0 }
 
-    QElapsedTimer* m_timer{ nullptr };
+    QElapsedTimer* m_elapsedTimer{ nullptr };
     QTimer* m_repaintTimer{ nullptr };
     uint32_t m_frameCount{ 0 };
     uint32_t m_fps{ 0 };

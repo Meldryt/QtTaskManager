@@ -56,22 +56,23 @@ public:
 
     struct GpuDynamicInfo
     {
-        uint16_t gpuGraphicsClock{ 0 }; // Current graphic clock value in MHz
-        uint16_t gpuMemoryClock{ 0 }; // Current memory clock value in MHz
+        double gpuUsage{ 0 }; // Current graphic activity level in percentage
+        double gpuVramUsage{ 0 }; // Current memory activity level in percentage
 
-        double gpuGraphicsUsage{ 0 }; // Current graphic activity level in percentage
-        uint8_t gpuMemoryUsage{ 0 }; // Current memory activity level in percentage
+        uint16_t gpuClockSpeed{ 0 }; // Current graphic clock value in MHz
+        uint16_t gpuVramClockSpeed{ 0 }; // Current memory clock value in MHz
 
-        uint16_t gpuGraphicsVoltage{ 0 }; // Current graphic voltage in mV
-        uint16_t gpuMemoryVoltage{ 0 }; // Current memory voltage in mV
-        double gpuGraphicsPower{ 0 }; //in Watt
-        double gpuAsicPower{ 0 }; //in Watt
+        uint16_t gpuVramUsed{ 0 };
+
+        double gpuPower{ 0 }; //in Watt
+        double gpuTotalBoardPower{ 0 }; //in Watt
+        uint16_t gpuVoltage{ 0 }; // Current graphic voltage in mV
 
         double gpuTemperature{ 0 };
-        double gpuTemperatureHotspot{ 0 }; // Current center of the die temperature value in C
+        double gpuHotspotTemperature{ 0 }; // Current center of the die temperature value in C
 
         uint16_t gpuFanSpeed{ 0 }; // Current fan RPM value
-        uint8_t gpuFanSpeedPercent{ 0 }; // Current ratio of fan RPM and max RPM
+        uint8_t gpuFanSpeedUsage{ 0 }; // Current ratio of fan RPM and max RPM
     };
 
     struct MemoryStaticInfo

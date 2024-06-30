@@ -11,8 +11,8 @@
 
 ProcessInfo::ProcessInfo()
 {
-    elapsedTimer = new QElapsedTimer();
-    elapsedTimer->start();
+    m_elapsedTimer = new QElapsedTimer();
+    m_elapsedTimer->start();
 }
 
 void ProcessInfo::setProcessorCount(uint8_t newProcessorCount)
@@ -83,7 +83,7 @@ void ProcessInfo::updateProcessesUsage()
 
         process->second.usedVirtualMemory = pmc.PrivateUsage;
         process->second.usedPhysicalMemory = pmc.WorkingSetSize;
-        process->second.timestamp = int64_t(elapsedTimer->elapsed() * 1000);
+        process->second.timestamp = int64_t(m_elapsedTimer->elapsed() * 1000);
         updateProcessUsage(processHandle, process->second);
 
         CloseHandle(processHandle);

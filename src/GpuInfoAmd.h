@@ -11,7 +11,7 @@ public:
 
     const Globals::GpuStaticInfo& staticInfo() const
     {
-        return m_adlxManager->staticInfo();
+        return m_staticInfo;
     }
 
     const Globals::GpuDynamicInfo& dynamicInfo() const
@@ -27,4 +27,6 @@ private:
     void initAgs();
 
     AdlxManager* m_adlxManager{ nullptr };
+
+    Globals::GpuStaticInfo m_staticInfo;
 };

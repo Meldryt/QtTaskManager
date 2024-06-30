@@ -196,24 +196,12 @@ namespace cube
 
 GlWidget::GlWidget(QWidget *parent)
 {
-    //QSurfaceFormat format;
-    //format.setDepthBufferSize(24);
-    //format.setStencilBufferSize(8);
-    //format.setVersion(4, 6);
-    //format.setProfile(QSurfaceFormat::CoreProfile);
-    //format.setRenderableType(QSurfaceFormat::OpenGL);
-    //format.setAlphaBufferSize(8);
-    ////format.setSwapBehavior(QSurfaceFormat::TripleBuffer);
-    ////format.setSwapInterval(1);
-    //format.setSwapInterval(0);
-    //setFormat(format);
-    //setUpdateBehavior(QOpenGlWidget::UpdateBehavior::NoPartialUpdate);
+    setWindowTitle("OpenGl Benchmark");
 
-    m_timer = new QElapsedTimer();
-    //elapsed = 0;
     setFixedSize(m_windowSizeX, m_windowSizeY);
     setMouseTracking(true); //trigger mouse move events, even if no button is pressed
 
+    m_elapsedTimer = new QElapsedTimer();
     m_repaintTimer = new QTimer(this);
     QObject::connect(m_repaintTimer, SIGNAL(timeout()), this, SLOT(update()));
 }
@@ -378,6 +366,12 @@ void GlWidget::createProgramCubes()
     }
 }
 
+//void GlWidget::paintEvent(QPaintEvent* event)
+//{
+//    paintGL();
+//}
+
+
 void GlWidget::initializeGL()
 {
     initializeOpenGLFunctions();
@@ -407,8 +401,10 @@ void GlWidget::initializeGL()
 
     createProgramCubes();
 
-    m_timer->start();
-    m_repaintTimer->start(1000.0/60.0);
+    m_elapsedTimer->start();
+    double targetFrametime = 1000.0 / 120.0; //1000.0 / 120.0;
+    m_repaintTimer->start(targetFrametime);
+    //m_repaintTimer->start();
 }
 
 void GlWidget::resizeGL(int w, int h)
@@ -420,6 +416,7 @@ void GlWidget::resizeGL(int w, int h)
 void GlWidget::paintGL()
 {
     animate();
+    rotateCamera();
 
     // this function is called for every frame to be rendered on screen
     const qreal retinaScale = devicePixelRatio(); // needed for Macs with retina display
@@ -435,13 +432,13 @@ void GlWidget::paintGL()
 
     drawProgram(ProgramType_Cubes);
 
-    const double elapsed = m_timer->nsecsElapsed() * 0.000000001;
+    const double elapsed = m_elapsedTimer->nsecsElapsed() * 0.000000001;
     if (elapsed >= 1.0)
     {
         m_fps = std::round(m_frameCount / elapsed);
         emit fpsUpdated(m_fps);    
         m_frameCount = 0;
-        m_timer->restart();
+        m_elapsedTimer->restart();
    
         //uint32_t newInstances = m_newInstancesPerTick;// (m_instancesMatrix.size() * m_instancesMatrix.size()) - m_instancesMatrix.size();
         //createMatrices(newInstances);
@@ -464,6 +461,8 @@ void GlWidget::drawProgram(ProgramType type)
         }
 
         m_programs[type].vao.bind();
+
+        m_programs[type].program->setUniformValue("cameraMatrix", m_cameraMatrix);
 
         m_instanceBuffer.bind();
         m_instanceBuffer.allocate(m_instancesMatrix.data(), m_instancesMatrix.size() * sizeof(m_instancesMatrix[0]));
@@ -493,6 +492,11 @@ void GlWidget::mouseMoveEvent(QMouseEvent* event)
     m_mousePosition = event->pos();
 }
 
+void GlWidget::timerEvent(QTimerEvent* e)
+{
+    update();
+}
+
 void GlWidget::createMatrices(const uint32_t newInstances)
 {
     float scale = 2.0f;
@@ -514,11 +518,17 @@ void GlWidget::createMatrices(const uint32_t newInstances)
 
 void GlWidget::animate()
 {
-    m_angle = 0.4f;
+    m_objectRotationAngle = 0.4f;
     for (uint32_t i = 0; i < m_instancesMatrix.size(); ++i)
     {
         //m_instancesMatrix[i].setToIdentity();
         //m_instancesMatrix[i].translate(i* 2.0f, 0.0f, 0.0f);
-        m_instancesMatrix[i].rotate(m_angle, QVector3D(0.0, 1.0, 0.0));
+        m_instancesMatrix[i].rotate(m_objectRotationAngle, QVector3D(0.0, 1.0, 0.0));
     }  
+}
+
+void GlWidget::rotateCamera()
+{
+    m_cameraRotationAngle = -0.001f;
+    m_cameraMatrix.rotate(m_objectRotationAngle, QVector3D(0.0, 1.0, 0.0));
 }

@@ -8,92 +8,89 @@
 
 TabProcesses::TabProcesses(QWidget *parent) : QWidget(parent)
 {
-    tableProcesses = new QTableWidget(this);
-    tableProcesses->setColumnCount(5);
-    QStringList headerNames;
-    headerNames << "Name" << "FileName" << "FilePath" << "Memory Usage" << "Cpu Usage" << "Disk Usage" << "Network Usage" << "GPU Usage";
-    tableProcesses->setHorizontalHeaderLabels(headerNames);
-    tableProcesses->verticalHeader()->hide();
-    tableProcesses->setColumnWidth(0,200);
-    tableProcesses->setColumnWidth(1,200);
-    tableProcesses->setColumnWidth(2,200);
-    tableProcesses->setWordWrap(false);
-    tableProcesses->insertRow(0);
+    m_tableProcesses = new QTableWidget(this);
+    m_tableProcesses->setColumnCount(TableHeaderNames.size());
 
-    for(uint8_t colIndex = 0; colIndex < headerNames.count(); ++colIndex)
+    m_tableProcesses->setHorizontalHeaderLabels(TableHeaderNames);
+    m_tableProcesses->verticalHeader()->hide();
+    m_tableProcesses->setColumnWidth(0,200);
+    m_tableProcesses->setColumnWidth(1,200);
+    m_tableProcesses->setColumnWidth(2,200);
+    m_tableProcesses->setWordWrap(false);
+    m_tableProcesses->insertRow(0);
+
+    for(uint8_t colIndex = 0; colIndex < TableHeaderNames.count(); ++colIndex)
     {
-        tableProcesses->setItem(0,colIndex, new QTableWidgetItem());
+        m_tableProcesses->setItem(0,colIndex, new QTableWidgetItem());
     }
-    tableProcesses->item(0,0)->setText("Total");
-    //QTreeWidget* treeWidget = new QTreeWidget();
-    //treeWidget->horizontalScrollBar()->hide();
-    //treeWidget->horizontalScrollBar()->setDisabled(true);
-    //treeWidget->setHeaderHidden(true);
-    //treeWidget->setColumnCount(2);
-    //tableProcesses->setCellWidget(0, 1, treeWidget);
-    //auto widget = dynamic_cast<QTreeWidget*>(tableProcesses->cellWidget(0, 5));
-//    QTreeWidgetItem* topLevel = new QTreeWidgetItem();
-//    topLevel->setText(0, "A");
-//    QTreeWidgetItem* child = new QTreeWidgetItem();
-//    child->setText(0, "B");
-//    treeWidget->addTopLevelItem(topLevel);
-//    topLevel->addChild(child);
-//    //treeWidget->setFixedSize(200,200);
-//    tableProcesses->setCellWidget(0, 1, treeWidget);
-//    tableProcesses->setRowHeight(0, 100);
-    //connect(processDatabase, &ProcessDatabase::receivedProcessList, this, &TabProcesses::updateTable);
+    m_tableProcesses->item(0,0)->setText("Total");
 
-    connect(tableProcesses->horizontalHeader(), &QHeaderView::sectionPressed, this, &TabProcesses::setSortMode);
+    connect(m_tableProcesses->horizontalHeader(), &QHeaderView::sectionPressed, this, &TabProcesses::setSortMode);
 
     QGridLayout *layout = new QGridLayout(this);
-    layout->addWidget(tableProcesses,0,0);
+    layout->addWidget(m_tableProcesses,0,0);
 
-    timer = new QTimer(this);
-    timer->setInterval(500);
-    connect(timer, &QTimer::timeout, this, &TabProcesses::process);
-    timer->start();
+    m_timer = new QTimer(this);
+    m_timer->setInterval(500);
+    connect(m_timer, &QTimer::timeout, this, &TabProcesses::process);
+    
+    m_timer->start();
 }
 
 void TabProcesses::process()
 {
+    QElapsedTimer elapsedTimer;
+    qint64 elapsedTime;
+    elapsedTimer.start();
+
+    setUpdatesEnabled(false);
+
     updateTable();
     updateTotalInfo();
-
     sortTable();
+
+    setUpdatesEnabled(true);
+
+    elapsedTime = elapsedTimer.nsecsElapsed() / 1000000;
+
+    if (elapsedTime >= 10)
+    {
+        qDebug() << "TabProcesses::process(): " << elapsedTime << " ms";
+    }  
 }
 
 void TabProcesses::updateTable()
 {
-    if(processList.size() < tableProcesses->rowCount()-1)
+    if(m_processList.size() < m_tableProcesses->rowCount()-1)
     {
-        tableProcesses->setRowCount(processList.size()+1);
+        m_tableProcesses->setRowCount(static_cast<int>(m_processList.size()+1));
     }
 
 
-    for(uint32_t index = 0; index < processList.size(); ++index)
+    for(uint32_t index = 0; index < m_processList.size(); ++index)
     {
-        ProcessInfo::Process process = processList.at(index);
+        ProcessInfo::Process process = m_processList.at(index);
 
         bool newRow{false};
         uint8_t tableRow = index + 1;
-        if(tableProcesses->rowCount()-1 < tableRow)
+        if(m_tableProcesses->rowCount()-1 < tableRow)
         {
-            tableProcesses->insertRow(tableRow);
-            for(uint8_t colIndex = 0; colIndex < tableProcesses->columnCount(); ++colIndex)
+            m_tableProcesses->insertRow(tableRow);
+            for(uint8_t colIndex = 0; colIndex < m_tableProcesses->columnCount(); ++colIndex)
             {
-                tableProcesses->setItem(tableRow, colIndex, new QTableWidgetItem());
+                m_tableProcesses->setItem(tableRow, colIndex, new QTableWidgetItem());
             }
             newRow = true;
         }
-        if(newRow || tableProcesses->item(tableRow, 0)->text() != process.description.c_str())
+        if(newRow || m_tableProcesses->item(tableRow, 0)->text() != process.description.c_str())
         {
-            tableProcesses->item(tableRow, 0)->setText(process.description.c_str());
-            tableProcesses->item(tableRow, 1)->setText(process.baseName.c_str());
-            tableProcesses->item(tableRow, 2)->setText(process.filePath.c_str());
+            m_tableProcesses->item(tableRow, 0)->setText(process.description.c_str());
+            m_tableProcesses->item(tableRow, 1)->setText(process.baseName.c_str());
+            m_tableProcesses->item(tableRow, 2)->setText(process.filePath.c_str());
         }
         uint64_t usedPhysicalMemory = (process.usedPhysicalMemory)/(1024*1024);
-        tableProcesses->item(tableRow, 3)->setText(QString::number(usedPhysicalMemory) + " MB");
-        tableProcesses->item(tableRow, 4)->setText(QString::number(process.usedCpuLoad, 'f', 2) + " %");
+        m_tableProcesses->item(tableRow, 3)->setText(QString::number(usedPhysicalMemory) + " MB");
+        m_tableProcesses->item(tableRow, 4)->setText(QString::number(process.usedCpuLoad, 'f', 2) + " %");
         //uint64_t usedVirtualMemory = (process.usedVirtualMemory)/(1024*1024);
         //tableProcesses->setItem(tableRow, 4, new QTableWidgetItem(QString::number(usedVirtualMemory) + " MB"));
     }
@@ -136,14 +133,14 @@ void TabProcesses::slotProcesses(const std::map<uint32_t, ProcessInfo::Process>&
 
     while (process != std::end(processMap))
     {
-        auto it = std::find_if(processList.begin(), processList.end(), [process](const ProcessInfo::Process& processInfo)
+        auto it = std::find_if(m_processList.begin(), m_processList.end(), [process](const ProcessInfo::Process& processInfo)
         {
             return (process->second.processID == processInfo.processID);
         });
 
-        if(it == processList.end())
+        if(it == m_processList.end())
         {
-            processList.push_back(process->second);
+            m_processList.push_back(process->second);
             changed = true;
         }
         else
@@ -158,11 +155,11 @@ void TabProcesses::slotProcesses(const std::map<uint32_t, ProcessInfo::Process>&
         ++index;
     }
 
-    for(auto it = std::begin(processList); it != std::end(processList); )
+    for(auto it = std::begin(m_processList); it != std::end(m_processList); )
     {
         if(it->timestamp+1 < currTime)
         {
-            it = processList.erase(it);
+            it = m_processList.erase(it);
             changed = true;
         }
         else
@@ -176,7 +173,7 @@ void TabProcesses::slotProcesses(const std::map<uint32_t, ProcessInfo::Process>&
 
 void TabProcesses::sortTable()
 {
-    switch(sortMode)
+    switch(m_sortMode)
     {
     case SortMode::SortProcessName:
         sortNames();
@@ -201,32 +198,32 @@ void TabProcesses::setSortMode(int headerIndex)
 {
     if(headerIndex == 0)
     {
-        sortMode = SortMode::SortProcessName;
+        m_sortMode = SortMode::SortProcessName;
     }
     else if(headerIndex == 1)
     {
-        sortMode = SortMode::SortFileName;
+        m_sortMode = SortMode::SortFileName;
     }
     else if(headerIndex == 3)
     {
-        if(sortMode == SortMode::SortMemoryUsageHigh)
+        if(m_sortMode == SortMode::SortMemoryUsageHigh)
         {
-            sortMode = SortMode::SortMemoryUsageLow;
+            m_sortMode = SortMode::SortMemoryUsageLow;
         }
         else
         {
-            sortMode = SortMode::SortMemoryUsageHigh;
+            m_sortMode = SortMode::SortMemoryUsageHigh;
         }
     }
     else if(headerIndex == 4)
     {
-        if(sortMode == SortMode::SortCpuUsageHigh)
+        if(m_sortMode == SortMode::SortCpuUsageHigh)
         {
-            sortMode = SortMode::SortCpuUsageLow;
+            m_sortMode = SortMode::SortCpuUsageLow;
         }
         else
         {
-            sortMode = SortMode::SortCpuUsageHigh;
+            m_sortMode = SortMode::SortCpuUsageHigh;
         }
     }
 
@@ -301,34 +298,34 @@ bool compareCpuLower(const ProcessInfo::Process& first, const ProcessInfo::Proce
 
 void TabProcesses::sortNames()
 {
-    std::sort(processList.begin(),processList.end(),compareNames);
+    std::sort(m_processList.begin(),m_processList.end(),compareNames);
 }
 
 void TabProcesses::sortFileNames()
 {
-    std::sort(processList.begin(),processList.end(),compareFileNames);
+    std::sort(m_processList.begin(),m_processList.end(),compareFileNames);
 }
 
 void TabProcesses::sortMemoryUsage()
 {
-    if(sortMode == SortMode::SortMemoryUsageHigh)
+    if(m_sortMode == SortMode::SortMemoryUsageHigh)
     {
-        std::sort(processList.begin(),processList.end(),compareMemoryHigher);
+        std::sort(m_processList.begin(),m_processList.end(),compareMemoryHigher);
     }
-    else if(sortMode == SortMode::SortMemoryUsageLow)
+    else if(m_sortMode == SortMode::SortMemoryUsageLow)
     {
-        std::sort(processList.begin(),processList.end(),compareMemoryLower);
+        std::sort(m_processList.begin(),m_processList.end(),compareMemoryLower);
     }
 }
 
 void TabProcesses::sortCpuUsage()
 {
-    if(sortMode == SortMode::SortCpuUsageHigh)
+    if(m_sortMode == SortMode::SortCpuUsageHigh)
     {
-        std::sort(processList.begin(),processList.end(),compareCpuHigher);
+        std::sort(m_processList.begin(),m_processList.end(),compareCpuHigher);
     }
-    else if(sortMode == SortMode::SortCpuUsageLow)
+    else if(m_sortMode == SortMode::SortCpuUsageLow)
     {
-        std::sort(processList.begin(),processList.end(),compareCpuLower);
+        std::sort(m_processList.begin(),m_processList.end(),compareCpuLower);
     }
 }

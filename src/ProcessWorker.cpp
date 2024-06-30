@@ -38,7 +38,7 @@ void ProcessWorker::update()
         m_finished = true;
     }
 
-    qDebug() << "ProcessWorker::update(): " << elapsedTime;
+    //qDebug() << "ProcessWorker::update(): " << elapsedTime;
 }
 
 void ProcessWorker::slotProcessorCount(uint8_t newProcessorCount)

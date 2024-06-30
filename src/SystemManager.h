@@ -3,6 +3,8 @@
 #include "TabHardware.h"
 #include "TabPerformance.h"
 #include "TabProcesses.h"
+#include "TabBenchmark.h"
+
 #include "Worker.h"
 
 #include <QTabWidget>
@@ -28,6 +30,7 @@ private:
     TabHardware* m_tabHardware{nullptr};
     TabProcesses* m_tabProcesses{nullptr};
     TabPerformance* m_tabPerformance{nullptr};
+    TabBenchmark* m_tabBenchmark{ nullptr };
     QDockWidget* m_dockWidget{ nullptr };
     std::vector<QThread*> m_workerThreads;
     std::vector<Worker*> m_worker;

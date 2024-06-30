@@ -53,7 +53,9 @@ private:
     void ShowGPUFanSpeed(IADLXGPUMetricsSupportPtr gpuMetricsSupport, IADLXGPUMetricsPtr gpuMetrics);
     void ShowGPUVRAM(IADLXGPUMetricsSupportPtr gpuMetricsSupport, IADLXGPUMetricsPtr gpuMetrics);
     void ShowGPUVoltage(IADLXGPUMetricsSupportPtr gpuMetricsSupport, IADLXGPUMetricsPtr gpuMetrics);
-
+    void ShowGPUTotalBoardPower(IADLXGPUMetricsSupportPtr gpuMetricsSupport, IADLXGPUMetricsPtr gpuMetrics);
+    void ShowGPUIntakeTemperature(IADLXGPUMetricsSupportPtr gpuMetricsSupport, IADLXGPUMetricsPtr gpuMetrics);
+    
     const std::map<uint32_t, std::string> MapVendorIdName = {
         {0x1002, "AMD"},
         {0x10DE, "NVIDIA"},
@@ -82,9 +84,11 @@ private:
     Globals::GpuStaticInfo m_staticInfo;
     Globals::GpuDynamicInfo m_dynamicInfo;
 
-    // ASCII °
+    // ASCII ï¿½
     static const signed char g_degree = 248;
 
     IADLXGPUPtr m_oneGPU{ nullptr };
     IADLXPerformanceMonitoringServicesPtr m_perfMonitoringService{ nullptr };
+
+    bool m_initialized{ false };
 };
