@@ -13,6 +13,6 @@ nvapi : https://github.com/NVIDIA/nvapi
 optional:
 RyzenMasterMonitoringSDK : https://www.amd.com/de/developer/ryzen-master-monitoring-sdk.html
 
-![Screenshot](img/screenshot1.png)
+![Screenshot](img/screenshot1.PNG)
 
-![Screenshot](img/screenshot2.png)
+![Screenshot](img/screenshot2.PNG)
