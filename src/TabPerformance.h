@@ -2,11 +2,9 @@
 
 #include <QWidget>
 #include <QListWidget>
-//#include <QLineSeries>
 #include <QtCharts/QChart>
 #include <QtCharts/QLineSeries>
 #include <QtCharts/QChartView>
-#include <QTimer>
 #include <QLabel>
 #include <QComboBox>
 #include <QTableWidget>
@@ -15,12 +13,13 @@
 #include <QGraphicsLayout>
 
 #include "Globals.h"
-//#include "GpuBenchmarkWidget.h"
 
 class TabPerformance : public QWidget
 {
 public:
     explicit TabPerformance(QWidget *parent = nullptr);
+
+    void process();
 
 private:
     void initCpuWidgets();
@@ -31,7 +30,6 @@ private:
 
     void updateCpuMultiGraphs(const Globals::CpuDynamicInfo& dynamicInfo);
 
-    void process();
     void processCpu();
     void processGpu();
     void processMemory();
@@ -86,8 +84,6 @@ private:
 
     QListWidget* m_listWidget{nullptr};
 
-    //GpuBenchmarkWidget* m_gpuBenchmarkWidget{ nullptr };
-
     //cpu
     QWidget* m_cpuWidget{nullptr};
     QTableWidget* m_cpuTableWidget{ nullptr };
@@ -140,8 +136,6 @@ private:
     QComboBox* m_gpuComboBoxActiveGraph{ nullptr };
     std::map<int, GraphInfo*> m_gpuGraphs;
     std::map<int, QString> m_gpuTableInfos;
-
-    QTimer* timer{nullptr};
 
     double m_cpuTotalLoad{0.0};
 

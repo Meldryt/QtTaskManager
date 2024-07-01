@@ -14,10 +14,12 @@ TabBenchmark::TabBenchmark(QWidget *parent) : QWidget(parent)
 
 void TabBenchmark::slotOpenBenchmarkWindow()
 {
-    m_glWidget = new GlWidget();
-    m_glWidget->resize(800, 600);
-    QRect widgetRect = this->geometry();
-    widgetRect.moveTopLeft(this->mapToGlobal(widgetRect.topRight()));
-    m_glWidget->move(widgetRect.x() + 20, widgetRect.y());
-    m_glWidget->show(); 
+    //m_glWidget = new GlWidget();
+    //QRect widgetRect = this->geometry();
+    //widgetRect.moveTopLeft(this->mapToGlobal(widgetRect.topRight()));
+    //m_glWidget->move(widgetRect.x() + 20, widgetRect.y());
+    //m_glWidget->show();
+
+    m_glWindow = new GlWindow();
+    m_glWindow->show();
 }

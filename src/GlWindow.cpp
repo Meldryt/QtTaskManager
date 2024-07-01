@@ -1,4 +1,4 @@
-#include "GlWidget.h"
+#include "GlWindow.h"
 #include <QTimer>
 #include <QOpenGLFunctions_4_5_Core>
 #include <QOpenGLFunctions_4_5_Compatibility>
@@ -194,21 +194,20 @@ namespace cube
     };
 }
 
-GlWidget::GlWidget(QWidget *parent)
+GlWindow::GlWindow(QWidget *parent) : QOpenGLWindow()
 {
-    setWindowTitle("OpenGl Benchmark");
-
-    setFixedSize(m_windowSizeX, m_windowSizeY);
-    setMouseTracking(true); //trigger mouse move events, even if no button is pressed
-
     resize(m_windowSizeX, m_windowSizeY);
     m_elapsedTimerFps = new QElapsedTimer();
     m_elapsedTimerDeltaTime = new QElapsedTimer();
     m_repaintTimer = new QTimer(this);
-    QObject::connect(m_repaintTimer, SIGNAL(timeout()), this, SLOT(update()));
+    //QObject::connect(m_repaintTimer, SIGNAL(timeout()), this, SLOT(update()));
+
+    connect(this, &QOpenGLWindow::frameSwapped,
+        this, QOverload<>::of(&QPaintDeviceWindow::update));
+    update();
 }
 
-GlWidget::~GlWidget()
+GlWindow::~GlWindow()
 {
     // Make sure the context is current and then explicitly
     // destroy all underlying OpenGL resources.
@@ -226,7 +225,7 @@ GlWidget::~GlWidget()
     //doneCurrent();
 }
 
-bool GlWidget::createProgram(const std::vector<float>& vertices, const std::vector<uint32_t>& indices, ProgramInfo& programInfo)
+bool GlWindow::createProgram(const std::vector<float>& vertices, const std::vector<uint32_t>& indices, ProgramInfo& programInfo)
 {
     bool hasTexture = false;
     char* vertexShaderSource{ nullptr };
@@ -326,7 +325,7 @@ bool GlWidget::createProgram(const std::vector<float>& vertices, const std::vect
     return true;
 }
 
-void GlWidget::createProgramCubes()
+void GlWindow::createProgramCubes()
 {
     std::vector<float> vertices;
     std::vector<uint32_t> indices;
@@ -368,27 +367,23 @@ void GlWidget::createProgramCubes()
     }
 }
 
-//void GlWidget::paintEvent(QPaintEvent* event)
-//{
-//    paintGL();
-//}
 
-
-void GlWidget::initializeGL()
+void GlWindow::initializeGL()
 {
     initializeOpenGLFunctions();
+
+    //makeCurrent();
 
     glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK);
     glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LESS);
+    //glFrontFace(GL_CCW);
     //glEnable(GL_BLEND);
     //glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
+    
     // Calculate aspect ratio
     m_aspectRatio = m_windowSizeX / m_windowSizeY;
-
-    // Reset projection
-    //m_cameraMatrix.setToIdentity();
 
     const std::string vendor = reinterpret_cast<const char*>(glGetString(GL_VENDOR));
     const std::string renderer = reinterpret_cast<const char*>(glGetString(GL_RENDERER));
@@ -401,6 +396,7 @@ void GlWidget::initializeGL()
     m_instancesMatrix.resize(m_initialInstanceCount);
     createMatrices(m_initialInstanceCount);
 
+    m_cameraMatrix.setToIdentity();
     m_cameraMatrix.perspective(m_fov, m_aspectRatio, m_zNear, m_zFar);
     m_cameraMatrix.lookAt(m_cameraPosition, { 0.0,0.0,0.0 }, { 0.0,1.0,0.0 });
 
@@ -408,22 +404,28 @@ void GlWidget::initializeGL()
 
     m_elapsedTimerFps->start();
     m_elapsedTimerDeltaTime->start();
-    const double targetFrametime = 1000.0 / 120.0; //1000.0 / 120.0;
-    m_repaintTimer->start(targetFrametime);
+    //const double targetFrametime = 1000.0 / 120.0; //1000.0 / 120.0;
+    //m_repaintTimer->start(targetFrametime);
 }
 
-void GlWidget::resizeGL(int w, int h)
+void GlWindow::resizeGL(int w, int h)
 {
-    //m_projection.setToIdentity();
-    //m_projection.perspective(45.0f, w / float(h), 0.01f, 100.0f);
+    m_windowSizeX = w;
+    m_windowSizeY = h;
+    m_aspectRatio = m_windowSizeX / m_windowSizeY;
+    m_cameraMatrix.setToIdentity();
+    m_cameraMatrix.perspective(m_fov, m_aspectRatio, m_zNear, m_zFar);
+    m_cameraMatrix.lookAt(m_cameraPosition, { 0.0,0.0,0.0 }, { 0.0,1.0,0.0 });
+
+    update();
 }
 
-void GlWidget::paintGL()
+void GlWindow::paintGL()
 {
-    const double deltaTime = m_elapsedTimerDeltaTime->restart() * 0.000000001;
+    m_elapsedTimerDeltaTime->start();
 
-    animate(deltaTime);
-    rotateCamera(deltaTime);
+    animate(m_deltaTime);
+    rotateCamera(m_deltaTime);
 
     // this function is called for every frame to be rendered on screen
     const qreal retinaScale = devicePixelRatio(); // needed for Macs with retina display
@@ -446,14 +448,16 @@ void GlWidget::paintGL()
         //uint32_t newInstances = m_newInstancesPerTick;// (m_instancesMatrix.size() * m_instancesMatrix.size()) - m_instancesMatrix.size();
         //createMatrices(newInstances);
 
-        qDebug() << "GlWidget FPS: " << m_fps << " count: " << m_instancesMatrix.size() << " m_newInstancesPerTick: " << m_newInstancesPerTick;
+        qDebug() << "GlWindow FPS: " << m_fps << " deltatime: " << m_deltaTime << " count: " << m_instancesMatrix.size() << " m_newInstancesPerTick: " << m_newInstancesPerTick;
         //m_newInstancesPerTick += 100;
     }
+
+    m_deltaTime = m_elapsedTimerDeltaTime->nsecsElapsed() * 0.000000001;
 
     ++m_frameCount;
 }
 
-void GlWidget::drawProgram(ProgramType type)
+void GlWindow::drawProgram(ProgramType type)
 {
     if (m_programs.find(type) != m_programs.end())
     {
@@ -480,7 +484,7 @@ void GlWidget::drawProgram(ProgramType type)
     }
 }
 
-void GlWidget::mouseReleaseEvent(QMouseEvent* event)
+void GlWindow::mouseReleaseEvent(QMouseEvent* event)
 {
     if(event->button() == Qt::MouseButton::LeftButton)
     {
@@ -490,17 +494,17 @@ void GlWidget::mouseReleaseEvent(QMouseEvent* event)
     }
 }
 
-void GlWidget::mouseMoveEvent(QMouseEvent* event)
+void GlWindow::mouseMoveEvent(QMouseEvent* event)
 {
     m_mousePosition = event->pos();
 }
 
-void GlWidget::timerEvent(QTimerEvent* e)
-{
-    update();
-}
+//void GlWindow::timerEvent(QTimerEvent* e)
+//{
+//    //update();
+//}
 
-void GlWidget::createMatrices(const uint32_t newInstances)
+void GlWindow::createMatrices(const uint32_t newInstances)
 {
     float scale = 2.0f;
     uint32_t x_max = 50;
@@ -519,9 +523,9 @@ void GlWidget::createMatrices(const uint32_t newInstances)
     }
 }
 
-void GlWidget::animate(const double deltaTime)
+void GlWindow::animate(const double deltaTime)
 {
-    m_objectRotationAngle = 500.0f * deltaTime;
+    m_objectRotationAngle = 150.0f * deltaTime;
     for (uint32_t i = 0; i < m_instancesMatrix.size(); ++i)
     {
         //m_instancesMatrix[i].setToIdentity();
@@ -530,8 +534,8 @@ void GlWidget::animate(const double deltaTime)
     }  
 }
 
-void GlWidget::rotateCamera(const double deltaTime)
+void GlWindow::rotateCamera(const double deltaTime)
 {
-    m_cameraRotationAngle = -100.0f * deltaTime;
-    m_cameraMatrix.rotate(m_objectRotationAngle, QVector3D(0.0, 1.0, 0.0));
+    m_cameraRotationAngle = 3.0f * deltaTime;
+    m_cameraMatrix.rotate(m_cameraRotationAngle, QVector3D(0.0, 1.0, 0.0));
 }

@@ -2,7 +2,6 @@
 
 #include <QWidget>
 #include <QTableWidget>
-#include <QTimer>
 
 #include "ProcessInfo.h"
 
@@ -11,8 +10,9 @@ class TabProcesses : public QWidget
 public:
     TabProcesses(QWidget *parent = nullptr);
 
-private:
     void process();
+
+private:
     void updateTable();
     void updateTotalInfo();
 
@@ -47,7 +47,6 @@ private:
     };
 
     QTableWidget* m_tableProcesses{nullptr};
-    QTimer* m_timer{nullptr};
 
     std::vector<ProcessInfo::Process> m_processList;
 

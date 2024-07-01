@@ -59,6 +59,8 @@ set(PROJECT_SOURCES
     src/Worker.cpp
     src/GlWidget.cpp
 	src/GlWidget.h
+    src/GlWindow.cpp
+	src/GlWindow.h
     src/MainWindow.ui
 
     external/ADLX/SDK/ADLXHelper/Windows/Cpp/ADLXHelper.h

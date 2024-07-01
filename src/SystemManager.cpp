@@ -5,6 +5,7 @@
 #include "GpuWorker.h"
 #include "MemoryWorker.h"
 
+#include <QElapsedTimer>
 #include <QDebug>
 
 SystemManager::SystemManager(QWidget* parent) : QTabWidget(parent)
@@ -105,6 +106,11 @@ SystemManager::~SystemManager()
 
 void SystemManager::update()
 {
+    QElapsedTimer elapsedTimer;
+    qint64 elapsedTime;
+
+    elapsedTimer.start();
+
     if (m_staticInfoCpuChanged)
     {
         m_tabHardware->slotCpuStaticInfo(m_staticInfoCpu);
@@ -152,5 +158,11 @@ void SystemManager::update()
         m_dynamicInfoMemoryChanged = false;
     }
 
-    //qDebug() << "SystemManager::update(): ";
+    m_tabHardware->process();
+    m_tabProcesses->process();
+    m_tabPerformance->process();
+
+    elapsedTime = elapsedTimer.nsecsElapsed() * 0.000000001;
+
+    qDebug() << "SystemManager::update(): " << elapsedTime;
 }

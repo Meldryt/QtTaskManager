@@ -1,7 +1,7 @@
 #pragma once
 
 #include <QtOpenGL>
-#include <QOpenGLWidget>
+#include <QOpenGLWindow>
 #include <QMouseEvent>
 #include <QElapsedTimer>
 #include <vector>
@@ -9,12 +9,12 @@
 
 class World;
 
-class GlWidget : public QOpenGLWidget, protected QOpenGLFunctions
+class GlWindow : public QOpenGLWindow, protected QOpenGLFunctions
 {
     Q_OBJECT
 public:
-    GlWidget(QWidget *parent = nullptr);
-    ~GlWidget();
+    GlWindow(QWidget *parent = nullptr);
+    ~GlWindow();
 
 signals:
     void fpsUpdated(uint32_t fps);
@@ -24,7 +24,7 @@ public slots:
 protected:
     //void mousePressEvent(QMouseEvent* e) override;
     void mouseReleaseEvent(QMouseEvent* e) override;
-    void timerEvent(QTimerEvent* e) override;
+    //void timerEvent(QTimerEvent* e) override;
 
     void initializeGL() override;
     void resizeGL(int w, int h) override;
@@ -69,12 +69,6 @@ private:
     QVector3D m_cameraPosition{ 0.0f, 10.0f, -70.0f };
     QPoint m_mousePosition{ 0,0 };
 
-    //QOpenGLShader* m_shader{ nullptr };
-    //QOpenGLTexture* m_texture{ nullptr };
-
-    QOpenGLContext* m_context{ nullptr };
-    QOpenGLPaintDevice* m_device{ nullptr };
-
     QMatrix4x4 m_cameraMatrix;
     float m_objectRotationAngle{ 0 };
     float m_cameraRotationAngle{ 0 };
@@ -90,4 +84,5 @@ private:
     QTimer* m_repaintTimer{ nullptr };
     uint32_t m_frameCount{ 0 };
     uint32_t m_fps{ 0 };
+    double m_deltaTime{ 0.0 };
 };

@@ -2,7 +2,6 @@
 
 #include "GpuInfo.h"
 
-#include <QElapsedTimer>
 #include <QDebug>
 
 GpuWorker::GpuWorker(int timerInterval, QObject* parent)
@@ -27,16 +26,7 @@ void GpuWorker::stop()
 
 void GpuWorker::update()
 { 
-    //QElapsedTimer elapsedTimer;
-    //qint64 elapsedTime;
-
-    //elapsedTimer.start();
-
     m_gpuInfo->update();
-
-    //elapsedTime = elapsedTimer.elapsed();
-
-    //qDebug() << "GpuWorker::update(): " << elapsedTime;
 
     emit signalDynamicInfo(m_gpuInfo->getDynamicInfo());
 }

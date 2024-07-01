@@ -4,7 +4,6 @@
 #include <QListWidget>
 #include <QLabel>
 #include <QTableWidget>
-#include <QTimer>
 
 #include "Globals.h"
 
@@ -13,8 +12,9 @@ class TabHardware : public QWidget
 public:
     explicit TabHardware(QWidget *parent = nullptr);
 
-private:
     void process();
+
+private:
     void processCpu();
     void processGpu();
     void processMemory();

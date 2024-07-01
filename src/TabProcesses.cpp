@@ -29,20 +29,10 @@ TabProcesses::TabProcesses(QWidget *parent) : QWidget(parent)
 
     QGridLayout *layout = new QGridLayout(this);
     layout->addWidget(m_tableProcesses,0,0);
-
-    m_timer = new QTimer(this);
-    m_timer->setInterval(500);
-    connect(m_timer, &QTimer::timeout, this, &TabProcesses::process);
-    
-    m_timer->start();
 }
 
 void TabProcesses::process()
 {
-    QElapsedTimer elapsedTimer;
-    qint64 elapsedTime;
-    elapsedTimer.start();
-
     setUpdatesEnabled(false);
 
     updateTable();
@@ -50,13 +40,6 @@ void TabProcesses::process()
     sortTable();
 
     setUpdatesEnabled(true);
-
-    elapsedTime = elapsedTimer.nsecsElapsed() / 1000000;
-
-    if (elapsedTime >= 10)
-    {
-        qDebug() << "TabProcesses::process(): " << elapsedTime << " ms";
-    }  
 }
 
 void TabProcesses::updateTable()

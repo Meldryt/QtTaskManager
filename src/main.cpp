@@ -3,9 +3,11 @@
 #include <QApplication>
 #include <QSurfaceFormat>
 
+// @note: please run project as admin to work properly!
+
 int main(int argc, char* argv[])
 {
-    //QCoreApplication::setAttribute(Qt::AA_UseDesktopOpenGL);
+    QCoreApplication::setAttribute(Qt::AA_UseDesktopOpenGL);
     QCoreApplication::setAttribute(Qt::AA_ShareOpenGLContexts);
     QSurfaceFormat format = QSurfaceFormat::defaultFormat();
     format.setDepthBufferSize(24);
@@ -16,9 +18,8 @@ int main(int argc, char* argv[])
     format.setAlphaBufferSize(8);
     format.setSamples(16);
     format.setSwapInterval(0); //vsync on = 1, vsync off = 0
-    //format.setSwapBehavior(QSurfaceFormat::TripleBuffer);
+    ////format.setSwapBehavior(QSurfaceFormat::TripleBuffer);
     QSurfaceFormat::setDefaultFormat(format);
-    // @note: please run project as admin to work properly!
 
     QApplication a(argc, argv);
     MainWindow w;

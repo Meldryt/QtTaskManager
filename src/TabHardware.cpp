@@ -82,11 +82,6 @@ TabHardware::TabHardware(QWidget *parent) : QWidget{parent}
 
     connect(m_listWidget,&QListWidget::itemSelectionChanged, this, &TabHardware::showSelectionWidget);
     m_listWidget->setCurrentRow(0);
-
-    m_timer = new QTimer(this);
-    m_timer->setInterval(1000);
-    connect(m_timer, &QTimer::timeout, this, &TabHardware::process);
-    m_timer->start();
 }
 
 void TabHardware::process()

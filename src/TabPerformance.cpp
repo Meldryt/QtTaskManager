@@ -34,11 +34,6 @@ TabPerformance::TabPerformance(QWidget *parent) : QWidget{parent}
     m_listWidget->setCurrentRow(0);
 
     showSelectionWidget();
-
-    timer = new QTimer(this);
-    timer->setInterval(500);
-    connect(timer, &QTimer::timeout, this, &TabPerformance::process);
-    timer->start();
 }
 
 void TabPerformance::initCpuWidgets()
@@ -76,9 +71,6 @@ void TabPerformance::initCpuWidgets()
         m_cpuStackedWidget, &QStackedWidget::setCurrentIndex);
 
     QGridLayout* cpuWidgetLayout = new QGridLayout(m_cpuWidget);
-    //QDockWidget* dockWidget = new QDockWidget("Benchmark", m_cpuWidget);
-    //dockWidget->setFloating(false);
-    //cpuWidgetLayout->addWidget(dockWidget, 0, 0);
     cpuWidgetLayout->addWidget(m_cpuGroupBoxActiveGraph, 0, 1);
     cpuWidgetLayout->addWidget(m_cpuTableWidget, 1, 0);
     cpuWidgetLayout->addWidget(m_cpuStackedWidget, 1, 1);
@@ -125,18 +117,14 @@ void TabPerformance::initGpuWidgets()
     QObject::connect(m_gpuComboBoxActiveGraph, &QComboBox::currentIndexChanged,
         m_gpuStackedWidget, &QStackedWidget::setCurrentIndex);
 
-    //m_gpuBenchmarkWidget = new GpuBenchmarkWidget(m_gpuWidget);
-
     QGridLayout* gpuWidgetLayout = new QGridLayout(m_gpuWidget);
     gpuWidgetLayout->addWidget(m_gpuGroupBoxActiveGraph, 0, 1);
     gpuWidgetLayout->addWidget(m_gpuTableWidget, 1, 0);
     gpuWidgetLayout->addWidget(m_gpuStackedWidget, 1, 1);
-    //gpuWidgetLayout->addWidget(m_gpuBenchmarkWidget, 1, 2);
     gpuWidgetLayout->setRowStretch(0, 1);
     gpuWidgetLayout->setRowStretch(1, 10);
     gpuWidgetLayout->setColumnStretch(0, 1);
     gpuWidgetLayout->setColumnStretch(1, 2);
-    //gpuWidgetLayout->setColumnStretch(2, 2);
     m_gpuWidget->setLayout(gpuWidgetLayout);
 
     initGpuGraphs();
@@ -145,6 +133,7 @@ void TabPerformance::initGpuWidgets()
 void TabPerformance::initMemoryWidgets()
 {
     m_memoryLineSeries = new QLineSeries();
+    m_memoryLineSeries->setUseOpenGL(true);
 
     m_memoryChart = new QChart();
     m_memoryChart->legend()->hide();
@@ -211,10 +200,6 @@ void TabPerformance::initGpuGraphs()
 
 void TabPerformance::process()
 {
-    QElapsedTimer elapsedTimer;
-    qint64 elapsedTime;
-    elapsedTimer.start();
-
     setUpdatesEnabled(false);
 
     processCpu();
@@ -222,20 +207,15 @@ void TabPerformance::process()
     processMemory();
 
     setUpdatesEnabled(true);
-
-    elapsedTime = elapsedTimer.nsecsElapsed() / 1000000;
-
-    if (elapsedTime >= 10)
-    {
-        qDebug() << "TabPerformance::process(): " << elapsedTime << " ms";
-    }
 }
 
 void TabPerformance::processCpu()
 {
     for (int i = 0; i < m_cpuGraphs.size(); ++i)
     {
-        GraphInfo* graphInfo = m_cpuGraphs[i];
+        GraphInfo*& graphInfo = m_cpuGraphs[i];
+        graphInfo->chartView->setUpdatesEnabled(false);
+
         for (int lineSeriesIndex = 0; lineSeriesIndex < graphInfo->lineSeries.size(); ++lineSeriesIndex)
         {
             QLineSeries* lineSeries = graphInfo->lineSeries.at(lineSeriesIndex);
@@ -262,9 +242,11 @@ void TabPerformance::processCpu()
             points.append({ 60.0, currentY });
             lineSeries->replace(points);
         }
+
+        graphInfo->chartView->setUpdatesEnabled(true);
     }
 
-    m_cpuGraphs[m_cpuComboBoxActiveGraph->currentIndex()]->chartView->repaint();
+    //m_cpuGraphs[m_cpuComboBoxActiveGraph->currentIndex()]->chartView->repaint();
 
     for (int i = 0; i < m_cpuTableInfos.size(); ++i)
     {
@@ -277,6 +259,8 @@ void TabPerformance::processGpu()
     for (int i = 0; i < m_gpuGraphs.size(); ++i)
     {
         GraphInfo* graphInfo = m_gpuGraphs[i];
+        graphInfo->chartView->setUpdatesEnabled(false);
+
         for (int lineSeriesIndex = 0; lineSeriesIndex < graphInfo->lineSeries.size(); ++lineSeriesIndex)
         {
             QLineSeries* lineSeries = graphInfo->lineSeries.at(lineSeriesIndex);
@@ -303,9 +287,11 @@ void TabPerformance::processGpu()
             points.append({ 60.0, currentY });
             lineSeries->replace(points);
         }
+
+        graphInfo->chartView->setUpdatesEnabled(true);
     }
 
-    m_gpuGraphs[m_gpuComboBoxActiveGraph->currentIndex()]->chartView->repaint();
+    //m_gpuGraphs[m_gpuComboBoxActiveGraph->currentIndex()]->chartView->repaint();
 
     for (int i = 0; i < m_gpuTableInfos.size(); ++i)
     {
@@ -315,25 +301,25 @@ void TabPerformance::processGpu()
 
 void TabPerformance::processMemory()
 {
-    QList<QPointF> points = m_memoryLineSeries->points();
-    if (!points.empty())
-    {
-        m_memoryLineSeries->clear();
-        for (uint8_t i = 0; i < points.size(); ++i)
-        {
-            points[i].setX(points.at(i).x() - 1);
-        }
-        if (points.first().x() < 0)
-        {
-            points.removeFirst();
-        }
-        m_memoryLineSeries->append(points);
-    }
+    //QList<QPointF> points = m_memoryLineSeries->points();
+    //if (!points.empty())
+    //{
+    //    m_memoryLineSeries->clear();
+    //    for (uint8_t i = 0; i < points.size(); ++i)
+    //    {
+    //        points[i].setX(points.at(i).x() - 1);
+    //    }
+    //    if (points.first().x() < 0)
+    //    {
+    //        points.removeFirst();
+    //    }
+    //    m_memoryLineSeries->append(points);
+    //}
 
-    double x = 60;
-    double y = m_memoryUsedSize;
-    m_memoryLineSeries->append(x, y);
-    m_memoryChartView->repaint();
+    //double x = 60;
+    //double y = m_memoryUsedSize;
+    //m_memoryLineSeries->append(x, y);
+    //m_memoryChartView->repaint();
 }
 
 void TabPerformance::updateCpuMultiGraphs(const Globals::CpuDynamicInfo& dynamicInfo)
@@ -386,6 +372,7 @@ void TabPerformance::updateCpuMultiGraphs(const Globals::CpuDynamicInfo& dynamic
         for (int j = 0; j < m_cpuGraphs[graphIndex]->lineSeries.size(); ++j)
         {
             m_cpuGraphs[graphIndex]->lineSeries[j] = new QLineSeries();
+            m_cpuGraphs[graphIndex]->lineSeries[j]->setUseOpenGL(true);
             m_cpuGraphs[graphIndex]->chart->addSeries(m_cpuGraphs[graphIndex]->lineSeries[j]);
         }
         m_cpuGraphs[graphIndex]->chart->createDefaultAxes();
