@@ -18,6 +18,8 @@
 class ICPUEx;
 class IBIOSEx;
 
+class WmiManager;
+
 class CpuInfo
 {
 public:
@@ -34,11 +36,11 @@ private:
 
     void readSystemInfo();
 
-    bool initWmi();
-    void readStaticInfoWmi();
+    //bool initWmi();
+    //void readStaticInfoWmi();
     void readDynamicInfoWmi();
-    void readWmiFrequency();
-    void readWmiFanSpeed();
+    //void readWmiFrequency();
+    //void readWmiFanSpeed();
     void readThermalZoneTemperature();
 
     void initPdh();
@@ -49,13 +51,10 @@ private:
     void readRyzenDynamicCpuInfo();
     void readRyzenDynamicBiosInfo();
 
-    bool executeQuery(const std::wstring& query);
-    bool executeQueryAsync(const std::wstring& query);
+    //bool executeQuery(const std::wstring& query);
+    //bool executeQueryAsync(const std::wstring& query);
 
-    //template <typename T>
-    //std::vector<T> query(const std::wstring& wmi_class, const std::wstring& field, const std::wstring& filter = L"");
-    std::vector<std::string> query(const std::wstring& wmi_class, const std::wstring& field, const std::wstring& filter = L"", const ULONG count = 1);
-    void queryAsync(const std::wstring& wmi_class, const std::wstring& field, const std::wstring& filter = L"", const ULONG count = 1);
+
 
     void fetchStaticInfoLinux();
     void fetchDynamicInfo();
@@ -82,11 +81,6 @@ private:
 
     PDH_HQUERY m_cpuQueryPerformance;
     PDH_HCOUNTER m_cpuPerformanceCounter;
-    
-    //wmi
-    IWbemLocator* locator{ nullptr };
-    IWbemServices* service{ nullptr };
-    IEnumWbemClassObject* enumerator{ nullptr };
 
     //amd ryzen master sdk
     ICPUEx* m_amdCpuDevice{ nullptr };
@@ -95,8 +89,8 @@ private:
     bool m_useRyzenCpuParameters{ false };
 
     bool m_useWmi{ false };
-    bool m_isWmiFrequencyInfoAvailable{ false };
-    bool m_isWmiFanInfoAvailable{ false };
+
+    WmiManager* m_wmiManager{ nullptr };
 
 #else
 

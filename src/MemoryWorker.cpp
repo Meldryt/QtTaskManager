@@ -1,9 +1,5 @@
 #include "MemoryWorker.h"
-
 #include "MemoryInfo.h"
-
-#include <QElapsedTimer>
-#include <QDebug>
 
 MemoryWorker::MemoryWorker(int timerInterval, QObject* parent)
     : Worker{ timerInterval, parent }
@@ -27,16 +23,7 @@ void MemoryWorker::stop()
 
 void MemoryWorker::update()
 { 
-    //QElapsedTimer elapsedTimer;
-    //qint64 elapsedTime;
-
-    //elapsedTimer.start();
-
     m_memoryInfo->update();
-
-    //elapsedTime = elapsedTimer.elapsed();
-
-    //qDebug() << "MemoryWorker::update(): " << elapsedTime;
 
     emit signalDynamicInfo(m_memoryInfo->getDynamicInfo());
 }

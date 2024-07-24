@@ -19,9 +19,6 @@ signals:
     void stopped();
     void finished();
 
-protected:
-    bool m_finished{ true };
-
 private:
     QTimer* m_timer{nullptr};
 };

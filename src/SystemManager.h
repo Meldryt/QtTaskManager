@@ -10,7 +10,6 @@
 #include <QTabWidget>
 #include <QThread>
 #include <QTimer>
-#include <QDockWidget>
 
 class ProcessWorker;
 class CpuWorker;
@@ -31,7 +30,6 @@ private:
     TabProcesses* m_tabProcesses{nullptr};
     TabPerformance* m_tabPerformance{nullptr};
     TabBenchmark* m_tabBenchmark{ nullptr };
-    QDockWidget* m_dockWidget{ nullptr };
     std::vector<QThread*> m_workerThreads;
     std::vector<Worker*> m_worker;
 

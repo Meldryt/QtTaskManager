@@ -22,23 +22,18 @@ void ProcessWorker::update()
 { 
     QElapsedTimer elapsedTimer;
     qint64 elapsedTime;
+    elapsedTimer.start();
 
-    if (m_finished)
+    m_processInfo->update();
+
+    emit signalDynamicInfo(m_processInfo->getProcessMap());
+
+    elapsedTime = elapsedTimer.nsecsElapsed() * 0.000000001;
+
+    if(elapsedTime > 0)
     {
-        m_finished = false;
-
-        elapsedTimer.start();
-
-        m_processInfo->update();
-
-        elapsedTime = elapsedTimer.elapsed();
-
-        emit signalDynamicInfo(m_processInfo->getProcessMap());
-
-        m_finished = true;
-    }
-
-    //qDebug() << "ProcessWorker::update(): " << elapsedTime;
+        qDebug() << "ProcessWorker::update(): " << elapsedTime;        
+    }  
 }
 
 void ProcessWorker::slotProcessorCount(uint8_t newProcessorCount)

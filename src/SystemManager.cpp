@@ -15,7 +15,6 @@ SystemManager::SystemManager(QWidget* parent) : QTabWidget(parent)
     m_tabPerformance = new TabPerformance(parent);
     m_tabBenchmark = new TabBenchmark(parent);
 
-    //m_dockWidget = new QDockWidget("Benchmark",parent);
     addTab(m_tabProcesses, QString("Processes"));
     addTab(m_tabPerformance, QString("Performance"));
     addTab(m_tabHardware, QString("Hardware"));
@@ -164,5 +163,8 @@ void SystemManager::update()
 
     elapsedTime = elapsedTimer.nsecsElapsed() * 0.000000001;
 
-    qDebug() << "SystemManager::update(): " << elapsedTime;
+    if(elapsedTime > 0)
+    {
+        qDebug() << "SystemManager::update(): " << elapsedTime;        
+    }  
 }

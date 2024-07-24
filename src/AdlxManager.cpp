@@ -190,14 +190,6 @@ void AdlxManager::ShowGPUInfo()
     ret = m_oneGPU->RevisionId(&revisionId);
     qDebug() << "RevisionId: " << revisionId << ", return code is: " << ret << "(0 means success)";
 
-    if (MapVendorIdName.find(subSystemVendorId) != MapVendorIdName.end())
-    {
-        m_staticInfo.cardManufacturer = MapVendorIdName.at(subSystemVendorId);
-    }
-    m_staticInfo.gpuModel = gpuName;
-    m_staticInfo.memorySize = totalVRAM;
-    m_staticInfo.memoryType = vramTypeString;
-
     IADLXGPU1Ptr gpu1(m_oneGPU);
     if (gpu1)
     {
@@ -223,6 +215,14 @@ void AdlxManager::ShowGPUInfo()
         ret = gpu1->PCIBusLaneWidth(&laneWidth);
         qDebug() << "PCIBusLaneWidth: " << laneWidth;
     }
+
+    if (MapVendorIdName.find(subSystemVendorId) != MapVendorIdName.end())
+    {
+        m_staticInfo.cardManufacturer = MapVendorIdName.at(subSystemVendorId);
+    }
+    m_staticInfo.gpuModel = gpuName;
+    m_staticInfo.memorySize = totalVRAM;
+    m_staticInfo.memoryType = vramTypeString;
 }
 
 // Show current all metrics

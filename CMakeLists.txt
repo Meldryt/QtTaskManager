@@ -62,6 +62,8 @@ set(PROJECT_SOURCES
     src/GlWindow.cpp
 	src/GlWindow.h
     src/MainWindow.ui
+    src/WmiManager.h
+    src/WmiManager.cpp
 
     external/ADLX/SDK/ADLXHelper/Windows/Cpp/ADLXHelper.h
     external/ADLX/SDK/ADLXHelper/Windows/Cpp/ADLXHelper.cpp

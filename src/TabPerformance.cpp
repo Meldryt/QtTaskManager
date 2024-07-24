@@ -5,7 +5,6 @@
 #include <QPoint>
 #include <QHeaderView>
 #include <QGraphicsLayout>
-#include <QDockWidget>
 #include <QElapsedTimer>
 
 TabPerformance::TabPerformance(QWidget *parent) : QWidget{parent}

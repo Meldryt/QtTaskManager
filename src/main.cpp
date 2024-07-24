@@ -5,7 +5,7 @@
 
 // @note: please run project as admin to work properly!
 
-int main(int argc, char* argv[])
+void setSurfaceFormat()
 {
     QCoreApplication::setAttribute(Qt::AA_UseDesktopOpenGL);
     QCoreApplication::setAttribute(Qt::AA_ShareOpenGLContexts);
@@ -20,6 +20,11 @@ int main(int argc, char* argv[])
     format.setSwapInterval(0); //vsync on = 1, vsync off = 0
     ////format.setSwapBehavior(QSurfaceFormat::TripleBuffer);
     QSurfaceFormat::setDefaultFormat(format);
+}
+
+int main(int argc, char* argv[])
+{
+    setSurfaceFormat();
 
     QApplication a(argc, argv);
     MainWindow w;
