@@ -16,3 +16,10 @@ RyzenMasterMonitoringSDK : https://www.amd.com/de/developer/ryzen-master-monitor
 ![Screenshot](img/screenshot1.PNG)
 
 ![Screenshot](img/screenshot2.PNG)
+
+
+### todo
+
+- move WmiManager to seperate Worker (non cpu stuff out of CpuInfo)
+- update network speed graph
+- test nvapi code

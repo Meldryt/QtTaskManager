@@ -25,6 +25,8 @@ private:
     void initCpuWidgets();
     void initGpuWidgets();
     void initMemoryWidgets();
+    void initNetworkWidgets();
+
     void initCpuGraphs();
     void initGpuGraphs();
 
@@ -33,6 +35,7 @@ private:
     void processCpu();
     void processGpu();
     void processMemory();
+    void processNetwork();
 
     struct GraphInfo
     {
@@ -146,13 +149,24 @@ private:
     QLineSeries* m_memoryLineSeries{ nullptr };
 
     uint32_t m_memoryTotalSize{ 0 };
-    uint32_t m_memoryUsedSize{ 0 };  
+    uint32_t m_memoryUsedSize{ 0 };
+
+    //network
+    QWidget* m_networkWidget{ nullptr };
+    QChartView* m_networkChartView{ nullptr };
+    QChart* m_networkChart{ nullptr };
+    QLineSeries* m_networkLineSeries{ nullptr };
+
+    uint32_t m_networkTotalSpeed{ 0 };
+    uint32_t m_networkUsedSpeed{ 0 };
 
 public slots:
     void slotCpuDynamicInfo(const Globals::CpuDynamicInfo& dynamicInfo);
     void slotGpuDynamicInfo(const Globals::GpuDynamicInfo& dynamicInfo);
     void slotTotalMemory(const uint32_t& val);
     void slotUsedMemory(const uint32_t& val);
+    void slotTotalNetworkSpeed(const uint32_t& val);
+    void slotUsedNetworkSpeed(const uint32_t& val);
 
 private slots:
     void showSelectionWidget();

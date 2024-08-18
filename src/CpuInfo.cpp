@@ -62,14 +62,14 @@ void CpuInfo::init()
     fetchStaticInfo();
 }
 
-const Globals::CpuStaticInfo& CpuInfo::getStaticInfo() const
+const Globals::CpuStaticInfo& CpuInfo::staticInfo() const
 {
-    return staticInfo;
+    return m_staticInfo;
 }
 
-const Globals::CpuDynamicInfo& CpuInfo::getDynamicInfo() const
+const Globals::CpuDynamicInfo& CpuInfo::dynamicInfo() const
 {
-    return dynamicInfo;
+    return m_dynamicInfo;
 }
 
 void CpuInfo::update()
@@ -83,10 +83,8 @@ void CpuInfo::update()
         readPdhFrequency();
     }
 
-    if (m_useWmi)
-    {
-        readDynamicInfoWmi();
-    }
+    readDynamicInfoWmi();
+
     fetchDynamicInfo();
 }
 
@@ -102,7 +100,7 @@ void CpuInfo::initPdh()
     PdhAddEnglishCounter(totalCPUQuery, sw, 0, &totalCPUCounter);
     PdhCollectQueryData(totalCPUQuery);
 
-    for (uint8_t i = 0; i < staticInfo.processorCount; ++i)
+    for (uint8_t i = 0; i < m_staticInfo.processorCount; ++i)
     {
         PDH_HQUERY singleCPUQuery;
         PDH_HCOUNTER singleCPUCounter;
@@ -119,8 +117,8 @@ void CpuInfo::initPdh()
         singleCPUCounters.push_back(singleCPUCounter);
     }
 
-    dynamicInfo.cpuCoreUsages.resize(staticInfo.processorCount);
-    dynamicInfo.cpuCoreFrequencies.resize(staticInfo.processorCount);
+    m_dynamicInfo.cpuCoreUsages.resize(m_staticInfo.processorCount);
+    m_dynamicInfo.cpuCoreFrequencies.resize(m_staticInfo.processorCount);
     //SYSTEM_INFO siSysInfo;
     //GetNativeSystemInfo(&siSysInfo);
     //m_cpuCount = siSysInfo.dwNumberOfProcessors;
@@ -322,31 +320,31 @@ void CpuInfo::readRyzenDynamicCpuInfo()
         int iRet = m_amdCpuDevice->GetCPUParameters(stData);
         if (!iRet)
         {
-            dynamicInfo.cpuTemperature = stData.dTemperature;
+            m_dynamicInfo.cpuTemperature = stData.dTemperature;
             //dynamicInfo.cpuPower = stData.fVDDCR_VDD_Power;
-            dynamicInfo.cpuPower = stData.fPPTValue;
-            dynamicInfo.cpuSocPower = stData.fVDDCR_SOC_Power;
+            m_dynamicInfo.cpuPower = stData.fPPTValue;
+            m_dynamicInfo.cpuSocPower = stData.fVDDCR_SOC_Power;
             //dynamicInfo.cpuMaxFrequency = stData.fCCLK_Fmax;
 
             double maxFrequency = 0.0;
-            if (dynamicInfo.cpuCoreFrequencies.empty())
+            if (m_dynamicInfo.cpuCoreFrequencies.empty())
             {
-                dynamicInfo.cpuCoreFrequencies.resize(stData.stFreqData.uLength);
+                m_dynamicInfo.cpuCoreFrequencies.resize(stData.stFreqData.uLength);
             }
 
             for (unsigned int i = 0; i < stData.stFreqData.uLength; i++)
             {
                 if (stData.stFreqData.dFreq[i] != 0)
                 {
-                    dynamicInfo.cpuCoreFrequencies[i] = stData.stFreqData.dFreq[i];
-                    if (dynamicInfo.cpuCoreFrequencies[i] > maxFrequency)
+                    m_dynamicInfo.cpuCoreFrequencies[i] = stData.stFreqData.dFreq[i];
+                    if (m_dynamicInfo.cpuCoreFrequencies[i] > maxFrequency)
                     {
-                        maxFrequency = dynamicInfo.cpuCoreFrequencies[i];
+                        maxFrequency = m_dynamicInfo.cpuCoreFrequencies[i];
                     }
                 }
             }
-            staticInfo.baseFrequency = stData.fCCLK_Fmax; //is this correct?
-            dynamicInfo.cpuMaxFrequency = maxFrequency;
+            m_staticInfo.baseFrequency = stData.fCCLK_Fmax; //is this correct?
+            m_dynamicInfo.cpuMaxFrequency = maxFrequency;
             //qDebug() << "stData.fVDDCR_VDD_Power: " << stData.fVDDCR_VDD_Power << " stData.fVDDCR_SOC_Power: " << stData.fVDDCR_SOC_Power; //null
             //qDebug() << " stData.fPPTValue: " << stData.fPPTValue << " stData.fPPTLimit: " << stData.fPPTLimit << " stData.fCCLK_Fmax: " << stData.fCCLK_Fmax << " stData.dPeakSpeed: " << stData.dPeakSpeed;
         }
@@ -426,12 +424,16 @@ void CpuInfo::fetchStaticInfo()
 {
     readSystemInfo();
 
-    if (m_useWmi)
+    //if (m_useWmi)
     {
         m_wmiManager = new WmiManager();
         m_wmiManager->init();
-
-        //readStaticInfoWmi();
+        m_wmiManager->readStaticInfo();
+        
+        if (m_useRyzenCpuParameters)
+        {
+            //m_wmiManager->disableCpuUpdates();
+        }
     }
 
     initPdh();
@@ -484,7 +486,7 @@ void CpuInfo::readSystemInfo()
     }
 
     //string includes manufacturer, model and clockspeed
-    staticInfo.cpuBrand = CPUBrandString;
+    m_staticInfo.cpuBrand = CPUBrandString;
     //qDebug() << "CPU Type: " << staticSystemInfo.cpuBrand.c_str();
 
     //SYSTEM_INFO sysInfo;
@@ -551,14 +553,14 @@ void CpuInfo::readSystemInfo()
         }
     }
 
-    staticInfo.processorCount = processorCoreCount;
-    staticInfo.threadCount = logicalProcessorCount;
-    staticInfo.l1CacheSize = processorL1CacheSize/1024;
-    staticInfo.l2CacheSize = processorL2CacheSize/1024;
-    staticInfo.l3CacheSize = processorL3CacheSize/1024;
+    m_staticInfo.processorCount = processorCoreCount;
+    m_staticInfo.threadCount = logicalProcessorCount;
+    m_staticInfo.l1CacheSize = processorL1CacheSize/1024;
+    m_staticInfo.l2CacheSize = processorL2CacheSize/1024;
+    m_staticInfo.l3CacheSize = processorL3CacheSize/1024;
 
-    dynamicInfo.cpuThreadFrequencies.resize(logicalProcessorCount);
-    dynamicInfo.cpuThreadUsages.resize(logicalProcessorCount);
+    m_dynamicInfo.cpuThreadFrequencies.resize(logicalProcessorCount);
+    m_dynamicInfo.cpuThreadUsages.resize(logicalProcessorCount);
 }
 #else
 void CpuInfo::fetchStaticInfoLinux()
@@ -588,13 +590,13 @@ void CpuInfo::fetchDynamicInfoWindows()
     PDH_FMT_COUNTERVALUE counterVal;
     PdhCollectQueryData(totalCPUQuery);
     PdhGetFormattedCounterValue(totalCPUCounter, PDH_FMT_DOUBLE, NULL, &counterVal);
-    dynamicInfo.cpuTotalUsage = counterVal.doubleValue;
+    m_dynamicInfo.cpuTotalUsage = counterVal.doubleValue;
 
-    for(uint8_t i=0;i<staticInfo.processorCount;++i)
+    for(uint8_t i=0;i< m_staticInfo.processorCount;++i)
     {
         PdhCollectQueryData(singleCPUQueries[i]);
         PdhGetFormattedCounterValue(singleCPUCounters[i], PDH_FMT_DOUBLE, NULL, &counterVal);
-        dynamicInfo.cpuCoreUsages[i] = counterVal.doubleValue;
+        m_dynamicInfo.cpuCoreUsages[i] = counterVal.doubleValue;
     }
 }
 #else
@@ -614,7 +616,7 @@ void CpuInfo::readPdhBaseFrequency()
         if (PdhGetRawCounterValue(m_cpuFreqCounter, &cntType, &cnt) == ERROR_SUCCESS &&
             (cnt.CStatus == PDH_CSTATUS_VALID_DATA || cnt.CStatus == PDH_CSTATUS_NEW_DATA))
         {
-            staticInfo.baseFrequency = (cnt.FirstValue);
+            m_staticInfo.baseFrequency = (cnt.FirstValue);
         }
     }
 }
@@ -629,7 +631,7 @@ void CpuInfo::readPdhFrequency()
         if (PdhGetFormattedCounterValue(m_cpuPerformanceCounter, PDH_FMT_DOUBLE, &cntType, &cnt) == ERROR_SUCCESS &&
             (cnt.CStatus == PDH_CSTATUS_VALID_DATA || cnt.CStatus == PDH_CSTATUS_NEW_DATA))
         {
-            dynamicInfo.cpuMaxFrequency = staticInfo.baseFrequency * (cnt.doubleValue / 100.0);
+            m_dynamicInfo.cpuMaxFrequency = m_staticInfo.baseFrequency * (cnt.doubleValue / 100.0);
         }
     }
 }
@@ -637,25 +639,6 @@ void CpuInfo::readPdhFrequency()
 
 void CpuInfo::readDynamicInfoWmi()
 {
-    //readWmiFrequency();
-    //readWmiFanSpeed();
-    
-    //readThermalZoneTemperature();
-}
+    m_wmiManager->update();
 
-/*
-* Return CPU frequency.
-*/
-//@note: CallNtPowerInformation does not give current frequency anymore since Windows 10 21H1 (19043)
-
-void CpuInfo::readThermalZoneTemperature()
-{
-    //BSTR query = SysAllocString(L"SELECT * FROM MSAcpi_ThermalZoneTemperature");
-    //auto thermalZoneTemperature = query(L"MSAcpi_ThermalZoneTemperature", L"InstanceName,CurrentTemperature");
-    //auto thermalZoneTemperature = query(L"MSAcpi_ThermalZoneTemperature", L"*");
-    //if (!thermalZoneTemperature.empty()) {
-    //    //return;
-    //    const double temperature = std::stod(thermalZoneTemperature[0]);
-    //    dynamicInfo.cpuTemperature = temperature;
-    //}
 }

@@ -8,8 +8,8 @@
 #include <qDebug>
 //#include <Wbemidl.h>
 
-//#include <Wbemidl.h>
-
+//@todo: implement async calls
+// 
 // class QuerySink : public IWbemObjectSink
 // {
 //     LONG m_lRef;
@@ -127,119 +127,6 @@
 WmiManager::WmiManager()
 {
     //m_sink = new QuerySink(enumerator);
-    init();
-}
-
-void WmiManager::readCpuFrequency()
-{
-    if (m_isWmiFrequencyInfoAvailable)
-    {
-        return;
-    }
-    //auto percentProcessorPerformanceTotal = query(L"Win32_PerfFormattedData_Counters_ProcessorInformation",
-    //    L"PercentProcessorPerformance", L"Name = '_Total'");
-    //if (percentProcessorPerformanceTotal.empty()) {
-    //    return;
-    //}
-
-    //auto percentProcessorUtility = query(L"Win32_PerfFormattedData_Counters_ProcessorInformation",
-    //    L"PercentProcessorUtility");
-    //if (!percentProcessorUtility.empty()) {
-    //}
-
-    //auto percentProcessorUtilityTotal = query(L"Win32_PerfFormattedData_Counters_ProcessorInformation",
-    //    L"PercentProcessorUtility", L"Name = '_Total'");
-    //if (!percentProcessorUtilityTotal.empty()) {
-    //}
-
-    auto percentProcessorPerformance = query(L"Win32_PerfFormattedData_Counters_ProcessorInformation",
-        L"PercentProcessorPerformance", L"NOT Name LIKE '%_Total\'", 16);
-    if (percentProcessorPerformance.empty()) {
-        return;
-    }
-
-    auto percentProcessorUtility = query(L"Win32_PerfFormattedData_Counters_ProcessorInformation",
-        L"PercentProcessorUtility", L"NOT Name LIKE '%_Total\'", 16);
-    if (percentProcessorUtility.empty()) {
-        return;
-    }
-
-    uint16_t maxFrequency = 0;
-
-    for (size_t i = 0; i < staticInfo.threadCount; i++)
-    {
-        const double performance = std::stod(percentProcessorPerformance[i]) / 100;
-        double currentFrequency = staticInfo.baseFrequency * performance;
-        dynamicInfo.cpuThreadFrequencies[i] = currentFrequency;
-        if (currentFrequency > maxFrequency)
-        {
-            maxFrequency = currentFrequency;
-        }
-
-        const double usage = std::stod(percentProcessorUtility[i]);// *100;
-        dynamicInfo.cpuThreadUsages[i] = usage;
-    }
-
-    dynamicInfo.cpuMaxFrequency = maxFrequency;
-}
-
-void WmiManager::readFanSpeed()
-{
-    if (m_isWmiFanInfoAvailable)
-    {
-        return;
-    }
-
-    auto availability = query(L"Win32_Fan", L"Availability");
-    if (!availability.empty()) {
-
-    }
-
-    auto activeCooling = query(L"Win32_Fan", L"ActiveCooling");
-    if (!activeCooling.empty()) {
-
-    }
-
-    auto desiredSpeed = query(L"Win32_Fan", L"DesiredSpeed");
-    if (!desiredSpeed.empty()) {
-
-    }
-
-    auto configManagerErrorCode = query(L"Win32_Fan", L"ConfigManagerErrorCode");
-    if (!configManagerErrorCode.empty()) {
-
-    }
-}
-
-void WmiManager::readCpuInfo()
-{
-    auto cpuName = query(L"Win32_Processor", L"Name");
-    if (!cpuName.empty()) {
-
-    }
-
-    auto cpuManufacturer = query(L"Win32_Processor", L"Manufacturer");
-    if (!cpuManufacturer.empty()) {
-
-    }
-
-    auto cpuNumberOfCores = query(L"Win32_Processor", L"NumberOfCores");
-    if (!cpuNumberOfCores.empty()) {
-
-    }
-
-    auto cpuNumberOfLogicalProcessors = query(L"Win32_Processor", L"NumberOfLogicalProcessors");
-    if (!cpuNumberOfLogicalProcessors.empty()) {
-
-    }
-
-    auto percentofMaximumFrequency = query(L"Win32_Processor", L"MaxClockSpeed");
-    if (!percentofMaximumFrequency.empty()) {
-
-    }
-
-    uint32_t baseFrequency = std::stoi(percentofMaximumFrequency[0]);
-    staticInfo.baseFrequency = baseFrequency;
 }
 
 //@note: check available wmi classes with WMI Explorer (https://github.com/vinaypamnani/wmie2)
@@ -275,28 +162,224 @@ bool WmiManager::init()
         qWarning() << "CoSetProxyBlanket failed! reason: " << std::system_category().message(hr).c_str();
     }
 
-    // auto percentProcessorPerformance = query(L"Win32_PerfFormattedData_Counters_ProcessorInformation", L"PercentProcessorPerformance");
-    // auto percentProcessorUtility = query(L"Win32_PerfFormattedData_Counters_ProcessorInformation", L"PercentProcessorUtility");
-    // if (!percentProcessorPerformance.empty() && !percentProcessorUtility.empty()) {
-    //     m_isWmiFrequencyInfoAvailable = true;
-    // }
+    const std::vector<std::wstring> fields = { L"PercentProcessorPerformance",L"PercentProcessorUtility"};
+    std::map<std::string, std::vector<std::string>> fieldMap = queryArray(L"Win32_PerfFormattedData_Counters_ProcessorInformation", fields);
 
-    // auto fanInfo = query(L"Win32_Fan", L"*");
-    // if (!fanInfo.empty()) {
-    //     m_isWmiFanInfoAvailable = true;
-    // }
+     if (!fieldMap["PercentProcessorPerformance"].empty() && !fieldMap["PercentProcessorUtility"].empty()) {
+         m_isWmiFrequencyInfoAvailable = true;
+     }
+
+     auto fanInfo = query(L"Win32_Fan", L"*");
+     if (!fanInfo.empty()) {
+         m_isWmiFanInfoAvailable = true;
+     }
 
     return true;
 }
 
-void WmiManager::readQuery(const std::string className, const std::string parameter)
+void WmiManager::readStaticInfo()
 {
-    //L"Win32_Processor", L"Name"
-    auto result = query(QString(className.c_str()).toStdWString(), QString(parameter.c_str()).toStdWString());
-    if (!result.empty()) {
+    readCpuInfo();
+}
+
+void WmiManager::update()
+{
+    if (m_readCpuInfos)
+    {
+        readCpuFrequency();
+        readFanSpeed();
+    }
+
+    readNetworkSpeed();
+}
+
+void WmiManager::disableCpuUpdates()
+{
+    m_readCpuInfos = false;
+}
+
+const Globals::CpuStaticInfo& WmiManager::cpuStaticInfo() const
+{
+    return m_cpuStaticInfo;
+}
+
+const Globals::CpuDynamicInfo& WmiManager::cpuDynamicInfo() const
+{
+    return m_cpuDynamicInfo;
+}
+
+const Globals::NetworkDynamicInfo& WmiManager::networkDynamicInfo() const
+{
+    return m_networkDynamicInfo;
+}
+
+/*
+* read CPU frequency.
+*/
+//@note: CallNtPowerInformation does not give current frequency anymore since Windows 10 21H1 (19043)
+void WmiManager::readCpuFrequency()
+{
+    if (!m_isWmiFrequencyInfoAvailable)
+    {
+        return;
+    }
+    //auto percentProcessorPerformanceTotal = query(L"Win32_PerfFormattedData_Counters_ProcessorInformation",
+    //    L"PercentProcessorPerformance", L"Name = '_Total'");
+    //if (percentProcessorPerformanceTotal.empty()) {
+    //    return;
+    //}
+
+    //auto percentProcessorUtility = query(L"Win32_PerfFormattedData_Counters_ProcessorInformation",
+    //    L"PercentProcessorUtility");
+    //if (!percentProcessorUtility.empty()) {
+    //}
+
+    //auto percentProcessorUtilityTotal = query(L"Win32_PerfFormattedData_Counters_ProcessorInformation",
+    //    L"PercentProcessorUtility", L"Name = '_Total'");
+    //if (!percentProcessorUtilityTotal.empty()) {
+    //}
+
+    const std::vector<std::wstring> fields = { L"PercentProcessorPerformance",L"PercentProcessorUtility"};
+    std::map<std::string, std::vector<std::string>> fieldMap = queryArray(L"Win32_PerfFormattedData_Counters_ProcessorInformation", fields, L"NOT Name LIKE '%_Total\'", 16);
+
+    if (fieldMap["PercentProcessorPerformance"].empty() || fieldMap["PercentProcessorUtility"].empty()) {
+        return;
+    }
+
+    uint16_t maxFrequency = 0;
+
+    for (size_t i = 0; i < m_cpuStaticInfo.threadCount; i++)
+    {
+        const double performance = std::stod(fieldMap["PercentProcessorPerformance"][i]) / 100;
+        double currentFrequency = m_cpuStaticInfo.baseFrequency * performance;
+        m_cpuDynamicInfo.cpuThreadFrequencies[i] = currentFrequency;
+        if (currentFrequency > maxFrequency)
+        {
+            maxFrequency = currentFrequency;
+        }
+
+        const double usage = std::stod(fieldMap["PercentProcessorUtility"][i]);// *100;
+        m_cpuDynamicInfo.cpuThreadUsages[i] = usage;
+    }
+
+    m_cpuDynamicInfo.cpuMaxFrequency = maxFrequency;
+}
+
+void WmiManager::readCpuInfo()
+{
+    const std::vector<std::wstring> fields = { L"Name",L"Manufacturer",L"NumberOfCores",L"NumberOfLogicalProcessors",L"MaxClockSpeed" };
+    std::map<std::string, std::vector<std::string>> fieldMap = queryArray(L"Win32_Processor", fields);
+
+    if (!fieldMap["Name"].empty()) {
+
+    }
+
+    if (!fieldMap["Manufacturer"].empty()) {
+
+    }
+
+    if (!fieldMap["NumberOfCores"].empty()) {
+
+    }
+
+    if (!fieldMap["NumberOfLogicalProcessors"].empty()) {
+
+    }
+
+    if (!fieldMap["MaxClockSpeed"].empty()) {
+
+    }
+
+    uint32_t baseFrequency = std::stoi(fieldMap["MaxClockSpeed"][0]);
+    m_cpuStaticInfo.baseFrequency = baseFrequency;
+}
+
+void WmiManager::readFanSpeed()
+{
+    if (m_isWmiFanInfoAvailable)
+    {
+        return;
+    }
+
+    const std::vector<std::wstring> fields = { L"Availability",L"ActiveCooling",L"DesiredSpeed",L"ConfigManagerErrorCode"};
+    std::map<std::string, std::vector<std::string>> fieldMap = queryArray(L"Win32_Fan", fields);
+
+    if (!fieldMap["Availability"].empty()) {
+
+    }
+
+    if (!fieldMap["ActiveCooling"].empty()) {
+
+    }
+
+    if (!fieldMap["DesiredSpeed"].empty()) {
+
+    }
+
+    if (!fieldMap["ConfigManagerErrorCode"].empty()) {
 
     }
 }
+
+//@note: tested, not supported
+//void WmiManager::readThermalZoneTemperature()
+//{
+    //BSTR query = SysAllocString(L"SELECT * FROM MSAcpi_ThermalZoneTemperature");
+    //auto thermalZoneTemperature = query(L"MSAcpi_ThermalZoneTemperature", L"InstanceName,CurrentTemperature");
+    //auto thermalZoneTemperature = query(L"MSAcpi_ThermalZoneTemperature", L"*");
+    //if (!thermalZoneTemperature.empty()) {
+    //    //return;
+    //    const double temperature = std::stod(thermalZoneTemperature[0]);
+    //    dynamicInfo.cpuTemperature = temperature;
+    //}
+//}
+
+void WmiManager::readNetworkSpeed()
+{
+    const std::vector<std::wstring> fields = { L"Name",L"BytesReceivedPerSec",L"BytesSentPerSec",L"BytesTotalPerSec",L"CurrentBandwidth" };
+    std::map<std::string, std::vector<std::string>> fieldMap = queryArray(L"Win32_PerfFormattedData_Tcpip_NetworkInterface", fields);
+
+    if (!fieldMap["Name"].empty()) {
+        m_networkDynamicInfo.names.clear();
+        for (auto&& netWorkInterfaceName : fieldMap["Name"])
+        {
+            m_networkDynamicInfo.names.push_back(netWorkInterfaceName);
+        }
+    }
+
+    if (!fieldMap["BytesReceivedPerSec"].empty()) {
+        m_networkDynamicInfo.bytesReceivedPerSec.clear();
+        for (auto&& bytesReceivedPerSec : fieldMap["BytesReceivedPerSec"])
+        {
+            m_networkDynamicInfo.bytesReceivedPerSec.push_back(std::stoi(bytesReceivedPerSec));
+        }
+    }
+
+    if (!fieldMap["BytesSentPerSec"].empty()) {
+        m_networkDynamicInfo.bytesSentPerSec.clear();
+        for (auto&& bytesSentPerSec : fieldMap["BytesSentPerSec"])
+        {
+            m_networkDynamicInfo.bytesSentPerSec.push_back(std::stoi(bytesSentPerSec));
+        }
+    }
+
+    if (!fieldMap["BytesTotalPerSec"].empty()) {
+        m_networkDynamicInfo.bytesTotalPerSec.clear();
+        for (auto&& bytesTotalPerSec : fieldMap["BytesTotalPerSec"])
+        {
+            m_networkDynamicInfo.bytesTotalPerSec.push_back(std::stoi(bytesTotalPerSec));
+        }
+    }
+
+    if (!fieldMap["CurrentBandwidth"].empty()) {
+        m_networkDynamicInfo.currentBandwidth.clear();
+        for (auto&& currentBandwidth : fieldMap["CurrentBandwidth"])
+        {
+            m_networkDynamicInfo.currentBandwidth.push_back(std::stoi(currentBandwidth));
+        }
+    }
+}
+
 
 bool WmiManager::executeQuery(const std::wstring& query) {
     if (m_service == nullptr) return false;
@@ -310,38 +393,37 @@ bool WmiManager::executeQuery(const std::wstring& query) {
 //        WBEM_FLAG_FORWARD_ONLY | WBEM_FLAG_RETURN_IMMEDIATELY, nullptr, sink));
 //}
 
-inline std::string wstring_to_std_string(const std::wstring& ws) {
-    std::string str_locale = setlocale(LC_ALL, "");
-    const wchar_t* wch_src = ws.c_str();
+//inline std::string wstring_to_std_string(const std::wstring& ws) {
+//    std::string str_locale = setlocale(LC_ALL, "");
+//    const wchar_t* wch_src = ws.c_str();
+//
+//#ifdef _MSC_VER
+//    size_t n_dest_size;
+//    wcstombs_s(&n_dest_size, nullptr, 0, wch_src, 0);
+//    n_dest_size++;  // Increase by one for null terminator
+//
+//    char* ch_dest = new char[n_dest_size];
+//    memset(ch_dest, 0, n_dest_size);
+//
+//    size_t n_convert_size;
+//    wcstombs_s(&n_convert_size, ch_dest, n_dest_size, wch_src,
+//        n_dest_size - 1);  // subtract one to ignore null terminator
+//
+//    std::string result_text = ch_dest;
+//    delete[] ch_dest;
+//#else
+//    size_t n_dest_size = wcstombs(NULL, wch_src, 0) + 1;
+//    char* ch_dest = new char[n_dest_size];
+//    memset(ch_dest, 0, n_dest_size);
+//    wcstombs(ch_dest, wch_src, n_dest_size);
+//    std::string result_text = ch_dest;
+//    delete[] ch_dest;
+//#endif
+//
+//    setlocale(LC_ALL, str_locale.c_str());
+//    return result_text;
+//}
 
-#ifdef _MSC_VER
-    size_t n_dest_size;
-    wcstombs_s(&n_dest_size, nullptr, 0, wch_src, 0);
-    n_dest_size++;  // Increase by one for null terminator
-
-    char* ch_dest = new char[n_dest_size];
-    memset(ch_dest, 0, n_dest_size);
-
-    size_t n_convert_size;
-    wcstombs_s(&n_convert_size, ch_dest, n_dest_size, wch_src,
-        n_dest_size - 1);  // subtract one to ignore null terminator
-
-    std::string result_text = ch_dest;
-    delete[] ch_dest;
-#else
-    size_t n_dest_size = wcstombs(NULL, wch_src, 0) + 1;
-    char* ch_dest = new char[n_dest_size];
-    memset(ch_dest, 0, n_dest_size);
-    wcstombs(ch_dest, wch_src, n_dest_size);
-    std::string result_text = ch_dest;
-    delete[] ch_dest;
-#endif
-
-    setlocale(LC_ALL, str_locale.c_str());
-    return result_text;
-}
-
-//template <>
 std::vector<std::string> WmiManager::query(const std::wstring& wmi_class, const std::wstring& field, const std::wstring& filter, const ULONG count) 
 {
     std::wstring filter_string;
@@ -360,7 +442,7 @@ std::vector<std::string> WmiManager::query(const std::wstring& wmi_class, const 
     {
         ULONG u_return = 0;
         IWbemClassObject* obj = nullptr;
-        long timeout = WBEM_INFINITE;//WBEM_INFINITE
+        long timeout = WBEM_INFINITE;
         while (m_enumerator) {
             m_enumerator->Next(timeout, count, &obj, &u_return);
 
@@ -399,15 +481,12 @@ std::vector<std::string> WmiManager::query(const std::wstring& wmi_class, const 
         HRESULT    hRes = WBEM_S_NO_ERROR;
         // Final Next will return WBEM_S_FALSE
         ULONG            uReturned;
-        IWbemClassObject* obj[16];
+        IWbemClassObject* obj[256];
 
-        hRes = m_enumerator->Next(WBEM_INFINITE, 16, obj, &uReturned);
+        hRes = m_enumerator->Next(WBEM_INFINITE, count, obj, &uReturned);
 
         if (SUCCEEDED(hRes))
         {
-            // Do something with the objects.
-            //ProcessObjects( uReturned,  apObj );
-
             for (ULONG n = 0; n < uReturned; n++)
             {
                 VARIANT vt_prop;
@@ -416,9 +495,6 @@ std::vector<std::string> WmiManager::query(const std::wstring& wmi_class, const 
                 if (SUCCEEDED(hr)) {
                     if (vt_prop.vt == VT_BSTR)
                     {
-                        //result.push_back(wstring_to_std_string(vt_prop.bstrVal));
-                        //assert(bs != nullptr);
-                        //std::wstring ws(vt_prop.bstrVal, SysStringLen(vt_prop.bstrVal));
                         char* text = _com_util::ConvertBSTRToString(vt_prop.bstrVal);
                         result.push_back(text);
                     }
@@ -436,10 +512,130 @@ std::vector<std::string> WmiManager::query(const std::wstring& wmi_class, const 
                 VariantClear(&vt_prop);
                 obj[n]->Release();
             }
-        }    // If Enum succeeded...
+        }
     }
 
     return result;
+}
+
+
+std::map<std::string, std::vector<std::string>> WmiManager::queryArray(const std::wstring& wmi_class, const std::vector<std::wstring>& fields, const std::wstring& filter, const ULONG count)
+{
+    std::map<std::string, std::vector<std::string>> fieldMap;
+
+    std::wstring filter_string;
+    if (!filter.empty()) {
+        filter_string.append(L" WHERE " + filter);
+    }
+    std::wstring fieldsMerged;
+    for (auto&& element : fields)
+    {
+        fieldsMerged += element;
+        if (element != fields.back())
+        {
+            fieldsMerged += L" ,";
+        }
+    }
+    std::wstring query_string(L"SELECT " + fieldsMerged + L" FROM " + wmi_class + filter_string);
+    bool success = executeQuery(query_string);
+    if (!success) {
+        return {};
+    }
+
+    if (count == 1)
+    {
+        ULONG u_return = 0;
+        IWbemClassObject* obj = nullptr;
+        long timeout = WBEM_INFINITE;
+        while (m_enumerator) {
+            m_enumerator->Next(timeout, 1, &obj, &u_return);
+
+            if (!u_return || !obj) {
+                break;
+            }
+
+            for (auto&& field : fields)
+            {
+                VARIANT vt_prop;
+                VariantInit(&vt_prop);
+
+                HRESULT hr = obj->Get(field.c_str(), 0, &vt_prop, nullptr, nullptr);
+
+                if (SUCCEEDED(hr)) {
+                    std::string text;
+                    if (vt_prop.vt == VT_BSTR)
+                    {
+                        text = _com_util::ConvertBSTRToString(vt_prop.bstrVal);
+                    }
+                    else if (vt_prop.vt == VT_I4)
+                    {
+                        text = std::to_string(vt_prop.uintVal);
+                    }
+                    else if (vt_prop.vt == VT_UI8)
+                    {
+                        text = std::to_string(vt_prop.ullVal);
+                    }
+                    else
+                    {
+                        qWarning() << "CpuInfo::query: Unhandled Type " << vt_prop.vt;
+                    }
+                    fieldMap[std::string(field.begin(), field.end())].push_back(text);
+                }
+                VariantClear(&vt_prop);
+            }
+
+            obj->Release();
+        }
+    }
+    else
+    {
+        HRESULT    hRes = WBEM_S_NO_ERROR;
+        // Final Next will return WBEM_S_FALSE
+        ULONG            uReturned;
+        IWbemClassObject* obj[256];
+
+        hRes = m_enumerator->Next(WBEM_INFINITE, count, obj, &uReturned);
+
+        if (SUCCEEDED(hRes))
+        {
+            for (ULONG n = 0; n < uReturned; n++)
+            {
+                for (auto&& field : fields)
+                {
+                    VARIANT vt_prop;
+                    VariantInit(&vt_prop);
+
+                    HRESULT hr = obj[n]->Get(field.c_str(), 0, &vt_prop, nullptr, nullptr);
+
+                    if (SUCCEEDED(hr)) {
+                        std::string text;
+                        if (vt_prop.vt == VT_BSTR)
+                        {
+                            text = _com_util::ConvertBSTRToString(vt_prop.bstrVal);
+                        }
+                        else if (vt_prop.vt == VT_I4)
+                        {
+                            text = std::to_string(vt_prop.uintVal);
+                        }
+                        else if (vt_prop.vt == VT_UI8)
+                        {
+                            text = std::to_string(vt_prop.ullVal);
+                        }
+                        else
+                        {
+                            qWarning() << "CpuInfo::query: Unhandled Type " << vt_prop.vt;
+                        }
+                        fieldMap[std::string(field.begin(), field.end())].push_back(text);
+                    }
+                    VariantClear(&vt_prop);
+                }
+
+                obj[n]->Release();
+            }
+        }
+    }
+
+    return fieldMap;
 }
 
 //void WmiManager::queryAsync(const std::wstring& wmi_class, const std::wstring& field, const std::wstring& filter, const ULONG count) 

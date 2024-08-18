@@ -21,7 +21,7 @@ void CpuWorker::start()
 
     m_cpuInfo->init();
 
-    emit signalStaticInfo(m_cpuInfo->getStaticInfo());
+    emit signalStaticInfo(m_cpuInfo->staticInfo());
 }
 
 void CpuWorker::stop()
@@ -37,7 +37,7 @@ void CpuWorker::update()
 
     m_cpuInfo->update();
 
-    emit signalDynamicInfo(m_cpuInfo->getDynamicInfo());
+    emit signalDynamicInfo(m_cpuInfo->dynamicInfo());
 
     elapsedTime = elapsedTimer.nsecsElapsed() / 1000000;
 

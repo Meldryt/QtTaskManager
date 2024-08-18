@@ -13,7 +13,6 @@ TabPerformance::TabPerformance(QWidget *parent) : QWidget{parent}
     m_listWidget->addItem("CPU");
     m_listWidget->addItem("GPU");
     m_listWidget->addItem("RAM");
-    m_listWidget->addItem("Disk");
     m_listWidget->addItem("Network");
     m_listWidget->setFixedWidth(70);
 
@@ -24,10 +23,12 @@ TabPerformance::TabPerformance(QWidget *parent) : QWidget{parent}
     initCpuWidgets();
     initGpuWidgets();
     initMemoryWidgets();
+    initNetworkWidgets();
 
     layout->addWidget(m_cpuWidget, 0, 1);
     layout->addWidget(m_gpuWidget, 0, 2);
     layout->addWidget(m_memoryWidget, 0, 3);
+    layout->addWidget(m_networkWidget, 0, 4);
 
     connect(m_listWidget,&QListWidget::itemSelectionChanged, this, &TabPerformance::showSelectionWidget);
     m_listWidget->setCurrentRow(0);
@@ -152,6 +153,29 @@ void TabPerformance::initMemoryWidgets()
     m_memoryWidget->setLayout(memoryWidgetLayout);
 }
 
+void TabPerformance::initNetworkWidgets()
+{
+    m_networkLineSeries = new QLineSeries();
+    m_networkLineSeries->setUseOpenGL(true);
+
+    m_networkChart = new QChart();
+    m_networkChart->legend()->hide();
+    m_networkChart->addSeries(m_networkLineSeries);
+    m_networkChart->createDefaultAxes();
+    m_networkChart->axes(Qt::Horizontal).back()->setRange(0, 60);
+    m_networkChart->axes(Qt::Vertical).back()->setRange(0.0, 100.0);
+    //chart->setTitle("Simple line chart example");
+
+    m_networkChartView = new QChartView(m_networkChart);
+    m_networkChartView->setRenderHint(QPainter::Antialiasing);
+
+    m_networkWidget = new QWidget(this);
+
+    QGridLayout* networkWidgetLayout = new QGridLayout(m_networkWidget);
+    networkWidgetLayout->addWidget(m_networkChartView, 0, 0);
+    m_networkWidget->setLayout(networkWidgetLayout);
+}
+
 void TabPerformance::initCpuGraphs()
 {
     int index = 0;
@@ -204,6 +228,7 @@ void TabPerformance::process()
     processCpu();
     processGpu();
     processMemory();
+    processNetwork();
 
     setUpdatesEnabled(true);
 }
@@ -300,25 +325,48 @@ void TabPerformance::processGpu()
 
 void TabPerformance::processMemory()
 {
-    //QList<QPointF> points = m_memoryLineSeries->points();
-    //if (!points.empty())
-    //{
-    //    m_memoryLineSeries->clear();
-    //    for (uint8_t i = 0; i < points.size(); ++i)
-    //    {
-    //        points[i].setX(points.at(i).x() - 1);
-    //    }
-    //    if (points.first().x() < 0)
-    //    {
-    //        points.removeFirst();
-    //    }
-    //    m_memoryLineSeries->append(points);
-    //}
+    QList<QPointF> points = m_memoryLineSeries->points();
+    if (!points.empty())
+    {
+        m_memoryLineSeries->clear();
+        for (uint8_t i = 0; i < points.size(); ++i)
+        {
+            points[i].setX(points.at(i).x() - 1);
+        }
+        if (points.first().x() < 0)
+        {
+            points.removeFirst();
+        }
+        m_memoryLineSeries->append(points);
+    }
 
-    //double x = 60;
-    //double y = m_memoryUsedSize;
-    //m_memoryLineSeries->append(x, y);
-    //m_memoryChartView->repaint();
+    double x = 60;
+    double y = m_memoryUsedSize;
+    m_memoryLineSeries->append(x, y);
+    m_memoryChartView->repaint();
+}
+
+void TabPerformance::processNetwork()
+{
+    QList<QPointF> points = m_networkLineSeries->points();
+    if (!points.empty())
+    {
+        m_networkLineSeries->clear();
+        for (uint8_t i = 0; i < points.size(); ++i)
+        {
+            points[i].setX(points.at(i).x() - 1);
+        }
+        if (points.first().x() < 0)
+        {
+            points.removeFirst();
+        }
+        m_networkLineSeries->append(points);
+    }
+
+    double x = 60;
+    double y = m_networkUsedSpeed;
+    m_networkLineSeries->append(x, y);
+    m_networkChartView->repaint();
 }
 
 void TabPerformance::updateCpuMultiGraphs(const Globals::CpuDynamicInfo& dynamicInfo)
@@ -454,11 +502,23 @@ void TabPerformance::slotUsedMemory(const uint32_t& val)
     m_memoryUsedSize = val;
 }
 
+void TabPerformance::slotTotalNetworkSpeed(const uint32_t& val)
+{
+    m_networkTotalSpeed = val;
+    m_networkChart->axes(Qt::Vertical).back()->setRange(0.0, m_networkTotalSpeed);
+}
+
+void TabPerformance::slotUsedNetworkSpeed(const uint32_t& val)
+{
+    m_networkUsedSpeed = val;
+}
+
 void TabPerformance::showSelectionWidget()
 {
     m_cpuWidget->hide();
     m_gpuWidget->hide();
     m_memoryWidget->hide();
+    m_networkWidget->hide();
 
     switch(m_listWidget->currentRow())
     {
@@ -470,6 +530,9 @@ void TabPerformance::showSelectionWidget()
         break;
     case 2:
         m_memoryWidget->show();
+        break;
+    case 3:
+        m_networkWidget->show();
         break;
     default:
         break;

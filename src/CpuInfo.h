@@ -28,8 +28,8 @@ public:
     void init();
     void update();
 
-    const Globals::CpuStaticInfo &getStaticInfo() const;
-    const Globals::CpuDynamicInfo &getDynamicInfo() const;
+    const Globals::CpuStaticInfo &staticInfo() const;
+    const Globals::CpuDynamicInfo &dynamicInfo() const;
 
 private:
     void fetchStaticInfo();
@@ -66,8 +66,8 @@ private:
     void readPdhBaseFrequency();
     void readPdhFrequency();
 
-    Globals::CpuStaticInfo staticInfo;
-    Globals::CpuDynamicInfo dynamicInfo;
+    Globals::CpuStaticInfo m_staticInfo;
+    Globals::CpuDynamicInfo m_dynamicInfo;
 
 #ifdef _WIN32
     //pdh
@@ -87,8 +87,6 @@ private:
     IBIOSEx* m_amdCpuBiosDevice{ nullptr };
 
     bool m_useRyzenCpuParameters{ false };
-
-    bool m_useWmi{ false };
 
     WmiManager* m_wmiManager{ nullptr };
 

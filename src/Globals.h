@@ -86,4 +86,13 @@ public:
         uint32_t usedVirtualMemory{0};
         uint32_t usedPhysicalMemory{0};
     };
+
+    struct NetworkDynamicInfo
+    {
+        std::vector<std::string> names;
+        std::vector<uint32_t> bytesReceivedPerSec;
+        std::vector<uint32_t> bytesSentPerSec;
+        std::vector<uint32_t> bytesTotalPerSec;
+        std::vector<uint32_t> currentBandwidth;
+    };
 };
