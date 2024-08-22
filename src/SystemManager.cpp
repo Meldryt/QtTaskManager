@@ -4,6 +4,7 @@
 #include "CpuWorker.h"
 #include "GpuWorker.h"
 #include "MemoryWorker.h"
+#include "WmiWorker.h"
 
 #include <QElapsedTimer>
 #include <QDebug>
@@ -24,11 +25,13 @@ SystemManager::SystemManager(QWidget* parent) : QTabWidget(parent)
     m_cpuWorker = std::make_unique<CpuWorker>(1000);
     m_gpuWorker = std::make_unique<GpuWorker>(500);
     m_memoryWorker = std::make_unique<MemoryWorker>(500);
+    m_wmiWorker = std::make_unique<WmiWorker>(1000);
 
     m_worker.push_back(m_processWorker.get());
     m_worker.push_back(m_cpuWorker.get());
     m_worker.push_back(m_gpuWorker.get());
     m_worker.push_back(m_memoryWorker.get());
+    m_worker.push_back(m_wmiWorker.get());
 
     for (int i = 0; i < m_worker.size(); ++i)
     {
@@ -37,52 +40,57 @@ SystemManager::SystemManager(QWidget* parent) : QTabWidget(parent)
         m_workerThreads.push_back(thread);
 
         connect(thread, &QThread::started, m_worker[i], &Worker::start);
-        connect(m_worker[i], &CpuWorker::finished, thread, &QThread::quit);
-        connect(m_worker[i], &CpuWorker::finished, m_worker[i], &CpuWorker::deleteLater);
+        connect(m_worker[i], &Worker::signalFinished, thread, &QThread::quit);
+        connect(m_worker[i], &Worker::signalFinished, m_worker[i], &Worker::deleteLater);
         connect(thread, &QThread::finished, thread, &QThread::deleteLater);
     }
 
-
-    connect(m_cpuWorker.get(), &CpuWorker::signalStaticInfo, this, [&](const Globals::CpuStaticInfo& staticInfo)
+    connect(m_cpuWorker.get(), &CpuWorker::signalStaticInfo, this, [&](const QMap<uint8_t,QVariant>& staticInfo)
     {
-            m_staticInfoCpu = staticInfo;
-            m_staticInfoCpuChanged = true;
+        m_staticInfoCpu = staticInfo;
+        m_staticInfoCpuChanged = true;
     });
 
-    connect(m_cpuWorker.get(), &CpuWorker::signalDynamicInfo, this, [&](const Globals::CpuDynamicInfo& dynamicInfo)
+    connect(m_cpuWorker.get(), &CpuWorker::signalDynamicInfo, this, [&](const QMap<uint8_t,QVariant>& dynamicInfo)
     {     
-            m_dynamicInfoCpu = dynamicInfo;
-            m_dynamicInfoCpuChanged = true;
+        m_dynamicInfoCpu = dynamicInfo;
+        m_dynamicInfoCpuChanged = true;
     });
 
-    connect(m_gpuWorker.get(), &GpuWorker::signalStaticInfo, this, [&](const Globals::GpuStaticInfo& staticInfo)
+    connect(m_gpuWorker.get(), &GpuWorker::signalStaticInfo, this, [&](const QMap<uint8_t,QVariant>& staticInfo)
     {
-            m_staticInfoGpu = staticInfo;
-            m_staticInfoGpuChanged = true;
+        m_staticInfoGpu = staticInfo;
+        m_staticInfoGpuChanged = true;
     });
 
-    connect(m_gpuWorker.get(), &GpuWorker::signalDynamicInfo, this, [&](const Globals::GpuDynamicInfo& dynamicInfo)
+    connect(m_gpuWorker.get(), &GpuWorker::signalDynamicInfo, this, [&](const QMap<uint8_t,QVariant>& dynamicInfo)
     {
-            m_dynamicInfoGpu = dynamicInfo;
-            m_dynamicInfoGpuChanged = true;
+        m_dynamicInfoGpu = dynamicInfo;
+        m_dynamicInfoGpuChanged = true;
     });
 
     connect(m_processWorker.get(), &ProcessWorker::signalDynamicInfo, this, [&](const std::map<uint32_t, ProcessInfo::Process>& processMap)
     {
-            m_processMap = processMap;
-            m_processMapChanged = true;
+        m_processMap = processMap;
+        m_processMapChanged = true;
     });
 
-    connect(m_memoryWorker.get(), &MemoryWorker::signalStaticInfo, this, [&](const Globals::MemoryStaticInfo& staticInfo)
+    connect(m_memoryWorker.get(), &MemoryWorker::signalStaticInfo, this, [&](const QMap<uint8_t,QVariant>& staticInfo)
     {
-            m_staticInfoMemory = staticInfo;
-            m_staticInfoMemoryChanged = true;
+        m_staticInfoMemory = staticInfo;
+        m_staticInfoMemoryChanged = true;
     });
 
-    connect(m_memoryWorker.get(), &MemoryWorker::signalDynamicInfo, this, [&](const Globals::MemoryDynamicInfo& dynamicInfo)
+    connect(m_memoryWorker.get(), &MemoryWorker::signalDynamicInfo, this, [&](const QMap<uint8_t,QVariant>& dynamicInfo)
     {
-            m_dynamicInfoMemory = dynamicInfo;
-            m_dynamicInfoMemoryChanged = true;
+        m_dynamicInfoMemory = dynamicInfo;
+        m_dynamicInfoMemoryChanged = true;
+    });
+
+    connect(m_wmiWorker.get(), &WmiWorker::signalDynamicInfo, this, [&](const QMap<uint8_t,QVariant>& dynamicInfo)
+    {
+        m_dynamicInfoMemory = dynamicInfo;
+        m_dynamicInfoMemoryChanged = true;
     });
 
     for (int i = 0; i < m_workerThreads.size(); ++i)
@@ -115,7 +123,12 @@ void SystemManager::update()
         m_tabHardware->slotCpuStaticInfo(m_staticInfoCpu);
         if (m_processWorker)
         {
-            m_processWorker->slotProcessorCount(m_staticInfoCpu.processorCount);
+            QVariant variant = m_staticInfoCpu[Globals::Key_Cpu_ProcessorCount];
+            if (variant.canConvert<uint8_t>())
+            {
+                const uint8_t processorCount = variant.value<uint8_t>();
+                m_processWorker->slotProcessorCount(processorCount);
+            }
         }
         m_staticInfoCpuChanged = false;
     }
@@ -146,14 +159,26 @@ void SystemManager::update()
 
     if (m_staticInfoMemoryChanged)
     {
-        m_tabHardware->slotTotalPhysicalMemory(m_staticInfoMemory.totalPhysicalMemory);
-        m_tabPerformance->slotTotalMemory(m_staticInfoMemory.totalPhysicalMemory);
+        QVariant variant = m_staticInfoMemory[Globals::Key_Memory_TotalPhysicalMemory];
+        if (variant.canConvert<uint32_t>())
+        {
+            const uint32_t totalPhysicalMemory = variant.value<uint32_t>();
+            m_tabHardware->slotTotalPhysicalMemory(totalPhysicalMemory);
+            m_tabPerformance->slotTotalMemory(totalPhysicalMemory);
+        }
+        
         m_staticInfoMemoryChanged = false;
     }
 
     if (m_dynamicInfoMemoryChanged)
     {
-        m_tabPerformance->slotUsedMemory(m_dynamicInfoMemory.usedPhysicalMemory);
+        QVariant variant = m_staticInfoMemory[Globals::Key_Memory_UsedPhysicalMemory];
+        if (variant.canConvert<uint32_t>())
+        {
+            const uint32_t usedPhysicalMemory = variant.value<uint32_t>();
+            m_tabPerformance->slotUsedMemory(usedPhysicalMemory);
+        }
+
         m_dynamicInfoMemoryChanged = false;
     }
 

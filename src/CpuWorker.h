@@ -20,11 +20,12 @@ public slots:
     virtual void update() override;
 
 signals:
-    void signalStaticInfo(const Globals::CpuStaticInfo&);
-    void signalDynamicInfo(const Globals::CpuDynamicInfo&);
+    void signalStaticInfo(const QMap<uint8_t,QVariant>&);
+    void signalDynamicInfo(const QMap<uint8_t,QVariant>&);
 
 private:
     std::unique_ptr<CpuInfo> m_cpuInfo{nullptr};
     QElapsedTimer* m_elapsedTimer{ nullptr };
+
 };
 

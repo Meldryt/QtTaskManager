@@ -17,8 +17,8 @@ public slots:
     virtual void update() override;
 
 signals:
-    void signalStaticInfo(const Globals::GpuStaticInfo&);
-    void signalDynamicInfo(const Globals::GpuDynamicInfo&);
+    void signalStaticInfo(const QMap<uint8_t,QVariant>&);
+    void signalDynamicInfo(const QMap<uint8_t,QVariant>&);
 
 private:
     std::unique_ptr<GpuInfo> m_gpuInfo{nullptr};

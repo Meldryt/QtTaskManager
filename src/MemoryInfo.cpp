@@ -25,10 +25,13 @@ void MemoryInfo::fetchStaticInfo()
     GlobalMemoryStatusEx(&memInfo);
 
     DWORDLONG totalVirtualMem = memInfo.ullTotalPageFile;
-    staticInfo.totalVirtualMemory = (totalVirtualMem / 1024) / 1024;
+    m_totalVirtualMemory = (totalVirtualMem / 1024) / 1024;
 
     DWORDLONG totalPhysMem = memInfo.ullTotalPhys;
-    staticInfo.totalPhysicalMemory = (totalPhysMem / 1024) / 1024;
+    m_totalPhysicalMemory = (totalPhysMem / 1024) / 1024;
+
+    m_staticInfo[Globals::SysInfoAttr::Key_Memory_TotalVirtualMemory] = m_totalVirtualMemory;
+    m_staticInfo[Globals::SysInfoAttr::Key_Memory_TotalPhysicalMemory] = m_totalPhysicalMemory;
 }
 
 void MemoryInfo::fetchDynamicInfo()
@@ -38,18 +41,11 @@ void MemoryInfo::fetchDynamicInfo()
     GlobalMemoryStatusEx(&memInfo);
 
     DWORDLONG virtualMemUsed = memInfo.ullTotalPageFile - memInfo.ullAvailPageFile;
-    dynamicInfo.usedVirtualMemory = (virtualMemUsed / 1024) / 1024;
+    m_usedVirtualMemory = (virtualMemUsed / 1024) / 1024;
 
     DWORDLONG physMemUsed = memInfo.ullTotalPhys - memInfo.ullAvailPhys;
-    dynamicInfo.usedPhysicalMemory = (physMemUsed / 1024) / 1024;
-}
+    m_usedPhysicalMemory = (physMemUsed / 1024) / 1024;
 
-const Globals::MemoryStaticInfo &MemoryInfo::getStaticInfo() const
-{
-    return staticInfo;
-}
-
-const Globals::MemoryDynamicInfo &MemoryInfo::getDynamicInfo() const
-{
-    return dynamicInfo;
+    m_dynamicInfo[Globals::SysInfoAttr::Key_Memory_UsedVirtualMemory] = m_usedVirtualMemory;
+    m_dynamicInfo[Globals::SysInfoAttr::Key_Memory_UsedPhysicalMemory] = m_usedPhysicalMemory;
 }

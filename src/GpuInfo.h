@@ -1,6 +1,9 @@
 #pragma once
 
 #include <QObject>
+#include <QMap>
+#include <QVariant>
+
 #include <string>
 
 #include "Globals.h"
@@ -24,12 +27,12 @@ public:
     void init();
     void update();
 
-    const Globals::GpuStaticInfo& getStaticInfo() const
+    const QMap<uint8_t,QVariant>& getStaticInfo() const
     {
         return m_staticInfo;
     }
 
-    const Globals::GpuDynamicInfo& getDynamicInfo() const
+    const QMap<uint8_t,QVariant>& getDynamicInfo() const
     {
         return m_dynamicInfo;
     }
@@ -45,6 +48,6 @@ private:
     GpuInfoNVidia* m_gpuInfoNVidia{ nullptr };
     GpuInfoAmd* m_gpuInfoAmd{ nullptr };
 
-    Globals::GpuStaticInfo m_staticInfo;
-    Globals::GpuDynamicInfo m_dynamicInfo;
+    QMap<uint8_t,QVariant> m_staticInfo;
+    QMap<uint8_t,QVariant> m_dynamicInfo;
 };

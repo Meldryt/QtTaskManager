@@ -121,29 +121,29 @@ void TabHardware::processDevices()
 
 }
 
-void TabHardware::slotCpuStaticInfo(const Globals::CpuStaticInfo& staticInfo)
+void TabHardware::slotCpuStaticInfo(const QMap<uint8_t,QVariant>& staticInfo)
 {
-    m_cpuTableInfos[0] = staticInfo.cpuBrand.c_str();
-    m_cpuTableInfos[1] = QString::number(staticInfo.processorCount);
-    m_cpuTableInfos[2] = QString::number(staticInfo.threadCount);
-    m_cpuTableInfos[3] = QString::number(staticInfo.l1CacheSize);
-    m_cpuTableInfos[4] = QString::number(staticInfo.l2CacheSize);
-    m_cpuTableInfos[5] = QString::number(staticInfo.l3CacheSize);
-    m_cpuTableInfos[6] = QString::number(staticInfo.baseFrequency);
-    m_cpuTableInfos[7] = QString::number(staticInfo.maxFrequency);
+    m_cpuTableInfos[0] = staticInfo[Globals::SysInfoAttr::Key_Cpu_Brand].toString();
+    m_cpuTableInfos[1] = staticInfo[Globals::SysInfoAttr::Key_Cpu_ProcessorCount].toString();
+    m_cpuTableInfos[2] = staticInfo[Globals::SysInfoAttr::Key_Cpu_ThreadCount].toString();
+    m_cpuTableInfos[3] = staticInfo[Globals::SysInfoAttr::Key_Cpu_L1CacheSize].toString();
+    m_cpuTableInfos[4] = staticInfo[Globals::SysInfoAttr::Key_Cpu_L2CacheSize].toString();
+    m_cpuTableInfos[5] = staticInfo[Globals::SysInfoAttr::Key_Cpu_L3CacheSize].toString();
+    m_cpuTableInfos[6] = staticInfo[Globals::SysInfoAttr::Key_Cpu_BaseFrequency].toString();
+    m_cpuTableInfos[7] = staticInfo[Globals::SysInfoAttr::Key_Cpu_MaxFrequency].toString();
 }
 
-void TabHardware::slotGpuStaticInfo(const Globals::GpuStaticInfo& staticInfo)
+void TabHardware::slotGpuStaticInfo(const QMap<uint8_t,QVariant>& staticInfo)
 {
-    m_gpuTableInfos[0] = staticInfo.chipDesigner.c_str();
-    m_gpuTableInfos[1] = staticInfo.cardManufacturer.c_str();
-    m_gpuTableInfos[2] = staticInfo.gpuModel.c_str();
-    m_gpuTableInfos[3] = staticInfo.memoryVendor.c_str();
-    m_gpuTableInfos[4] = QString::number(staticInfo.memorySize);
-    m_gpuTableInfos[5] = staticInfo.memoryType.c_str();
-    m_gpuTableInfos[6] = QString::number(staticInfo.memoryBandwidth);
-    m_gpuTableInfos[7] = staticInfo.driverInfo.c_str();
-    m_gpuTableInfos[8] = staticInfo.driverVersion.c_str();
+    m_gpuTableInfos[0] = staticInfo[Globals::SysInfoAttr::Key_Gpu_ChipDesigner].toString();
+    m_gpuTableInfos[1] = staticInfo[Globals::SysInfoAttr::Key_Gpu_CardManufacturer].toString();
+    m_gpuTableInfos[2] = staticInfo[Globals::SysInfoAttr::Key_Gpu_Model].toString();
+    m_gpuTableInfos[3] = staticInfo[Globals::SysInfoAttr::Key_Gpu_MemoryVendor].toString();
+    m_gpuTableInfos[4] = staticInfo[Globals::SysInfoAttr::Key_Gpu_MemorySize].toString();
+    m_gpuTableInfos[5] = staticInfo[Globals::SysInfoAttr::Key_Gpu_MemoryType].toString();
+    m_gpuTableInfos[6] = staticInfo[Globals::SysInfoAttr::Key_Gpu_MemoryBandwidth].toString();
+    m_gpuTableInfos[7] = staticInfo[Globals::SysInfoAttr::Key_Gpu_DriverInfo].toString();
+    m_gpuTableInfos[8] = staticInfo[Globals::SysInfoAttr::Key_Gpu_DriverVersion].toString();
 }
 
 void TabHardware::slotTotalPhysicalMemory(const uint32_t& val)

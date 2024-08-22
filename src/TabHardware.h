@@ -73,8 +73,8 @@ private:
     std::map<int, QString> m_devicesTableInfos;
 
 public slots:
-    void slotCpuStaticInfo(const Globals::CpuStaticInfo& staticInfo);
-    void slotGpuStaticInfo(const Globals::GpuStaticInfo& staticInfo);
+    void slotCpuStaticInfo(const QMap<uint8_t,QVariant>& staticInfo);
+    void slotGpuStaticInfo(const QMap<uint8_t,QVariant>& staticInfo);
 
     void slotTotalPhysicalMemory(const uint32_t& val);
 

@@ -30,7 +30,7 @@ private:
     void initCpuGraphs();
     void initGpuGraphs();
 
-    void updateCpuMultiGraphs(const Globals::CpuDynamicInfo& dynamicInfo);
+    void updateCpuMultiGraphs(const QMap<uint8_t, QVariant>& dynamicInfo);
 
     void processCpu();
     void processGpu();
@@ -161,8 +161,8 @@ private:
     uint32_t m_networkUsedSpeed{ 0 };
 
 public slots:
-    void slotCpuDynamicInfo(const Globals::CpuDynamicInfo& dynamicInfo);
-    void slotGpuDynamicInfo(const Globals::GpuDynamicInfo& dynamicInfo);
+    void slotCpuDynamicInfo(const QMap<uint8_t, QVariant>& dynamicInfo);
+    void slotGpuDynamicInfo(const QMap<uint8_t, QVariant>& dynamicInfo);
     void slotTotalMemory(const uint32_t& val);
     void slotUsedMemory(const uint32_t& val);
     void slotTotalNetworkSpeed(const uint32_t& val);

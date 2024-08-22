@@ -18,8 +18,8 @@ public slots:
     virtual void update() override;
 
 signals:
-    void signalStaticInfo(const Globals::MemoryStaticInfo&);
-    void signalDynamicInfo(const Globals::MemoryDynamicInfo&);
+    void signalStaticInfo(const QMap<uint8_t, QVariant>&);
+    void signalDynamicInfo(const QMap<uint8_t,QVariant>&);
 
 private:
     std::unique_ptr<MemoryInfo> m_memoryInfo{nullptr};

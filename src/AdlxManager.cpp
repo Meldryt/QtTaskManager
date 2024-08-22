@@ -14,7 +14,7 @@ static ADLXHelper g_ADLXHelp;
 
 AdlxManager::AdlxManager()
 {
-	m_staticInfo.chipDesigner = "AMD";
+	m_gpuChipDesigner = "AMD";
 }
 
 AdlxManager::~AdlxManager()
@@ -118,6 +118,12 @@ bool AdlxManager::fetchStaticInfo()
     {
         qDebug() << "\tGet performance monitoring services failed";
     }
+
+    m_staticInfo[Globals::SysInfoAttr::Key_Gpu_ChipDesigner] = QString::fromStdString(m_gpuChipDesigner.c_str());
+    m_staticInfo[Globals::SysInfoAttr::Key_Gpu_CardManufacturer] = QString::fromStdString(m_gpuCardManufacturer);
+    m_staticInfo[Globals::SysInfoAttr::Key_Gpu_Model] = QString::fromStdString(m_gpuModel);
+    m_staticInfo[Globals::SysInfoAttr::Key_Gpu_MemorySize] = m_gpuMemorySize;
+    m_staticInfo[Globals::SysInfoAttr::Key_Gpu_MemoryType] = QString::fromStdString(m_gpuMemoryType);
         
 	return true;
 }
@@ -125,6 +131,20 @@ bool AdlxManager::fetchStaticInfo()
 bool AdlxManager::fetchDynamicInfo()
 {
     ShowCurrentAllMetrics(m_perfMonitoringService, m_oneGPU);
+
+    m_dynamicInfo[Globals::SysInfoAttr::Key_Gpu_Usage] = m_gpuUsage;
+    m_dynamicInfo[Globals::SysInfoAttr::Key_Gpu_ClockSpeed] = m_gpuClockSpeed;
+    m_dynamicInfo[Globals::SysInfoAttr::Key_Gpu_VRamUsage] = m_gpuVramUsage;
+    m_dynamicInfo[Globals::SysInfoAttr::Key_Gpu_VRamClockSpeed] = m_gpuVramClockSpeed;
+    m_dynamicInfo[Globals::SysInfoAttr::Key_Gpu_VRamUsed] = m_gpuVramUsed;
+    m_dynamicInfo[Globals::SysInfoAttr::Key_Gpu_Power] = m_gpuPower;
+    m_dynamicInfo[Globals::SysInfoAttr::Key_Gpu_TotalBoardPower] = m_gpuTotalBoardPower;
+    m_dynamicInfo[Globals::SysInfoAttr::Key_Gpu_Voltage] = m_gpuVoltage;
+    m_dynamicInfo[Globals::SysInfoAttr::Key_Gpu_Temperature] = m_gpuTemperature;
+    m_dynamicInfo[Globals::SysInfoAttr::Key_Gpu_HotSpotTemperature] = m_gpuHotspotTemperature;
+    m_dynamicInfo[Globals::SysInfoAttr::Key_Gpu_FanSpeed] = m_gpuFanSpeed;
+    m_dynamicInfo[Globals::SysInfoAttr::Key_Gpu_FanSpeedUsage] = m_gpuFanSpeedUsage;
+
 	return true;
 }
 
@@ -218,11 +238,12 @@ void AdlxManager::ShowGPUInfo()
 
     if (MapVendorIdName.find(subSystemVendorId) != MapVendorIdName.end())
     {
-        m_staticInfo.cardManufacturer = MapVendorIdName.at(subSystemVendorId);
+        m_gpuCardManufacturer = MapVendorIdName.at(subSystemVendorId);
     }
-    m_staticInfo.gpuModel = gpuName;
-    m_staticInfo.memorySize = totalVRAM;
-    m_staticInfo.memoryType = vramTypeString;
+
+    m_gpuModel = gpuName;
+    m_gpuMemorySize = totalVRAM;
+    m_gpuMemoryType = vramTypeString;
 }
 
 // Show current all metrics
@@ -390,7 +411,7 @@ void AdlxManager::ShowGPUUsage(IADLXGPUMetricsSupportPtr gpuMetricsSupport, IADL
             adlx_double usage = 0;
             res = gpuMetrics->GPUUsage(&usage);
             if (ADLX_SUCCEEDED(res))
-                m_dynamicInfo.gpuUsage = usage;
+                m_gpuUsage = usage;
         }
     }
 }
@@ -409,7 +430,7 @@ void AdlxManager::ShowGPUClockSpeed(IADLXGPUMetricsSupportPtr gpuMetricsSupport,
             adlx_int gpuClock = 0;
             res = gpuMetrics->GPUClockSpeed(&gpuClock);
             if (ADLX_SUCCEEDED(res))
-                m_dynamicInfo.gpuClockSpeed = gpuClock;
+                m_gpuClockSpeed = gpuClock;
         }
     }
 }
@@ -428,7 +449,7 @@ void AdlxManager::ShowGPUVRAMClockSpeed(IADLXGPUMetricsSupportPtr gpuMetricsSupp
             adlx_int memoryClock = 0;
             res = gpuMetrics->GPUVRAMClockSpeed(&memoryClock);
             if (ADLX_SUCCEEDED(res))
-                m_dynamicInfo.gpuVramClockSpeed = memoryClock;
+                m_gpuVramClockSpeed = memoryClock;
         }
     }
 }
@@ -447,7 +468,7 @@ void AdlxManager::ShowGPUTemperature(IADLXGPUMetricsSupportPtr gpuMetricsSupport
             adlx_double temperature = 0;
             res = gpuMetrics->GPUTemperature(&temperature);
             if (ADLX_SUCCEEDED(res))
-                m_dynamicInfo.gpuTemperature = temperature;
+                m_gpuTemperature = temperature;
         }
     }
 }
@@ -466,7 +487,7 @@ void AdlxManager::ShowGPUHotspotTemperature(IADLXGPUMetricsSupportPtr gpuMetrics
             adlx_double hotspotTemperature = 0;
             res = gpuMetrics->GPUHotspotTemperature(&hotspotTemperature);
             if (ADLX_SUCCEEDED(res))
-                m_dynamicInfo.gpuHotspotTemperature = hotspotTemperature;
+                m_gpuHotspotTemperature = hotspotTemperature;
         }
     }
 }
@@ -485,7 +506,7 @@ void AdlxManager::ShowGPUPower(IADLXGPUMetricsSupportPtr gpuMetricsSupport, IADL
             adlx_double power = 0;
             res = gpuMetrics->GPUPower(&power);
             if (ADLX_SUCCEEDED(res))
-                m_dynamicInfo.gpuPower = power;
+                m_gpuPower = power;
         }
     }
 }
@@ -504,7 +525,7 @@ void AdlxManager::ShowGPUFanSpeed(IADLXGPUMetricsSupportPtr gpuMetricsSupport, I
             adlx_int fanSpeed = 0;
             res = gpuMetrics->GPUFanSpeed(&fanSpeed);
             if (ADLX_SUCCEEDED(res))
-                m_dynamicInfo.gpuFanSpeed = fanSpeed;
+                m_gpuFanSpeed = fanSpeed;
         }
     }
 }
@@ -524,8 +545,8 @@ void AdlxManager::ShowGPUVRAM(IADLXGPUMetricsSupportPtr gpuMetricsSupport, IADLX
             res = gpuMetrics->GPUVRAM(&VRAM);
             if (ADLX_SUCCEEDED(res))
             {
-                m_dynamicInfo.gpuVramUsed = VRAM;
-                m_dynamicInfo.gpuVramUsage = (static_cast<double>(m_dynamicInfo.gpuVramUsed) / m_staticInfo.memorySize) * 100.0;
+                m_gpuVramUsed = VRAM;
+                m_gpuVramUsage = (static_cast<double>(m_gpuVramUsed) / m_gpuMemorySize) * 100.0;
             }
             
         }
@@ -546,7 +567,7 @@ void AdlxManager::ShowGPUVoltage(IADLXGPUMetricsSupportPtr gpuMetricsSupport, IA
             adlx_int voltage = 0;
             res = gpuMetrics->GPUVoltage(&voltage);
             if (ADLX_SUCCEEDED(res))
-                m_dynamicInfo.gpuVoltage = voltage;
+                m_gpuVoltage = voltage;
         }
     }
 }
@@ -565,7 +586,7 @@ void AdlxManager::ShowGPUTotalBoardPower(IADLXGPUMetricsSupportPtr gpuMetricsSup
             adlx_double power = 0;
             res = gpuMetrics->GPUTotalBoardPower(&power);
             if (ADLX_SUCCEEDED(res))
-                m_dynamicInfo.gpuTotalBoardPower = power;
+                m_gpuTotalBoardPower = power;
         }
     }
 }

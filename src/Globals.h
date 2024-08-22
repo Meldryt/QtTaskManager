@@ -6,93 +6,61 @@
 class Globals
 {
 public:
-    struct CpuStaticInfo
+    enum SysInfoAttr : uint8_t
     {
-        std::string cpuBrand{ "" };
-        uint8_t processorCount{ 0 };
-        uint8_t threadCount{ 0 };
-        uint32_t baseFrequency{ 0 };
-        uint32_t maxFrequency{ 0 };
-        uint32_t l1CacheSize{ 0 }; //size in KB
-        uint32_t l2CacheSize{ 0 }; //size in KB
-        uint32_t l3CacheSize{ 0 }; //size in KB
-    };
+        Key_Cpu_Brand = 0,
+        Key_Cpu_ProcessorCount,
+        Key_Cpu_ThreadCount,
+        Key_Cpu_BaseFrequency,
+        Key_Cpu_MaxFrequency,
+        Key_Cpu_L1CacheSize,
+        Key_Cpu_L2CacheSize,
+        Key_Cpu_L3CacheSize,   
 
-    struct CpuDynamicInfo
-    {
-        double cpuTotalUsage{ 0 };
+        Key_Cpu_TotalUsage,
+        Key_Cpu_CoreUsages,
+        Key_Cpu_CoreFrequencies,
+        Key_Cpu_CurrentMaxFrequency,
+        Key_Cpu_ThreadFrequencies,
+        Key_Cpu_ThreadUsages,
+        Key_Cpu_Voltage,
+        Key_Cpu_Power,
+        Key_Cpu_SocPower,
+        Key_Cpu_Temperature,
+        Key_Cpu_Fanspeed,
 
-        std::vector<double> cpuCoreUsages;
-        std::vector<double> cpuCoreFrequencies;
+        Key_Gpu_ChipDesigner,
+        Key_Gpu_CardManufacturer,
+        Key_Gpu_Model,
+        Key_Gpu_MemoryVendor,
+        Key_Gpu_MemorySize,
+        Key_Gpu_MemoryType,
+        Key_Gpu_MemoryBandwidth,
+        Key_Gpu_DriverInfo,
+        Key_Gpu_DriverVersion,
 
-        uint16_t cpuMaxFrequency{ 0 };
-        std::vector<double> cpuThreadFrequencies;
-        std::vector<double> cpuThreadUsages;
-        
-        uint16_t cpuVoltage{ 0 }; // Current voltage in mV
-        double cpuPower{ 0 }; //in Watt
-        double cpuSocPower{ 0 }; //in Watt
+        Key_Gpu_Usage,
+        Key_Gpu_ClockSpeed,
+        Key_Gpu_VRamUsage,
+        Key_Gpu_VRamClockSpeed,
+        Key_Gpu_VRamUsed,
+        Key_Gpu_Power,
+        Key_Gpu_TotalBoardPower,
+        Key_Gpu_Voltage,
+        Key_Gpu_Temperature,
+        Key_Gpu_HotSpotTemperature,
+        Key_Gpu_FanSpeed,
+        Key_Gpu_FanSpeedUsage,
 
-        double cpuTemperature{ 0 };
+        Key_Memory_TotalVirtualMemory,
+        Key_Memory_TotalPhysicalMemory,
+        Key_Memory_UsedVirtualMemory,
+        Key_Memory_UsedPhysicalMemory,
 
-        uint16_t cpuFanSpeed{ 0 }; // Current fan RPM value
-    };
-
-    struct GpuStaticInfo
-    {
-        std::string chipDesigner{ "" };
-        std::string cardManufacturer{ "" };
-        std::string gpuModel{ "" };
-
-        std::string memoryVendor{ "" };
-        uint16_t memorySize{ 0 };
-        std::string memoryType{ "" };
-
-        uint32_t memoryBandwidth{ 0 };
-
-        std::string driverInfo{ "" };
-        std::string driverVersion{ "" };
-    };
-
-    struct GpuDynamicInfo
-    {
-        double gpuUsage{ 0 }; // Current graphic activity level in percentage
-        double gpuVramUsage{ 0 }; // Current memory activity level in percentage
-
-        uint16_t gpuClockSpeed{ 0 }; // Current graphic clock value in MHz
-        uint16_t gpuVramClockSpeed{ 0 }; // Current memory clock value in MHz
-
-        uint16_t gpuVramUsed{ 0 };
-
-        double gpuPower{ 0 }; //in Watt
-        double gpuTotalBoardPower{ 0 }; //in Watt
-        uint16_t gpuVoltage{ 0 }; // Current graphic voltage in mV
-
-        double gpuTemperature{ 0 };
-        double gpuHotspotTemperature{ 0 }; // Current center of the die temperature value in C
-
-        uint16_t gpuFanSpeed{ 0 }; // Current fan RPM value
-        uint8_t gpuFanSpeedUsage{ 0 }; // Current ratio of fan RPM and max RPM
-    };
-
-    struct MemoryStaticInfo
-    {
-        uint32_t totalVirtualMemory{0};
-        uint32_t totalPhysicalMemory{0};
-    };
-
-    struct MemoryDynamicInfo
-    {
-        uint32_t usedVirtualMemory{0};
-        uint32_t usedPhysicalMemory{0};
-    };
-
-    struct NetworkDynamicInfo
-    {
-        std::vector<std::string> names;
-        std::vector<uint32_t> bytesReceivedPerSec;
-        std::vector<uint32_t> bytesSentPerSec;
-        std::vector<uint32_t> bytesTotalPerSec;
-        std::vector<uint32_t> currentBandwidth;
+        Key_Network_Names,
+        Key_Network_BytesReceivedPerSec,
+        Key_Network_BytesSentPerSec,
+        Key_Network_TotalBytesPerSec,
+        Key_Network_CurrentBandwidth,
     };
 };

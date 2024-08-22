@@ -13,12 +13,12 @@ void Worker::start()
 {   
     m_timer->start();
 
-    emit started();
+    emit signalStarted();
 }
 
 void Worker::stop()
 {   
     m_timer->stop();
 
-    emit stopped();
+    emit signalStopped();
 }

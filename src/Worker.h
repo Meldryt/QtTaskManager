@@ -1,6 +1,8 @@
 #pragma once
 
 #include <QObject>
+#include <QMap>
+#include <QVariant>
 #include <QTimer>
 
 class Worker : public QObject
@@ -15,9 +17,12 @@ public slots:
     virtual void update() = 0;
 
 signals:
-    void started();
-    void stopped();
-    void finished();
+    void signalStarted();
+    void signalStopped();
+    void signalFinished();
+
+    void signalStaticInfo(const QMap<uint8_t,QVariant>&);
+    void signalDynamicInfo(const QMap<uint8_t,QVariant>&);
 
 private:
     QTimer* m_timer{nullptr};

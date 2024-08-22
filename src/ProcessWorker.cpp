@@ -3,7 +3,7 @@
 #include <QElapsedTimer>
 
 ProcessWorker::ProcessWorker(int timerInterval, QObject* parent)
-    : Worker{ timerInterval, parent }
+    : Worker{ timerInterval, parent}
 {
     m_processInfo = std::make_unique<ProcessInfo>();
 }

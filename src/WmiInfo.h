@@ -6,25 +6,35 @@
 
 #include "Globals.h"
 
+#include <QMap>
+#include <QVariant>
+
 #include <vector>
 #include <string>
 #include <map>
 
-class WmiManager
+class WmiInfo
 {
 public:
-    WmiManager();
+    WmiInfo();
 
     bool init();
-    void readStaticInfo();
     void update();
 
-    //@note: disable costly updates
-    void disableCpuUpdates();
+    void readStaticInfo();
 
-    const Globals::CpuStaticInfo& cpuStaticInfo() const;
-    const Globals::CpuDynamicInfo& cpuDynamicInfo() const;
-    const Globals::NetworkDynamicInfo& networkDynamicInfo() const;
+    //@note: disable costly updates
+    //void disableCpuUpdates();
+
+    const QMap<uint8_t, QVariant>& staticInfo() const
+    {
+        return m_staticInfo;
+    }
+
+    const QMap<uint8_t, QVariant>& dynamicInfo() const
+    {
+        return m_dynamicInfo;
+    }
 
 private:
 
@@ -42,7 +52,7 @@ private:
     void readFanSpeed();
     void readNetworkSpeed();
 
-    bool m_readCpuInfos{ true };
+    bool m_readCpuParameters{ true };
 
     //wmi
     IWbemLocator* m_locator{ nullptr };
@@ -52,7 +62,23 @@ private:
     bool m_isWmiFrequencyInfoAvailable{ false };
     bool m_isWmiFanInfoAvailable{ false };
 
-    Globals::CpuStaticInfo m_cpuStaticInfo;
-    Globals::CpuDynamicInfo m_cpuDynamicInfo;
-    Globals::NetworkDynamicInfo m_networkDynamicInfo;
+    QMap<uint8_t, QVariant> m_staticInfo;
+    QMap<uint8_t, QVariant> m_dynamicInfo;
+
+    std::string m_cpuBrand{ "" };
+    uint8_t m_cpuProcessorCount{ 0 };
+    uint8_t m_cpuThreadCount{ 0 };
+    uint32_t m_cpuBaseFrequency{ 0 };
+    uint32_t m_cpuMaxFrequency{ 0 };
+
+    uint32_t m_cpuCurrentMaxFrequency{ 0 };
+    std::vector<double> m_cpuThreadFrequencies;
+    std::vector<double> m_cpuThreadUsages;
+
+    std::vector<std::string> m_networkNames;
+    std::vector<uint32_t> m_networkBytesReceivedPerSec;
+    std::vector<uint32_t> m_networkBytesSentPerSec;
+    std::vector<uint32_t> m_networkBytesTotalPerSec;
+    std::vector<uint32_t> m_networkCurrentBandwidth;
+
 };

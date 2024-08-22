@@ -9,12 +9,12 @@ class GpuInfoAmd
 public:
     GpuInfoAmd();
 
-    const Globals::GpuStaticInfo& staticInfo() const
+    const QMap<uint8_t,QVariant>& staticInfo() const
     {
         return m_staticInfo;
     }
 
-    const Globals::GpuDynamicInfo& dynamicInfo() const
+    const QMap<uint8_t,QVariant>& dynamicInfo() const
     {
         return m_adlxManager->dynamicInfo();
     }
@@ -28,5 +28,5 @@ private:
 
     AdlxManager* m_adlxManager{ nullptr };
 
-    Globals::GpuStaticInfo m_staticInfo;
+    QMap<uint8_t,QVariant> m_staticInfo;
 };

@@ -1,4 +1,4 @@
-#include "WmiManager.h"
+#include "WmiInfo.h"
 
 #include <comdef.h>
 #include <comutil.h>
@@ -124,8 +124,11 @@
 
 //QuerySink* m_sink;
 
-WmiManager::WmiManager()
+WmiInfo::WmiInfo()
 {
+#ifdef HAS_RYZEN_MASTER_SDK
+    m_readCpuParameters = false;
+#endif
     //m_sink = new QuerySink(enumerator);
 }
 
@@ -134,7 +137,7 @@ WmiManager::WmiManager()
 //some classes might not be available like "Win32_FanSpeed"
 //also using wmi + query is very slow (measured ~250ms per call)
 
-bool WmiManager::init()
+bool WmiInfo::init()
 {
     HRESULT hr;
     //hr = CoInitialize(NULL);
@@ -177,47 +180,46 @@ bool WmiManager::init()
     return true;
 }
 
-void WmiManager::readStaticInfo()
+void WmiInfo::readStaticInfo()
 {
     readCpuInfo();
+
+    m_staticInfo[Globals::SysInfoAttr::Key_Cpu_Brand] = QString::fromStdString(m_cpuBrand);
+    m_staticInfo[Globals::SysInfoAttr::Key_Cpu_ProcessorCount] = m_cpuProcessorCount;
+    m_staticInfo[Globals::SysInfoAttr::Key_Cpu_ThreadCount] = m_cpuThreadCount;
+    m_staticInfo[Globals::SysInfoAttr::Key_Cpu_BaseFrequency] = m_cpuBaseFrequency;
+    m_staticInfo[Globals::SysInfoAttr::Key_Cpu_MaxFrequency] = m_cpuMaxFrequency;
+    //m_staticInfo[Globals::SysInfoAttr::Key_Cpu_L1CacheSize] = m_cpuL1CacheSize;
+    //m_staticInfo[Globals::SysInfoAttr::Key_Cpu_L2CacheSize] = m_cpuL2CacheSize;
+    //m_staticInfo[Globals::SysInfoAttr::Key_Cpu_L3CacheSize] = m_cpuL3CacheSize;
 }
 
-void WmiManager::update()
+void WmiInfo::update()
 {
-    if (m_readCpuInfos)
+    if (m_readCpuParameters)
     {
         readCpuFrequency();
         readFanSpeed();
     }
 
     readNetworkSpeed();
-}
 
-void WmiManager::disableCpuUpdates()
-{
-    m_readCpuInfos = false;
-}
+    m_dynamicInfo[Globals::SysInfoAttr::Key_Cpu_CurrentMaxFrequency] = m_cpuCurrentMaxFrequency;
+    m_dynamicInfo[Globals::SysInfoAttr::Key_Cpu_ThreadFrequencies] = QVariant::fromValue(m_cpuThreadFrequencies);
+    m_dynamicInfo[Globals::SysInfoAttr::Key_Cpu_ThreadUsages] = QVariant::fromValue(m_cpuThreadUsages);
 
-const Globals::CpuStaticInfo& WmiManager::cpuStaticInfo() const
-{
-    return m_cpuStaticInfo;
-}
-
-const Globals::CpuDynamicInfo& WmiManager::cpuDynamicInfo() const
-{
-    return m_cpuDynamicInfo;
-}
-
-const Globals::NetworkDynamicInfo& WmiManager::networkDynamicInfo() const
-{
-    return m_networkDynamicInfo;
+    m_dynamicInfo[Globals::SysInfoAttr::Key_Network_Names] = QVariant::fromValue(m_networkNames);
+    m_dynamicInfo[Globals::SysInfoAttr::Key_Network_BytesReceivedPerSec] = QVariant::fromValue(m_networkBytesReceivedPerSec);
+    m_dynamicInfo[Globals::SysInfoAttr::Key_Network_BytesSentPerSec] = QVariant::fromValue(m_networkBytesSentPerSec);
+    m_dynamicInfo[Globals::SysInfoAttr::Key_Network_TotalBytesPerSec] = QVariant::fromValue(m_networkBytesTotalPerSec);
+    m_dynamicInfo[Globals::SysInfoAttr::Key_Network_CurrentBandwidth] = QVariant::fromValue(m_networkCurrentBandwidth);
 }
 
 /*
 * read CPU frequency.
 */
 //@note: CallNtPowerInformation does not give current frequency anymore since Windows 10 21H1 (19043)
-void WmiManager::readCpuFrequency()
+void WmiInfo::readCpuFrequency()
 {
     if (!m_isWmiFrequencyInfoAvailable)
     {
@@ -246,26 +248,26 @@ void WmiManager::readCpuFrequency()
         return;
     }
 
-    uint16_t maxFrequency = 0;
+    uint16_t currentMaxFrequency = 0;
 
-    for (size_t i = 0; i < m_cpuStaticInfo.threadCount; i++)
+    for (size_t i = 0; i < m_cpuThreadCount; i++)
     {
         const double performance = std::stod(fieldMap["PercentProcessorPerformance"][i]) / 100;
-        double currentFrequency = m_cpuStaticInfo.baseFrequency * performance;
-        m_cpuDynamicInfo.cpuThreadFrequencies[i] = currentFrequency;
-        if (currentFrequency > maxFrequency)
+        double currentFrequency = m_cpuBaseFrequency * performance;
+        m_cpuThreadFrequencies[i] = currentFrequency;
+        if (currentFrequency > currentMaxFrequency)
         {
-            maxFrequency = currentFrequency;
+            currentMaxFrequency = currentFrequency;
         }
 
         const double usage = std::stod(fieldMap["PercentProcessorUtility"][i]);// *100;
-        m_cpuDynamicInfo.cpuThreadUsages[i] = usage;
+        m_cpuThreadUsages[i] = usage;
     }
 
-    m_cpuDynamicInfo.cpuMaxFrequency = maxFrequency;
+    m_cpuCurrentMaxFrequency = currentMaxFrequency;
 }
 
-void WmiManager::readCpuInfo()
+void WmiInfo::readCpuInfo()
 {
     const std::vector<std::wstring> fields = { L"Name",L"Manufacturer",L"NumberOfCores",L"NumberOfLogicalProcessors",L"MaxClockSpeed" };
     std::map<std::string, std::vector<std::string>> fieldMap = queryArray(L"Win32_Processor", fields);
@@ -283,18 +285,17 @@ void WmiManager::readCpuInfo()
     }
 
     if (!fieldMap["NumberOfLogicalProcessors"].empty()) {
-
+        m_cpuThreadCount = std::stoi(fieldMap["NumberOfLogicalProcessors"][0]);
+        m_cpuThreadFrequencies.resize(m_cpuThreadCount);
+        m_cpuThreadUsages.resize(m_cpuThreadCount);
     }
 
     if (!fieldMap["MaxClockSpeed"].empty()) {
-
+        m_cpuBaseFrequency = std::stoi(fieldMap["MaxClockSpeed"][0]);
     }
-
-    uint32_t baseFrequency = std::stoi(fieldMap["MaxClockSpeed"][0]);
-    m_cpuStaticInfo.baseFrequency = baseFrequency;
 }
 
-void WmiManager::readFanSpeed()
+void WmiInfo::readFanSpeed()
 {
     if (m_isWmiFanInfoAvailable)
     {
@@ -322,7 +323,7 @@ void WmiManager::readFanSpeed()
 }
 
 //@note: tested, not supported
-//void WmiManager::readThermalZoneTemperature()
+//void WmiInfo::readThermalZoneTemperature()
 //{
     //BSTR query = SysAllocString(L"SELECT * FROM MSAcpi_ThermalZoneTemperature");
     //auto thermalZoneTemperature = query(L"MSAcpi_ThermalZoneTemperature", L"InstanceName,CurrentTemperature");
@@ -330,64 +331,64 @@ void WmiManager::readFanSpeed()
     //if (!thermalZoneTemperature.empty()) {
     //    //return;
     //    const double temperature = std::stod(thermalZoneTemperature[0]);
-    //    dynamicInfo.cpuTemperature = temperature;
+    //    m_cpuTemperature = temperature;
     //}
 //}
 
-void WmiManager::readNetworkSpeed()
+void WmiInfo::readNetworkSpeed()
 {
     const std::vector<std::wstring> fields = { L"Name",L"BytesReceivedPerSec",L"BytesSentPerSec",L"BytesTotalPerSec",L"CurrentBandwidth" };
     std::map<std::string, std::vector<std::string>> fieldMap = queryArray(L"Win32_PerfFormattedData_Tcpip_NetworkInterface", fields);
 
     if (!fieldMap["Name"].empty()) {
-        m_networkDynamicInfo.names.clear();
+        m_networkNames.clear();
         for (auto&& netWorkInterfaceName : fieldMap["Name"])
         {
-            m_networkDynamicInfo.names.push_back(netWorkInterfaceName);
+            m_networkNames.push_back(netWorkInterfaceName);
         }
     }
 
     if (!fieldMap["BytesReceivedPerSec"].empty()) {
-        m_networkDynamicInfo.bytesReceivedPerSec.clear();
+        m_networkBytesReceivedPerSec.clear();
         for (auto&& bytesReceivedPerSec : fieldMap["BytesReceivedPerSec"])
         {
-            m_networkDynamicInfo.bytesReceivedPerSec.push_back(std::stoi(bytesReceivedPerSec));
+            m_networkBytesReceivedPerSec.push_back(std::stoi(bytesReceivedPerSec));
         }
     }
 
     if (!fieldMap["BytesSentPerSec"].empty()) {
-        m_networkDynamicInfo.bytesSentPerSec.clear();
+        m_networkBytesSentPerSec.clear();
         for (auto&& bytesSentPerSec : fieldMap["BytesSentPerSec"])
         {
-            m_networkDynamicInfo.bytesSentPerSec.push_back(std::stoi(bytesSentPerSec));
+            m_networkBytesSentPerSec.push_back(std::stoi(bytesSentPerSec));
         }
     }
 
     if (!fieldMap["BytesTotalPerSec"].empty()) {
-        m_networkDynamicInfo.bytesTotalPerSec.clear();
+        m_networkBytesTotalPerSec.clear();
         for (auto&& bytesTotalPerSec : fieldMap["BytesTotalPerSec"])
         {
-            m_networkDynamicInfo.bytesTotalPerSec.push_back(std::stoi(bytesTotalPerSec));
+            m_networkBytesTotalPerSec.push_back(std::stoi(bytesTotalPerSec));
         }
     }
 
     if (!fieldMap["CurrentBandwidth"].empty()) {
-        m_networkDynamicInfo.currentBandwidth.clear();
+        m_networkCurrentBandwidth.clear();
         for (auto&& currentBandwidth : fieldMap["CurrentBandwidth"])
         {
-            m_networkDynamicInfo.currentBandwidth.push_back(std::stoi(currentBandwidth));
+            m_networkCurrentBandwidth.push_back(std::stoi(currentBandwidth));
         }
     }
 }
 
 
-bool WmiManager::executeQuery(const std::wstring& query) {
+bool WmiInfo::executeQuery(const std::wstring& query) {
     if (m_service == nullptr) return false;
     return SUCCEEDED(m_service->ExecQuery(bstr_t(L"WQL"), bstr_t(std::wstring(query.begin(), query.end()).c_str()),
         WBEM_FLAG_FORWARD_ONLY | WBEM_FLAG_RETURN_IMMEDIATELY, nullptr, &m_enumerator));
 }
 
-//bool WmiManager::executeQueryAsync(const std::wstring& query) {
+//bool WmiInfo::executeQueryAsync(const std::wstring& query) {
 //    if (service == nullptr || m_sink == nullptr) return false;
 //    return SUCCEEDED(service->ExecQueryAsync(bstr_t(L"WQL"), bstr_t(std::wstring(query.begin(), query.end()).c_str()),
 //        WBEM_FLAG_FORWARD_ONLY | WBEM_FLAG_RETURN_IMMEDIATELY, nullptr, sink));
@@ -424,7 +425,7 @@ bool WmiManager::executeQuery(const std::wstring& query) {
 //    return result_text;
 //}
 
-std::vector<std::string> WmiManager::query(const std::wstring& wmi_class, const std::wstring& field, const std::wstring& filter, const ULONG count) 
+std::vector<std::string> WmiInfo::query(const std::wstring& wmi_class, const std::wstring& field, const std::wstring& filter, const ULONG count) 
 {
     std::wstring filter_string;
     if (!filter.empty()) {
@@ -519,7 +520,7 @@ std::vector<std::string> WmiManager::query(const std::wstring& wmi_class, const 
 }
 
 
-std::map<std::string, std::vector<std::string>> WmiManager::queryArray(const std::wstring& wmi_class, const std::vector<std::wstring>& fields, const std::wstring& filter, const ULONG count)
+std::map<std::string, std::vector<std::string>> WmiInfo::queryArray(const std::wstring& wmi_class, const std::vector<std::wstring>& fields, const std::wstring& filter, const ULONG count)
 {
     std::map<std::string, std::vector<std::string>> fieldMap;
 
@@ -638,7 +639,7 @@ std::map<std::string, std::vector<std::string>> WmiManager::queryArray(const std
     return fieldMap;
 }
 
-//void WmiManager::queryAsync(const std::wstring& wmi_class, const std::wstring& field, const std::wstring& filter, const ULONG count) 
+//void WmiInfo::queryAsync(const std::wstring& wmi_class, const std::wstring& field, const std::wstring& filter, const ULONG count) 
 //{
 //    std::wstring filter_string;
 //    if (!filter.empty()) {

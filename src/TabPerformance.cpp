@@ -369,49 +369,53 @@ void TabPerformance::processNetwork()
     m_networkChartView->repaint();
 }
 
-void TabPerformance::updateCpuMultiGraphs(const Globals::CpuDynamicInfo& dynamicInfo)
+void TabPerformance::updateCpuMultiGraphs(const QMap<uint8_t, QVariant>& dynamicInfo)
 {
     int index = CpuMultiGraphsStartIndex;
     std::vector<int> initGraphs;
 
-    if (m_cpuGraphs[index]->lineSeries.empty() && !dynamicInfo.cpuCoreUsages.empty())
+    std::vector<double> cpuCoreUsages = dynamicInfo[Globals::Key_Cpu_CoreUsages].value<std::vector<double>>();
+    if (m_cpuGraphs[index]->lineSeries.empty() && !cpuCoreUsages.empty())
     {
-        m_cpuGraphs[index]->lineSeries.resize(dynamicInfo.cpuCoreUsages.size());
+        m_cpuGraphs[index]->lineSeries.resize(cpuCoreUsages.size());
         m_cpuGraphs[index]->points.resize(m_cpuGraphs[index]->lineSeries.size());
         m_cpuGraphs[index]->values.clear();
         initGraphs.push_back(index);
     }
-    m_cpuGraphs[index]->values = dynamicInfo.cpuCoreUsages;
+    m_cpuGraphs[index]->values = cpuCoreUsages;
     ++index;
 
-    if (m_cpuGraphs[index]->lineSeries.empty() && !dynamicInfo.cpuCoreFrequencies.empty())
+    std::vector<double> cpuCoreFrequencies = dynamicInfo[Globals::Key_Cpu_CoreFrequencies].value<std::vector<double>>();
+    if (m_cpuGraphs[index]->lineSeries.empty() && !cpuCoreFrequencies.empty())
     {
-        m_cpuGraphs[index]->lineSeries.resize(dynamicInfo.cpuCoreFrequencies.size());
+        m_cpuGraphs[index]->lineSeries.resize(cpuCoreFrequencies.size());
         m_cpuGraphs[index]->points.resize(m_cpuGraphs[index]->lineSeries.size());
         m_cpuGraphs[index]->values.clear();
         initGraphs.push_back(index);
     }
-    m_cpuGraphs[index]->values = dynamicInfo.cpuCoreFrequencies;
+    m_cpuGraphs[index]->values = cpuCoreFrequencies;
     ++index;
 
-    if (m_cpuGraphs[index]->lineSeries.empty() && !dynamicInfo.cpuThreadUsages.empty())
+    std::vector<double> cpuThreadUsages = dynamicInfo[Globals::Key_Cpu_ThreadUsages].value<std::vector<double>>();
+    if (m_cpuGraphs[index]->lineSeries.empty() && !cpuThreadUsages.empty())
     {
-        m_cpuGraphs[index]->lineSeries.resize(dynamicInfo.cpuThreadUsages.size());
+        m_cpuGraphs[index]->lineSeries.resize(cpuThreadUsages.size());
         m_cpuGraphs[index]->points.resize(m_cpuGraphs[index]->lineSeries.size());
         m_cpuGraphs[index]->values.clear();
         initGraphs.push_back(index);
     }
-    m_cpuGraphs[index]->values = dynamicInfo.cpuThreadUsages;
+    m_cpuGraphs[index]->values = cpuThreadUsages;
     ++index;
 
-    if (m_cpuGraphs[index]->lineSeries.empty() && !dynamicInfo.cpuThreadFrequencies.empty())
+    std::vector<double> cpuThreadFrequencies = dynamicInfo[Globals::Key_Cpu_ThreadFrequencies].value<std::vector<double>>();
+    if (m_cpuGraphs[index]->lineSeries.empty() && !cpuThreadFrequencies.empty())
     {
-        m_cpuGraphs[index]->lineSeries.resize(dynamicInfo.cpuThreadFrequencies.size());
+        m_cpuGraphs[index]->lineSeries.resize(cpuThreadFrequencies.size());
         m_cpuGraphs[index]->points.resize(m_cpuGraphs[index]->lineSeries.size());
         m_cpuGraphs[index]->values.clear();
         initGraphs.push_back(index);
     }
-    m_cpuGraphs[index]->values = dynamicInfo.cpuThreadFrequencies;
+    m_cpuGraphs[index]->values = cpuThreadFrequencies;
     
     for (int i = 0; i < initGraphs.size(); ++i)
     {
@@ -428,17 +432,17 @@ void TabPerformance::updateCpuMultiGraphs(const Globals::CpuDynamicInfo& dynamic
     }
 }
 
-void TabPerformance::slotCpuDynamicInfo(const Globals::CpuDynamicInfo& dynamicInfo)
+void TabPerformance::slotCpuDynamicInfo(const QMap<uint8_t, QVariant>& dynamicInfo)
 {
     int index = 0;
 
-    m_cpuGraphs[index++]->values[0] = dynamicInfo.cpuTotalUsage;
-    m_cpuGraphs[index++]->values[0] = dynamicInfo.cpuMaxFrequency;
-    m_cpuGraphs[index++]->values[0] = dynamicInfo.cpuPower;
-    m_cpuGraphs[index++]->values[0] = dynamicInfo.cpuSocPower;
-    m_cpuGraphs[index++]->values[0] = dynamicInfo.cpuVoltage;
-    m_cpuGraphs[index++]->values[0] = dynamicInfo.cpuTemperature;
-    m_cpuGraphs[index++]->values[0] = dynamicInfo.cpuFanSpeed;
+    m_cpuGraphs[index++]->values[0] = dynamicInfo[Globals::SysInfoAttr::Key_Cpu_TotalUsage].value<double>();
+    m_cpuGraphs[index++]->values[0] = dynamicInfo[Globals::SysInfoAttr::Key_Cpu_CurrentMaxFrequency].value<double>();
+    m_cpuGraphs[index++]->values[0] = dynamicInfo[Globals::SysInfoAttr::Key_Cpu_Power].value<double>();
+    m_cpuGraphs[index++]->values[0] = dynamicInfo[Globals::SysInfoAttr::Key_Cpu_SocPower].value<double>();
+    m_cpuGraphs[index++]->values[0] = dynamicInfo[Globals::SysInfoAttr::Key_Cpu_Voltage].value<double>();
+    m_cpuGraphs[index++]->values[0] = dynamicInfo[Globals::SysInfoAttr::Key_Cpu_Temperature].value<double>();
+    m_cpuGraphs[index++]->values[0] = dynamicInfo[Globals::SysInfoAttr::Key_Cpu_Fanspeed].value<double>();
 
     updateCpuMultiGraphs(dynamicInfo);
 
@@ -458,22 +462,22 @@ void TabPerformance::slotCpuDynamicInfo(const Globals::CpuDynamicInfo& dynamicIn
     }
 }
 
-void TabPerformance::slotGpuDynamicInfo(const Globals::GpuDynamicInfo& dynamicInfo)
+void TabPerformance::slotGpuDynamicInfo(const QMap<uint8_t, QVariant>& dynamicInfo)
 {
     int index = 0;
 
-    m_gpuGraphs[index++]->values[0] = dynamicInfo.gpuUsage;
-    m_gpuGraphs[index++]->values[0] = dynamicInfo.gpuVramUsage;
-    m_gpuGraphs[index++]->values[0] = dynamicInfo.gpuClockSpeed;
-    m_gpuGraphs[index++]->values[0] = dynamicInfo.gpuVramClockSpeed;
-    m_gpuGraphs[index++]->values[0] = dynamicInfo.gpuVramUsed;
-    m_gpuGraphs[index++]->values[0] = dynamicInfo.gpuPower;
-    m_gpuGraphs[index++]->values[0] = dynamicInfo.gpuTotalBoardPower;
-    m_gpuGraphs[index++]->values[0] = dynamicInfo.gpuVoltage;
-    m_gpuGraphs[index++]->values[0] = dynamicInfo.gpuTemperature;
-    m_gpuGraphs[index++]->values[0] = dynamicInfo.gpuHotspotTemperature;
-    m_gpuGraphs[index++]->values[0] = dynamicInfo.gpuFanSpeed;
-    m_gpuGraphs[index++]->values[0] = dynamicInfo.gpuFanSpeedUsage;
+    m_gpuGraphs[index++]->values[0] = dynamicInfo[Globals::SysInfoAttr::Key_Gpu_Usage].value<double>();
+    m_gpuGraphs[index++]->values[0] = dynamicInfo[Globals::SysInfoAttr::Key_Gpu_VRamUsage].value<double>();
+    m_gpuGraphs[index++]->values[0] = dynamicInfo[Globals::SysInfoAttr::Key_Gpu_ClockSpeed].value<double>();
+    m_gpuGraphs[index++]->values[0] = dynamicInfo[Globals::SysInfoAttr::Key_Gpu_VRamClockSpeed].value<double>();
+    m_gpuGraphs[index++]->values[0] = dynamicInfo[Globals::SysInfoAttr::Key_Gpu_VRamUsed].value<double>();
+    m_gpuGraphs[index++]->values[0] = dynamicInfo[Globals::SysInfoAttr::Key_Gpu_Power].value<double>();
+    m_gpuGraphs[index++]->values[0] = dynamicInfo[Globals::SysInfoAttr::Key_Gpu_TotalBoardPower].value<double>();
+    m_gpuGraphs[index++]->values[0] = dynamicInfo[Globals::SysInfoAttr::Key_Gpu_Voltage].value<double>();
+    m_gpuGraphs[index++]->values[0] = dynamicInfo[Globals::SysInfoAttr::Key_Gpu_Temperature].value<double>();
+    m_gpuGraphs[index++]->values[0] = dynamicInfo[Globals::SysInfoAttr::Key_Gpu_HotSpotTemperature].value<double>();
+    m_gpuGraphs[index++]->values[0] = dynamicInfo[Globals::SysInfoAttr::Key_Gpu_FanSpeed].value<double>();
+    m_gpuGraphs[index++]->values[0] = dynamicInfo[Globals::SysInfoAttr::Key_Gpu_FanSpeedUsage].value<double>();
 
     for (int i = 0; i < m_gpuGraphs.size(); ++i)
     {

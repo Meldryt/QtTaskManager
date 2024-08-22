@@ -39,7 +39,7 @@ void GpuInfo::detectGpu()
     const std::string vendor = "AMD";
     const std::string renderer = "AMD";
 
-    m_staticInfo.gpuModel = renderer;
+    m_staticInfo[Globals::SysInfoAttr::Key_Gpu_Model] = QString::fromStdString(renderer);
     //const std::string version = reinterpret_cast<const char*>(gl->glGetString(GL_VERSION));
     //const std::string extension = reinterpret_cast<const char*>(gl->glGetString(GL_EXTENSIONS));
     const bool isAmd = renderer.find("AMD") != std::string::npos || vendor.find("ATI") != std::string::npos;

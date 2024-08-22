@@ -5,8 +5,6 @@
 #include <QVariant>
 #include <QObject>
 
-#include "WmiManager.h"
-
 #include "external/RyzenMasterMonitoringSDK/include/ICPUEx.h"
 #include "external/RyzenMasterMonitoringSDK/include/IPlatform.h"
 #include "external/RyzenMasterMonitoringSDK/include/IDeviceManager.h"
@@ -62,12 +60,12 @@ void CpuInfo::init()
     fetchStaticInfo();
 }
 
-const Globals::CpuStaticInfo& CpuInfo::staticInfo() const
+const QMap<uint8_t,QVariant>& CpuInfo::staticInfo() const
 {
     return m_staticInfo;
 }
 
-const Globals::CpuDynamicInfo& CpuInfo::dynamicInfo() const
+const QMap<uint8_t,QVariant>& CpuInfo::dynamicInfo() const
 {
     return m_dynamicInfo;
 }
@@ -78,12 +76,14 @@ void CpuInfo::update()
     {
         readDynamicInfoRyzenMaster();
     }
+    else if (m_useIntelCpuParameters)
+    {
+        //@todo: implement intel sdk functions
+    }
     else
     {
         readPdhFrequency();
     }
-
-    readDynamicInfoWmi();
 
     fetchDynamicInfo();
 }
@@ -100,7 +100,7 @@ void CpuInfo::initPdh()
     PdhAddEnglishCounter(totalCPUQuery, sw, 0, &totalCPUCounter);
     PdhCollectQueryData(totalCPUQuery);
 
-    for (uint8_t i = 0; i < m_staticInfo.processorCount; ++i)
+    for (uint8_t i = 0; i < m_cpuProcessorCount; ++i)
     {
         PDH_HQUERY singleCPUQuery;
         PDH_HCOUNTER singleCPUCounter;
@@ -117,8 +117,8 @@ void CpuInfo::initPdh()
         singleCPUCounters.push_back(singleCPUCounter);
     }
 
-    m_dynamicInfo.cpuCoreUsages.resize(m_staticInfo.processorCount);
-    m_dynamicInfo.cpuCoreFrequencies.resize(m_staticInfo.processorCount);
+    m_cpuCoreUsages.resize(m_cpuProcessorCount);
+    m_cpuCoreFrequencies.resize(m_cpuProcessorCount);
     //SYSTEM_INFO siSysInfo;
     //GetNativeSystemInfo(&siSysInfo);
     //m_cpuCount = siSysInfo.dwNumberOfProcessors;
@@ -170,9 +170,11 @@ void CpuInfo::initRyzenMaster()
         //_tprintf(_T("Platform init failed\n"));
         return;
     }
+
     IDeviceManager& rDeviceManager = rPlatform.GetIDeviceManager();
     m_amdCpuDevice = (ICPUEx*)rDeviceManager.GetDevice(dtCPU, 0);
     m_amdCpuBiosDevice = (IBIOSEx*)rDeviceManager.GetDevice(dtBIOS, 0);
+
     if (!m_amdCpuDevice)
     {
         qDebug() << "Could not init amd devices.";
@@ -320,31 +322,31 @@ void CpuInfo::readRyzenDynamicCpuInfo()
         int iRet = m_amdCpuDevice->GetCPUParameters(stData);
         if (!iRet)
         {
-            m_dynamicInfo.cpuTemperature = stData.dTemperature;
+            m_cpuTemperature = stData.dTemperature;
             //dynamicInfo.cpuPower = stData.fVDDCR_VDD_Power;
-            m_dynamicInfo.cpuPower = stData.fPPTValue;
-            m_dynamicInfo.cpuSocPower = stData.fVDDCR_SOC_Power;
+            m_cpuPower = stData.fPPTValue;
+            m_cpuSocPower = stData.fVDDCR_SOC_Power;
             //dynamicInfo.cpuMaxFrequency = stData.fCCLK_Fmax;
 
             double maxFrequency = 0.0;
-            if (m_dynamicInfo.cpuCoreFrequencies.empty())
+            if (m_cpuCoreFrequencies.empty())
             {
-                m_dynamicInfo.cpuCoreFrequencies.resize(stData.stFreqData.uLength);
+                m_cpuCoreFrequencies.resize(stData.stFreqData.uLength);
             }
 
             for (unsigned int i = 0; i < stData.stFreqData.uLength; i++)
             {
                 if (stData.stFreqData.dFreq[i] != 0)
                 {
-                    m_dynamicInfo.cpuCoreFrequencies[i] = stData.stFreqData.dFreq[i];
-                    if (m_dynamicInfo.cpuCoreFrequencies[i] > maxFrequency)
+                    m_cpuCoreFrequencies[i] = stData.stFreqData.dFreq[i];
+                    if (m_cpuCoreFrequencies[i] > maxFrequency)
                     {
-                        maxFrequency = m_dynamicInfo.cpuCoreFrequencies[i];
+                        maxFrequency = m_cpuCoreFrequencies[i];
                     }
                 }
             }
-            m_staticInfo.baseFrequency = stData.fCCLK_Fmax; //is this correct?
-            m_dynamicInfo.cpuMaxFrequency = maxFrequency;
+            m_cpuBaseFrequency = stData.fCCLK_Fmax; //is this correct?
+            m_cpuMaxFrequency = maxFrequency;
             //qDebug() << "stData.fVDDCR_VDD_Power: " << stData.fVDDCR_VDD_Power << " stData.fVDDCR_SOC_Power: " << stData.fVDDCR_SOC_Power; //null
             //qDebug() << " stData.fPPTValue: " << stData.fPPTValue << " stData.fPPTLimit: " << stData.fPPTLimit << " stData.fCCLK_Fmax: " << stData.fCCLK_Fmax << " stData.dPeakSpeed: " << stData.dPeakSpeed;
         }
@@ -425,22 +427,31 @@ void CpuInfo::fetchStaticInfo()
     readSystemInfo();
 
     //if (m_useWmi)
-    {
-        m_wmiManager = new WmiManager();
-        m_wmiManager->init();
-        m_wmiManager->readStaticInfo();
-        
-        if (m_useRyzenCpuParameters)
-        {
-            //m_wmiManager->disableCpuUpdates();
-        }
-    }
+    //{
+    //    m_wmiManager = new WmiManager();
+    //    m_wmiManager->init();
+    //    m_wmiManager->readStaticInfo();
+    //    
+    //    if (m_useRyzenCpuParameters)
+    //    {
+    //        //m_wmiManager->disableCpuUpdates();
+    //    }
+    //}
 
     initPdh();
     readPdhBaseFrequency();
 
     initRyzenMaster();
     readStaticInfoRyzenMaster();
+
+    m_staticInfo[Globals::SysInfoAttr::Key_Cpu_Brand] = QString::fromStdString(m_cpuBrand);
+    m_staticInfo[Globals::SysInfoAttr::Key_Cpu_ProcessorCount] = m_cpuProcessorCount;
+    m_staticInfo[Globals::SysInfoAttr::Key_Cpu_ThreadCount] = m_cpuThreadCount;
+    m_staticInfo[Globals::SysInfoAttr::Key_Cpu_BaseFrequency] = m_cpuBaseFrequency;
+    m_staticInfo[Globals::SysInfoAttr::Key_Cpu_MaxFrequency] = m_cpuMaxFrequency;
+    m_staticInfo[Globals::SysInfoAttr::Key_Cpu_L1CacheSize] = m_cpuL1CacheSize;
+    m_staticInfo[Globals::SysInfoAttr::Key_Cpu_L2CacheSize] = m_cpuL2CacheSize;
+    m_staticInfo[Globals::SysInfoAttr::Key_Cpu_L3CacheSize] = m_cpuL3CacheSize;
 }
 
 #ifdef _WIN32
@@ -486,7 +497,7 @@ void CpuInfo::readSystemInfo()
     }
 
     //string includes manufacturer, model and clockspeed
-    m_staticInfo.cpuBrand = CPUBrandString;
+    m_cpuBrand = CPUBrandString;
     //qDebug() << "CPU Type: " << staticSystemInfo.cpuBrand.c_str();
 
     //SYSTEM_INFO sysInfo;
@@ -553,14 +564,14 @@ void CpuInfo::readSystemInfo()
         }
     }
 
-    m_staticInfo.processorCount = processorCoreCount;
-    m_staticInfo.threadCount = logicalProcessorCount;
-    m_staticInfo.l1CacheSize = processorL1CacheSize/1024;
-    m_staticInfo.l2CacheSize = processorL2CacheSize/1024;
-    m_staticInfo.l3CacheSize = processorL3CacheSize/1024;
+    m_cpuProcessorCount = processorCoreCount;
+    m_cpuThreadCount = logicalProcessorCount;
+    m_cpuL1CacheSize = processorL1CacheSize/1024;
+    m_cpuL2CacheSize = processorL2CacheSize/1024;
+    m_cpuL3CacheSize = processorL3CacheSize/1024;
 
-    m_dynamicInfo.cpuThreadFrequencies.resize(logicalProcessorCount);
-    m_dynamicInfo.cpuThreadUsages.resize(logicalProcessorCount);
+    m_cpuThreadFrequencies.resize(logicalProcessorCount);
+    m_cpuThreadUsages.resize(logicalProcessorCount);
 }
 #else
 void CpuInfo::fetchStaticInfoLinux()
@@ -582,6 +593,18 @@ void CpuInfo::fetchDynamicInfo()
 #else
     fetchDynamicInfoLinux();
 #endif
+
+    m_dynamicInfo[Globals::SysInfoAttr::Key_Cpu_TotalUsage] = m_cpuTotalUsage;
+    m_dynamicInfo[Globals::SysInfoAttr::Key_Cpu_CoreUsages] = QVariant::fromValue(m_cpuCoreUsages);
+    m_dynamicInfo[Globals::SysInfoAttr::Key_Cpu_CoreFrequencies] = QVariant::fromValue(m_cpuCoreFrequencies);
+    m_dynamicInfo[Globals::SysInfoAttr::Key_Cpu_CurrentMaxFrequency] = m_cpuCurrentMaxFrequency;
+    m_dynamicInfo[Globals::SysInfoAttr::Key_Cpu_ThreadFrequencies] = QVariant::fromValue(m_cpuThreadFrequencies);
+    m_dynamicInfo[Globals::SysInfoAttr::Key_Cpu_ThreadUsages] = QVariant::fromValue(m_cpuThreadUsages);
+    m_dynamicInfo[Globals::SysInfoAttr::Key_Cpu_Voltage] = m_cpuVoltage;
+    m_dynamicInfo[Globals::SysInfoAttr::Key_Cpu_Power] = m_cpuPower;
+    m_dynamicInfo[Globals::SysInfoAttr::Key_Cpu_SocPower] = m_cpuSocPower;
+    m_dynamicInfo[Globals::SysInfoAttr::Key_Cpu_Temperature] = m_cpuTemperature;
+    m_dynamicInfo[Globals::SysInfoAttr::Key_Cpu_Fanspeed] = m_cpuFanSpeed;
 }
 
 #ifdef _WIN32
@@ -590,13 +613,13 @@ void CpuInfo::fetchDynamicInfoWindows()
     PDH_FMT_COUNTERVALUE counterVal;
     PdhCollectQueryData(totalCPUQuery);
     PdhGetFormattedCounterValue(totalCPUCounter, PDH_FMT_DOUBLE, NULL, &counterVal);
-    m_dynamicInfo.cpuTotalUsage = counterVal.doubleValue;
+    m_cpuTotalUsage = counterVal.doubleValue;
 
-    for(uint8_t i=0;i< m_staticInfo.processorCount;++i)
+    for(uint8_t i=0;i< m_cpuProcessorCount;++i)
     {
         PdhCollectQueryData(singleCPUQueries[i]);
         PdhGetFormattedCounterValue(singleCPUCounters[i], PDH_FMT_DOUBLE, NULL, &counterVal);
-        m_dynamicInfo.cpuCoreUsages[i] = counterVal.doubleValue;
+        m_cpuCoreUsages[i] = counterVal.doubleValue;
     }
 }
 #else
@@ -616,7 +639,7 @@ void CpuInfo::readPdhBaseFrequency()
         if (PdhGetRawCounterValue(m_cpuFreqCounter, &cntType, &cnt) == ERROR_SUCCESS &&
             (cnt.CStatus == PDH_CSTATUS_VALID_DATA || cnt.CStatus == PDH_CSTATUS_NEW_DATA))
         {
-            m_staticInfo.baseFrequency = (cnt.FirstValue);
+            m_cpuBaseFrequency = (cnt.FirstValue);
         }
     }
 }
@@ -631,14 +654,7 @@ void CpuInfo::readPdhFrequency()
         if (PdhGetFormattedCounterValue(m_cpuPerformanceCounter, PDH_FMT_DOUBLE, &cntType, &cnt) == ERROR_SUCCESS &&
             (cnt.CStatus == PDH_CSTATUS_VALID_DATA || cnt.CStatus == PDH_CSTATUS_NEW_DATA))
         {
-            m_dynamicInfo.cpuMaxFrequency = m_staticInfo.baseFrequency * (cnt.doubleValue / 100.0);
+            m_cpuCurrentMaxFrequency = m_cpuBaseFrequency * (cnt.doubleValue / 100.0);
         }
     }
-}
-
-
-void CpuInfo::readDynamicInfoWmi()
-{
-    m_wmiManager->update();
-
 }

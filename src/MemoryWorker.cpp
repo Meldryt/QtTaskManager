@@ -2,7 +2,7 @@
 #include "MemoryInfo.h"
 
 MemoryWorker::MemoryWorker(int timerInterval, QObject* parent)
-    : Worker{ timerInterval, parent }
+    : Worker{ timerInterval, parent}
 {
     m_memoryInfo = std::make_unique<MemoryInfo>();
 }

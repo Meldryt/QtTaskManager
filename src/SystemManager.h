@@ -15,6 +15,7 @@ class ProcessWorker;
 class CpuWorker;
 class GpuWorker;
 class MemoryWorker;
+class WmiWorker;
 
 class SystemManager : public QTabWidget
 {
@@ -37,6 +38,7 @@ private:
     std::unique_ptr<CpuWorker> m_cpuWorker{nullptr};
     std::unique_ptr<GpuWorker> m_gpuWorker{nullptr};
     std::unique_ptr<MemoryWorker> m_memoryWorker{ nullptr };
+    std::unique_ptr<WmiWorker> m_wmiWorker{ nullptr };
 
     QTimer* m_timer{ nullptr };
 
@@ -51,15 +53,15 @@ private:
     bool m_staticInfoMemoryChanged{ false };
     bool m_dynamicInfoMemoryChanged{ false };
 
-    Globals::CpuStaticInfo m_staticInfoCpu;
-    Globals::CpuDynamicInfo m_dynamicInfoCpu;
+    QMap<uint8_t,QVariant> m_staticInfoCpu;
+    QMap<uint8_t,QVariant> m_dynamicInfoCpu;
 
-    Globals::GpuStaticInfo m_staticInfoGpu;
-    Globals::GpuDynamicInfo m_dynamicInfoGpu;
+    QMap<uint8_t,QVariant> m_staticInfoGpu;
+    QMap<uint8_t,QVariant> m_dynamicInfoGpu;
 
     std::map<uint32_t, ProcessInfo::Process> m_processMap;
 
-    Globals::MemoryStaticInfo m_staticInfoMemory;
-    Globals::MemoryDynamicInfo m_dynamicInfoMemory;
+    QMap<uint8_t,QVariant> m_staticInfoMemory;
+    QMap<uint8_t,QVariant> m_dynamicInfoMemory;
 };
 

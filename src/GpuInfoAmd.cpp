@@ -45,8 +45,8 @@ void GpuInfoAmd::initAgs()
         qDebug() << "Radeon Software Version: " << gpuInfo.radeonSoftwareVersion;
         qDebug() << "Driver Version:          " << gpuInfo.driverVersion;
 
-        m_staticInfo.driverInfo = gpuInfo.driverVersion;
-        m_staticInfo.driverVersion = gpuInfo.radeonSoftwareVersion;
+        m_staticInfo[Globals::SysInfoAttr::Key_Gpu_DriverInfo] = QString::fromStdString(gpuInfo.driverVersion);
+        m_staticInfo[Globals::SysInfoAttr::Key_Gpu_DriverVersion] = QString::fromStdString(gpuInfo.radeonSoftwareVersion);
 
         if (agsDeInitialize(agsContext) != AGS_SUCCESS)
         {

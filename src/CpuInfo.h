@@ -1,6 +1,9 @@
 #pragma once
 
 #include <QObject>
+#include <QMap>
+#include <QVariant>
+
 #include <string>
 #include <vector>
 //#include <windows.h>
@@ -15,10 +18,9 @@
 
 #include "Globals.h"
 
+
 class ICPUEx;
 class IBIOSEx;
-
-class WmiManager;
 
 class CpuInfo
 {
@@ -28,20 +30,13 @@ public:
     void init();
     void update();
 
-    const Globals::CpuStaticInfo &staticInfo() const;
-    const Globals::CpuDynamicInfo &dynamicInfo() const;
+    const QMap<uint8_t,QVariant> &staticInfo() const;
+    const QMap<uint8_t,QVariant> &dynamicInfo() const;
 
 private:
     void fetchStaticInfo();
 
     void readSystemInfo();
-
-    //bool initWmi();
-    //void readStaticInfoWmi();
-    void readDynamicInfoWmi();
-    //void readWmiFrequency();
-    //void readWmiFanSpeed();
-    void readThermalZoneTemperature();
 
     void initPdh();
 
@@ -66,8 +61,8 @@ private:
     void readPdhBaseFrequency();
     void readPdhFrequency();
 
-    Globals::CpuStaticInfo m_staticInfo;
-    Globals::CpuDynamicInfo m_dynamicInfo;
+    QMap<uint8_t, QVariant> m_staticInfo;
+    QMap<uint8_t, QVariant> m_dynamicInfo;
 
 #ifdef _WIN32
     //pdh
@@ -87,11 +82,36 @@ private:
     IBIOSEx* m_amdCpuBiosDevice{ nullptr };
 
     bool m_useRyzenCpuParameters{ false };
-
-    WmiManager* m_wmiManager{ nullptr };
+    bool m_useIntelCpuParameters{ false };
 
 #else
 
 #endif
+
+    std::string m_cpuBrand{ "" };
+    uint8_t m_cpuProcessorCount{ 0 };
+    uint8_t m_cpuThreadCount{ 0 };
+    uint32_t m_cpuBaseFrequency{ 0 };
+    uint32_t m_cpuMaxFrequency{ 0 };
+    uint32_t m_cpuL1CacheSize{ 0 }; //size in KB
+    uint32_t m_cpuL2CacheSize{ 0 }; //size in KB
+    uint32_t m_cpuL3CacheSize{ 0 }; //size in KB
+
+    double m_cpuTotalUsage{ 0 };
+
+    std::vector<double> m_cpuCoreUsages;
+    std::vector<double> m_cpuCoreFrequencies;
+
+    uint16_t m_cpuCurrentMaxFrequency{ 0 };
+    std::vector<double> m_cpuThreadFrequencies;
+    std::vector<double> m_cpuThreadUsages;
+    
+    uint16_t m_cpuVoltage{ 0 }; // Current voltage in mV
+    double m_cpuPower{ 0 }; //in Watt
+    double m_cpuSocPower{ 0 }; //in Watt
+
+    double m_cpuTemperature{ 0 };
+
+    uint16_t m_cpuFanSpeed{ 0 }; // Current fan RPM value
 };
 

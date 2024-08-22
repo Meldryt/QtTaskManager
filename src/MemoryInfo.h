@@ -1,6 +1,9 @@
 #pragma once
 
 #include <QObject>
+#include <QMap>
+#include <QVariant>
+
 #include <cstdint>
 
 #include "Globals.h"
@@ -14,14 +17,27 @@ public:
     void init();
     void update();
 
-    const Globals::MemoryStaticInfo &getStaticInfo() const;
-    const Globals::MemoryDynamicInfo &getDynamicInfo() const;
+    const QMap<uint8_t, QVariant>& getStaticInfo() const
+    {
+        return m_staticInfo;
+    }
+
+    const QMap<uint8_t, QVariant>& getDynamicInfo() const
+    {
+        return m_dynamicInfo;
+    }
 
 private:
     void fetchStaticInfo();
     void fetchDynamicInfo();
 
-    Globals::MemoryStaticInfo staticInfo;
-    Globals::MemoryDynamicInfo dynamicInfo;
+    QMap<uint8_t, QVariant> m_staticInfo;
+    QMap<uint8_t, QVariant> m_dynamicInfo;
+
+    uint32_t m_totalVirtualMemory{0};
+    uint32_t m_totalPhysicalMemory{0};
+
+    uint32_t m_usedVirtualMemory{0};
+    uint32_t m_usedPhysicalMemory{0};
 };
 
