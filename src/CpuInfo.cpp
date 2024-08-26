@@ -83,16 +83,14 @@ void CpuInfo::update()
 {
     if (m_useRyzenCpuParameters)
     {
-        readDynamicInfoRyzenMaster();
+        readDynamicInfoRyzenMaster(); 
     }
     else if (m_useIntelCpuParameters)
     {
         //@todo: implement intel sdk functions
     }
-    else
-    {
-        readPdhFrequency();
-    }
+
+    readPdhFrequency();
 
     fetchDynamicInfo();
 }

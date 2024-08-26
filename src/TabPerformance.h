@@ -101,7 +101,7 @@ private:
     const QStringList CpuGraphTitles
     {
         "CpuUsage",
-        "MaxFrequency",
+        "CurrentMaxFrequency",
         "CpuPower",
         "CpuSocPower",
         "Voltage",

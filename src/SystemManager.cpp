@@ -174,7 +174,7 @@ void SystemManager::update()
 
     if (m_dynamicInfoMemoryChanged)
     {
-        QVariant variant = m_staticInfoMemory[Globals::Key_Memory_UsedPhysicalMemory];
+        QVariant variant = m_dynamicInfoMemory[Globals::Key_Memory_UsedPhysicalMemory];
         if (variant.canConvert<uint32_t>())
         {
             const uint32_t usedPhysicalMemory = variant.value<uint32_t>();
