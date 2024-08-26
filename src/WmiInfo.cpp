@@ -209,7 +209,7 @@ void WmiInfo::update()
     m_dynamicInfo[Globals::SysInfoAttr::Key_Cpu_ThreadUsages] = QVariant::fromValue(m_cpuThreadUsages);
 
     m_dynamicInfo[Globals::SysInfoAttr::Key_Network_Names] = QVariant::fromValue(m_networkNames);
-    m_dynamicInfo[Globals::SysInfoAttr::Key_Network_BytesReceivedPerSec] = QVariant::fromValue(m_networkBytesReceivedPerSec);
+    m_dynamicInfo[Globals::SysInfoAttr::Key_Network_BytesReceivedPerSec] = m_networkBytesReceivedPerSec[0];
     m_dynamicInfo[Globals::SysInfoAttr::Key_Network_BytesSentPerSec] = QVariant::fromValue(m_networkBytesSentPerSec);
     m_dynamicInfo[Globals::SysInfoAttr::Key_Network_TotalBytesPerSec] = QVariant::fromValue(m_networkBytesTotalPerSec);
     m_dynamicInfo[Globals::SysInfoAttr::Key_Network_CurrentBandwidth] = QVariant::fromValue(m_networkCurrentBandwidth);

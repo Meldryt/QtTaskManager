@@ -163,7 +163,7 @@ void TabPerformance::initNetworkWidgets()
     m_networkChart->addSeries(m_networkLineSeries);
     m_networkChart->createDefaultAxes();
     m_networkChart->axes(Qt::Horizontal).back()->setRange(0, 60);
-    m_networkChart->axes(Qt::Vertical).back()->setRange(0.0, 100.0);
+    m_networkChart->axes(Qt::Vertical).back()->setRange(0.0, 1000.0);
     //chart->setTitle("Simple line chart example");
 
     m_networkChartView = new QChartView(m_networkChart);
@@ -515,6 +515,12 @@ void TabPerformance::slotTotalNetworkSpeed(const uint32_t& val)
 void TabPerformance::slotUsedNetworkSpeed(const uint32_t& val)
 {
     m_networkUsedSpeed = val;
+
+    if (m_networkUsedSpeed > m_networkCurrentMaxSpeed)
+    {
+        m_networkCurrentMaxSpeed = m_networkUsedSpeed;
+        m_networkChart->axes(Qt::Vertical).back()->setRange(0.0, m_networkCurrentMaxSpeed);
+    }
 }
 
 void TabPerformance::showSelectionWidget()

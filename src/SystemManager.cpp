@@ -89,8 +89,8 @@ SystemManager::SystemManager(QWidget* parent) : QTabWidget(parent)
 
     connect(m_wmiWorker.get(), &WmiWorker::signalDynamicInfo, this, [&](const QMap<uint8_t,QVariant>& dynamicInfo)
     {
-        m_dynamicInfoMemory = dynamicInfo;
-        m_dynamicInfoMemoryChanged = true;
+        m_dynamicInfoNetwork = dynamicInfo;
+        m_dynamicInfoNetworkChanged = true;
     });
 
     for (int i = 0; i < m_workerThreads.size(); ++i)
@@ -180,6 +180,18 @@ void SystemManager::update()
         }
 
         m_dynamicInfoMemoryChanged = false;
+    }
+
+    if (m_dynamicInfoNetworkChanged)
+    {
+        QVariant variant = m_dynamicInfoNetwork[Globals::Key_Network_BytesReceivedPerSec];
+        if (variant.canConvert<uint32_t>())
+        {
+            const uint32_t usedBytesReceivedPerSec = variant.value<uint32_t>();
+            m_tabPerformance->slotUsedNetworkSpeed(usedBytesReceivedPerSec);
+        }
+
+        m_dynamicInfoNetworkChanged = false;
     }
 
     m_tabHardware->process();

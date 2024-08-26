@@ -159,6 +159,7 @@ private:
 
     uint32_t m_networkTotalSpeed{ 0 };
     uint32_t m_networkUsedSpeed{ 0 };
+    uint32_t m_networkCurrentMaxSpeed{ 0 };
 
 public slots:
     void slotCpuDynamicInfo(const QMap<uint8_t, QVariant>& dynamicInfo);

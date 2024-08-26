@@ -53,6 +53,8 @@ private:
     bool m_staticInfoMemoryChanged{ false };
     bool m_dynamicInfoMemoryChanged{ false };
 
+    bool m_dynamicInfoNetworkChanged{ false };
+
     QMap<uint8_t,QVariant> m_staticInfoCpu;
     QMap<uint8_t,QVariant> m_dynamicInfoCpu;
 
@@ -63,5 +65,7 @@ private:
 
     QMap<uint8_t,QVariant> m_staticInfoMemory;
     QMap<uint8_t,QVariant> m_dynamicInfoMemory;
+
+    QMap<uint8_t, QVariant> m_dynamicInfoNetwork;
 };
 
