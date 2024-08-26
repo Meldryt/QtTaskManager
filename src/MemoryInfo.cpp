@@ -5,7 +5,12 @@
 
 MemoryInfo::MemoryInfo()
 {
+    qDebug() << __FUNCTION__;
+}
 
+MemoryInfo::~MemoryInfo()
+{
+    qDebug() << __FUNCTION__;
 }
 
 void MemoryInfo::init()

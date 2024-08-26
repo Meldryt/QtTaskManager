@@ -23,6 +23,7 @@ public:
     };
 
     GpuInfo();
+    ~GpuInfo();
 
     void init();
     void update();

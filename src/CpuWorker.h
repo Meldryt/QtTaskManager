@@ -13,6 +13,7 @@ class CpuWorker : public Worker
     Q_OBJECT
 public:
     explicit CpuWorker(int timerInterval, QObject *parent = nullptr);
+    ~CpuWorker();
 
 public slots:
     virtual void start() override;

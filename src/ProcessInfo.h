@@ -41,6 +41,7 @@ public:
     };
 
     ProcessInfo();
+    ~ProcessInfo();
 
     void setProcessorCount(uint8_t newProcessorCount);
     const std::map<uint32_t, Process> &getProcessMap() const;

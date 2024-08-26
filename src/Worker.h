@@ -10,6 +10,7 @@ class Worker : public QObject
     Q_OBJECT
 public:
     explicit Worker(int timerInterval, QObject *parent = nullptr);
+    virtual ~Worker();
 
 public slots:
     virtual void start();

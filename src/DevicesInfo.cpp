@@ -15,6 +15,7 @@
 
 #include <stddef.h>
 
+#include <QDebug>
 
 typedef unsigned __int64 QWORD;
 
@@ -192,7 +193,12 @@ DEFINE_GUID(GUID_DEVINTERFACE_MONITOR_DEVICE, 0xe6f07b5f, 0xee97, 0x4a90, 0xb0, 
 
 DevicesInfo::DevicesInfo()
 {
+    qDebug() << __FUNCTION__;
+}
 
+DevicesInfo::~DevicesInfo()
+{
+    qDebug() << __FUNCTION__;
 }
 
 void DevicesInfo::init()

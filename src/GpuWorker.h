@@ -10,6 +10,7 @@ class GpuWorker : public Worker
     Q_OBJECT
 public:
     explicit GpuWorker(int timerInterval, QObject* parent = nullptr);
+    ~GpuWorker();
 
 public slots:
     virtual void start() override;

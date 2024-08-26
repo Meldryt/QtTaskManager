@@ -11,6 +11,7 @@ class TabHardware : public QWidget
 {
 public:
     explicit TabHardware(QWidget *parent = nullptr);
+    ~TabHardware();
 
     void process();
 

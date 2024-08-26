@@ -14,11 +14,15 @@ static ADLXHelper g_ADLXHelp;
 
 AdlxManager::AdlxManager()
 {
+    qDebug() << __FUNCTION__;
+
 	m_gpuChipDesigner = "AMD";
 }
 
 AdlxManager::~AdlxManager()
 {
+    qDebug() << __FUNCTION__;
+
     ADLX_RESULT res = g_ADLXHelp.Terminate();
     qDebug() << "Destroy ADLX result: " << res;
 }

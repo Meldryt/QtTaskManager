@@ -11,10 +11,18 @@
 
 GpuInfo::GpuInfo()
 {
+    qDebug() << __FUNCTION__;
+}
+
+GpuInfo::~GpuInfo()
+{
+    qDebug() << __FUNCTION__;
 }
 
 void GpuInfo::init()
 {
+    qDebug() << __FUNCTION__;
+
     m_gpuInfoAmd = new GpuInfoAmd();
     m_gpuInfoNVidia = new GpuInfoNVidia();
 
@@ -28,6 +36,8 @@ void GpuInfo::init()
 
 void GpuInfo::update()
 {
+    qDebug() << __FUNCTION__;
+
     if(m_gpuDetected)
     {
         fetchDynamicInfo();
@@ -36,6 +46,8 @@ void GpuInfo::update()
 
 void GpuInfo::detectGpu()
 {
+    qDebug() << __FUNCTION__;
+
     const bool isAmd = GlGlobals::glRenderer.find("AMD") != std::string::npos || GlGlobals::glVendor.find("ATI") != std::string::npos;
     const bool isNVidia = GlGlobals::glRenderer.find("NVIDIA") != std::string::npos || GlGlobals::glVendor.find("NVIDIA") != std::string::npos;
 
@@ -61,6 +73,8 @@ void GpuInfo::detectGpu()
 
 void GpuInfo::fetchStaticInfo()
 {
+    qDebug() << __FUNCTION__;
+
     if (m_gpuManufacturer == GpuManufacturer::NVIDIA)
     {
         m_gpuInfoNVidia->fetchStaticInfo();
@@ -75,6 +89,8 @@ void GpuInfo::fetchStaticInfo()
 
 void GpuInfo::fetchDynamicInfo()
 {
+    qDebug() << __FUNCTION__;
+
     if(m_gpuManufacturer == GpuManufacturer::NVIDIA)
     {
         m_gpuInfoNVidia->fetchDynamicInfo();

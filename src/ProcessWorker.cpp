@@ -5,7 +5,14 @@
 ProcessWorker::ProcessWorker(int timerInterval, QObject* parent)
     : Worker{ timerInterval, parent}
 {
+    qDebug() << __FUNCTION__;
+
     m_processInfo = std::make_unique<ProcessInfo>();
+}
+
+ProcessWorker::~ProcessWorker()
+{
+    qDebug() << __FUNCTION__;
 }
 
 void ProcessWorker::start()

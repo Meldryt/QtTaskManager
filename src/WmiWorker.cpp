@@ -8,9 +8,16 @@
 WmiWorker::WmiWorker(int timerInterval, QObject *parent)
     : Worker{ timerInterval, parent}
 {
+    qDebug() << __FUNCTION__;
+
     m_wmiInfo = std::make_unique<WmiInfo>();
 
     m_elapsedTimer = new QElapsedTimer();
+}
+
+WmiWorker::~WmiWorker()
+{
+    qDebug() << __FUNCTION__;
 }
 
 void WmiWorker::start()

@@ -15,6 +15,7 @@ class WmiWorker : public Worker
     Q_OBJECT
 public:
     explicit WmiWorker(int timerInterval, QObject *parent = nullptr);
+    ~WmiWorker();
 
 public slots:
     virtual void start() override;

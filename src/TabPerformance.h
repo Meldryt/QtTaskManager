@@ -18,6 +18,7 @@ class TabPerformance : public QWidget
 {
 public:
     explicit TabPerformance(QWidget *parent = nullptr);
+    ~TabPerformance();
 
     void process();
 

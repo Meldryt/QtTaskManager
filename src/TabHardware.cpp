@@ -7,6 +7,8 @@
 
 TabHardware::TabHardware(QWidget *parent) : QWidget{parent}
 {
+    qDebug() << __FUNCTION__;
+
     m_listWidget = new QListWidget(this);
     m_listWidget->addItem("CPU");
     m_listWidget->addItem("GPU");
@@ -82,6 +84,11 @@ TabHardware::TabHardware(QWidget *parent) : QWidget{parent}
 
     connect(m_listWidget,&QListWidget::itemSelectionChanged, this, &TabHardware::showSelectionWidget);
     m_listWidget->setCurrentRow(0);
+}
+
+TabHardware::~TabHardware()
+{
+    qDebug() << __FUNCTION__;
 }
 
 void TabHardware::process()

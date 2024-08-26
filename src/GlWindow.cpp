@@ -196,6 +196,8 @@ namespace cube
 
 GlWindow::GlWindow(QWidget *parent) : QOpenGLWindow()
 {
+    qDebug() << __FUNCTION__;
+
     resize(m_windowSizeX, m_windowSizeY);
     m_elapsedTimerFps = new QElapsedTimer();
     m_elapsedTimerDeltaTime = new QElapsedTimer();
@@ -209,6 +211,8 @@ GlWindow::GlWindow(QWidget *parent) : QOpenGLWindow()
 
 GlWindow::~GlWindow()
 {
+    qDebug() << __FUNCTION__;
+
     // Make sure the context is current and then explicitly
     // destroy all underlying OpenGL resources.
     //makeCurrent();

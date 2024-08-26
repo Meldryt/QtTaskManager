@@ -8,6 +8,8 @@
 
 TabProcesses::TabProcesses(QWidget *parent) : QWidget(parent)
 {
+    qDebug() << __FUNCTION__;
+
     m_tableProcesses = new QTableWidget(this);
     m_tableProcesses->setColumnCount(TableHeaderNames.size());
 
@@ -29,6 +31,11 @@ TabProcesses::TabProcesses(QWidget *parent) : QWidget(parent)
 
     QGridLayout *layout = new QGridLayout(this);
     layout->addWidget(m_tableProcesses,0,0);
+}
+
+TabProcesses::~TabProcesses()
+{
+    qDebug() << __FUNCTION__;
 }
 
 void TabProcesses::process()

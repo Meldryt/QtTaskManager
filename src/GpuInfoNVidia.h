@@ -11,6 +11,7 @@ class GpuInfoNVidia
 {
 public:
     GpuInfoNVidia();
+    ~GpuInfoNVidia();
 
     const QMap<uint8_t,QVariant>& staticInfo() const
     {

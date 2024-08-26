@@ -126,10 +126,17 @@
 
 WmiInfo::WmiInfo()
 {
+    qDebug() << __FUNCTION__;
+
 #ifdef HAS_RYZEN_MASTER_SDK
     m_readCpuParameters = false;
 #endif
     //m_sink = new QuerySink(enumerator);
+}
+
+WmiInfo::~WmiInfo()
+{
+    qDebug() << __FUNCTION__;
 }
 
 //@note: check available wmi classes with WMI Explorer (https://github.com/vinaypamnani/wmie2)

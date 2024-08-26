@@ -17,6 +17,7 @@ class WmiInfo
 {
 public:
     WmiInfo();
+    ~WmiInfo();
 
     bool init();
     void update();

@@ -4,12 +4,19 @@
 
 TabBenchmark::TabBenchmark(QWidget *parent) : QWidget(parent)
 {
+    qDebug() << __FUNCTION__;
+
     m_buttonStartBenchmark = new QPushButton("Start Benchmark", this);
 
     QGridLayout* layout = new QGridLayout(this);
     layout->addWidget(m_buttonStartBenchmark, 0, 0);
 
     QObject::connect(m_buttonStartBenchmark, &QPushButton::clicked, this, &TabBenchmark::slotOpenBenchmarkWindow);
+}
+
+TabBenchmark::~TabBenchmark()
+{
+    qDebug() << __FUNCTION__;
 }
 
 void TabBenchmark::slotOpenBenchmarkWindow()

@@ -26,6 +26,7 @@ class CpuInfo
 {
 public:
     CpuInfo();
+    ~CpuInfo();
 
     void init();
     void update();

@@ -246,7 +246,14 @@ typedef NV_GPU_MEMORY_INFO_EX_V1 NV_GPU_MEMORY_INFO_EX;
 
 GpuInfoNVidia::GpuInfoNVidia()
 {
+    qDebug() << __FUNCTION__;
+
     m_gpuChipDesigner = "NVIDIA";
+}
+
+GpuInfoNVidia::~GpuInfoNVidia()
+{
+    qDebug() << __FUNCTION__;
 }
 
 bool GpuInfoNVidia::init()
@@ -271,6 +278,8 @@ bool GpuInfoNVidia::init()
  */
 bool GpuInfoNVidia::initNvApi()
 {
+    qDebug() << __FUNCTION__;
+
     HMODULE hmod = LoadLibraryA( NVAPI_DLL );
 
     if( hmod == NULL )
@@ -350,6 +359,8 @@ nvmlDevice_t nvmlGpuHandle;
 
 bool GpuInfoNVidia::initNvml()
 {
+    qDebug() << __FUNCTION__;
+
     /* Not in system path, but could be local */
     hDLL = LoadLibraryA("nvml.dll");
     if (!hDLL) {
@@ -543,6 +554,8 @@ void GpuInfoNVidia::nvmlGpuTempAndFanspeed() {
  */
 void GpuInfoNVidia::fetchStaticInfo()
 {
+    qDebug() << __FUNCTION__;
+
     NvAPI_Status status;
 
     status = (*_NvAPI_Initialize)();
@@ -678,6 +691,8 @@ void GpuInfoNVidia::fetchStaticInfo()
  */
 void GpuInfoNVidia::fetchDynamicInfo()
 {
+    qDebug() << __FUNCTION__;
+
     NvAPI_Status status;
 
     status = (*_NvAPI_Initialize)();

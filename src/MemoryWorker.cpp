@@ -4,7 +4,14 @@
 MemoryWorker::MemoryWorker(int timerInterval, QObject* parent)
     : Worker{ timerInterval, parent}
 {
+    qDebug() << __FUNCTION__;
+
     m_memoryInfo = std::make_unique<MemoryInfo>();
+}
+
+MemoryWorker::~MemoryWorker()
+{
+    qDebug() << __FUNCTION__;
 }
 
 void MemoryWorker::start()

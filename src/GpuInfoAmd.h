@@ -8,6 +8,7 @@ class GpuInfoAmd
 {
 public:
     GpuInfoAmd();
+    ~GpuInfoAmd();
 
     const QMap<uint8_t,QVariant>& staticInfo() const
     {

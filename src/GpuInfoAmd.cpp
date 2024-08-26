@@ -11,7 +11,14 @@
 
 GpuInfoAmd::GpuInfoAmd()
 {
+    qDebug() << __FUNCTION__;
+
     m_adlxManager = new AdlxManager();
+}
+
+GpuInfoAmd::~GpuInfoAmd()
+{
+    qDebug() << __FUNCTION__;
 }
 
 bool GpuInfoAmd::init()

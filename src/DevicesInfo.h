@@ -5,6 +5,7 @@ class DevicesInfo
 {
 public:
     DevicesInfo();
+    ~DevicesInfo();
 
     void init();
     void update();

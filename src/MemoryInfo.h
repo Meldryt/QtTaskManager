@@ -13,6 +13,7 @@ class MemoryInfo
 public:
 
     MemoryInfo();
+    ~MemoryInfo();
 
     void init();
     void update();

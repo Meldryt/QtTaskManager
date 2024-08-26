@@ -11,6 +11,7 @@ class MemoryWorker : public Worker
     Q_OBJECT
 public:
     explicit MemoryWorker(int timerInterval, QObject* parent = nullptr);
+    ~MemoryWorker();
 
 public slots:
     virtual void start() override;

@@ -9,6 +9,8 @@
 
 TabPerformance::TabPerformance(QWidget *parent) : QWidget{parent}
 {
+    qDebug() << __FUNCTION__;
+
     m_listWidget = new QListWidget(this);
     m_listWidget->addItem("CPU");
     m_listWidget->addItem("GPU");
@@ -34,6 +36,11 @@ TabPerformance::TabPerformance(QWidget *parent) : QWidget{parent}
     m_listWidget->setCurrentRow(0);
 
     showSelectionWidget();
+}
+
+TabPerformance::~TabPerformance()
+{
+    qDebug() << __FUNCTION__;
 }
 
 void TabPerformance::initCpuWidgets()

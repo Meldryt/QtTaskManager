@@ -52,9 +52,16 @@ typedef struct _PROCESSOR_POWER_INFORMATION {
 
 CpuInfo::CpuInfo()
 {
+    qDebug() << __FUNCTION__;
+
 #ifdef HAS_RYZEN_MASTER_SDK
     m_useRyzenCpuParameters = true;
 #endif
+}
+
+CpuInfo::~CpuInfo()
+{
+    qDebug() << __FUNCTION__;
 }
 
 void CpuInfo::init()

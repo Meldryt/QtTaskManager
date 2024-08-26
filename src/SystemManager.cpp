@@ -11,6 +11,8 @@
 
 SystemManager::SystemManager(QWidget* parent) : QTabWidget(parent)
 {
+    qDebug() << __FUNCTION__;
+
     m_tabHardware = new TabHardware(parent);
     m_tabProcesses = new TabProcesses(parent);
     m_tabPerformance = new TabPerformance(parent);
@@ -108,7 +110,7 @@ SystemManager::SystemManager(QWidget* parent) : QTabWidget(parent)
 
 SystemManager::~SystemManager()
 {
-
+    qDebug() << __FUNCTION__;
 }
 
 void SystemManager::update()

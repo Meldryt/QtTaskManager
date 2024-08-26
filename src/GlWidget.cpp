@@ -196,6 +196,8 @@ namespace cube
 
 GlWidget::GlWidget(QWidget *parent)
 {
+    qDebug() << __FUNCTION__;
+
     setWindowTitle("OpenGl Benchmark");
 
     setFixedSize(m_windowSizeX, m_windowSizeY);
@@ -210,6 +212,8 @@ GlWidget::GlWidget(QWidget *parent)
 
 GlWidget::~GlWidget()
 {
+    qDebug() << __FUNCTION__;
+
     // Make sure the context is current and then explicitly
     // destroy all underlying OpenGL resources.
     //makeCurrent();

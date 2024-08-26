@@ -9,6 +9,8 @@ MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
 {
+    qDebug() << __FUNCTION__;
+
     ui->setupUi(this);
 
     QOffscreenSurface surface;
@@ -41,5 +43,7 @@ MainWindow::MainWindow(QWidget *parent)
 
 MainWindow::~MainWindow()
 {
+    qDebug() << __FUNCTION__;
+
     delete ui;
 }

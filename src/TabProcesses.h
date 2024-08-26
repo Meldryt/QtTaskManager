@@ -9,6 +9,7 @@ class TabProcesses : public QWidget
 {
 public:
     TabProcesses(QWidget *parent = nullptr);
+    ~TabProcesses();
 
     void process();
 

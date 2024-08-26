@@ -10,6 +10,7 @@ class TabBenchmark : public QWidget
 {
 public:
     explicit TabBenchmark(QWidget *parent = nullptr);
+    ~TabBenchmark();
 
 public slots:
     void slotOpenBenchmarkWindow();

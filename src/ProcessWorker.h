@@ -8,6 +8,7 @@ class ProcessWorker : public Worker
     Q_OBJECT
 public:
     explicit ProcessWorker(int timerInterval, QObject* parent = nullptr);
+    ~ProcessWorker();
 
 public slots:
     virtual void start() override;

@@ -11,8 +11,15 @@
 
 ProcessInfo::ProcessInfo()
 {
+    qDebug() << __FUNCTION__;
+
     m_elapsedTimer = new QElapsedTimer();
     m_elapsedTimer->start();
+}
+
+ProcessInfo::~ProcessInfo()
+{
+    qDebug() << __FUNCTION__;
 }
 
 void ProcessInfo::setProcessorCount(uint8_t newProcessorCount)

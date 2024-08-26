@@ -8,9 +8,16 @@
 CpuWorker::CpuWorker(int timerInterval, QObject *parent)
     : Worker{ timerInterval, parent}
 {
+    qDebug() << __FUNCTION__;
+
     m_cpuInfo = std::make_unique<CpuInfo>();
 
     m_elapsedTimer = new QElapsedTimer();
+}
+
+CpuWorker::~CpuWorker()
+{
+    qDebug() << __FUNCTION__;
 }
 
 void CpuWorker::start()
