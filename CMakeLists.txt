@@ -15,6 +15,14 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets Charts Concurrent OpenGLWidgets)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets Charts Concurrent OpenGLWidgets)
+#find_package(NVML)
+#
+#if(NVML_FOUND)
+#  include_directories(
+#    include
+#    ${NVML_INCLUDE_DIRS}
+#  )
+#endif()
 
 set(PROJECT_SOURCES
     src/Globals.h
@@ -66,10 +74,12 @@ set(PROJECT_SOURCES
     src/WmiInfo.cpp
     src/WmiWorker.h
     src/WmiWorker.cpp
+    src/GlGlobals.h
 
     external/ADLX/SDK/ADLXHelper/Windows/Cpp/ADLXHelper.h
     external/ADLX/SDK/ADLXHelper/Windows/Cpp/ADLXHelper.cpp
     external/ADLX/SDK/platform/Windows/WinAPIs.cpp
+    #external/nvml/nvml.h
 )
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
@@ -121,6 +131,7 @@ endif()
 target_include_directories(${PROJECT_NAME} PRIVATE
     external/AGS_SDK/ags_lib/inc
     external/nvapi
+    external/nvml
 )
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
@@ -140,6 +151,7 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
     MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}
     MACOSX_BUNDLE TRUE
     WIN32_EXECUTABLE TRUE
+    LINK_FLAGS_RELEASE "/SUBSYSTEM:CONSOLE"
 )
 
 install(TARGETS ${PROJECT_NAME}

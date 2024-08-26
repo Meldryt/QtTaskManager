@@ -20,6 +20,7 @@ void WmiWorker::start()
     m_elapsedTimer->start();
 
     m_wmiInfo->init();
+    m_wmiInfo->readStaticInfo();
 
     emit signalStaticInfo(m_wmiInfo->staticInfo());
 }

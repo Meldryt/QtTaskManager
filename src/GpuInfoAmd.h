@@ -19,7 +19,7 @@ public:
         return m_adlxManager->dynamicInfo();
     }
 
-    bool detectGpu();
+    bool init();
     void fetchStaticInfo();
     void fetchDynamicInfo();
 

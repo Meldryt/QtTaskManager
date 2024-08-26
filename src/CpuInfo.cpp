@@ -5,10 +5,12 @@
 #include <QVariant>
 #include <QObject>
 
+#ifdef HAS_RYZEN_MASTER_SDK
 #include "external/RyzenMasterMonitoringSDK/include/ICPUEx.h"
 #include "external/RyzenMasterMonitoringSDK/include/IPlatform.h"
 #include "external/RyzenMasterMonitoringSDK/include/IDeviceManager.h"
 #include "external/RyzenMasterMonitoringSDK/include/IBIOSEx.h"
+#endif
 
 #include <iostream>
 
@@ -162,6 +164,7 @@ void CpuInfo::initPdh()
 
 void CpuInfo::initRyzenMaster()
 {
+#ifdef HAS_RYZEN_MASTER_SDK
     bool bRetCode = false;
     IPlatform& rPlatform = GetPlatform();
     bRetCode = rPlatform.Init();
@@ -184,10 +187,12 @@ void CpuInfo::initRyzenMaster()
     {
         m_useRyzenCpuParameters = true;
     }
+#endif
 }
 
 void CpuInfo::readStaticInfoRyzenMaster()
 {
+#ifdef HAS_RYZEN_MASTER_SDK
     int iRet;
 
     if (m_amdCpuBiosDevice)
@@ -304,6 +309,7 @@ void CpuInfo::readStaticInfoRyzenMaster()
             qDebug() << "CpuInfo::readStaticInfoRyzenMaster(): ICPUEx::GetChipsetName(): " << QString::fromWCharArray(str.c_str());
         }
     }
+#endif
 }
 
 void CpuInfo::readDynamicInfoRyzenMaster()
@@ -316,6 +322,7 @@ void CpuInfo::readDynamicInfoRyzenMaster()
 //The API call(GetCPUParameters) included in this SDK should only be called once per second to avoid impacting the load on the SMU.Calls made faster may impact the results.
 void CpuInfo::readRyzenDynamicCpuInfo()
 {
+#ifdef HAS_RYZEN_MASTER_SDK
     if (m_amdCpuDevice)
     {
         CPUParameters stData;
@@ -351,10 +358,12 @@ void CpuInfo::readRyzenDynamicCpuInfo()
             //qDebug() << " stData.fPPTValue: " << stData.fPPTValue << " stData.fPPTLimit: " << stData.fPPTLimit << " stData.fCCLK_Fmax: " << stData.fCCLK_Fmax << " stData.dPeakSpeed: " << stData.dPeakSpeed;
         }
     }
+#endif
 }
 
 void CpuInfo::readRyzenDynamicBiosInfo()
 { 
+#ifdef HAS_RYZEN_MASTER_SDK
     if (m_amdCpuBiosDevice)
     {
         int iRet;
@@ -400,6 +409,7 @@ void CpuInfo::readRyzenDynamicBiosInfo()
             qDebug() << "CpuInfo::readRyzenDynamicBiosInfo(): IBIOSEx::GetMemCtrlTrp(): " << memCtrlTrp;
         }
     }
+#endif
 }
 
 
@@ -640,6 +650,7 @@ void CpuInfo::readPdhBaseFrequency()
             (cnt.CStatus == PDH_CSTATUS_VALID_DATA || cnt.CStatus == PDH_CSTATUS_NEW_DATA))
         {
             m_cpuBaseFrequency = (cnt.FirstValue);
+            m_cpuMaxFrequency = m_cpuBaseFrequency;
         }
     }
 }

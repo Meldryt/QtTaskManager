@@ -2,6 +2,7 @@
 #include "GpuInfoNVidia.h"
 #include "GpuInfoAmd.h"
 
+#include "GlGlobals.h"
 //#include <QtGui/QOpenGLFunctions>
 //#include <QtGui/QOffscreenSurface>
 //#include <QtGui/QOpenGLContext>
@@ -35,30 +36,26 @@ void GpuInfo::update()
 
 void GpuInfo::detectGpu()
 {
-    //todo: find another place to get graphics card vendor, without creating offscreen widget in another thread
-    const std::string vendor = "AMD";
-    const std::string renderer = "AMD";
+    const bool isAmd = GlGlobals::glRenderer.find("AMD") != std::string::npos || GlGlobals::glVendor.find("ATI") != std::string::npos;
+    const bool isNVidia = GlGlobals::glRenderer.find("NVIDIA") != std::string::npos || GlGlobals::glVendor.find("NVIDIA") != std::string::npos;
 
-    m_staticInfo[Globals::SysInfoAttr::Key_Gpu_Model] = QString::fromStdString(renderer);
-    //const std::string version = reinterpret_cast<const char*>(gl->glGetString(GL_VERSION));
-    //const std::string extension = reinterpret_cast<const char*>(gl->glGetString(GL_EXTENSIONS));
-    const bool isAmd = renderer.find("AMD") != std::string::npos || vendor.find("ATI") != std::string::npos;
-    const bool isNVidia = renderer.find("NVIDIA") != std::string::npos || vendor.find("NVIDIA") != std::string::npos;
-
-    if (isAmd && m_gpuInfoAmd->detectGpu())
+    if (isAmd && m_gpuInfoAmd->init())
     {
         m_gpuManufacturer = GpuManufacturer::AMD;
         m_gpuDetected = true;
+        qDebug() << "GpuInfo::detectGpu(): " << "AMD Gpu detected!";
     }
-    else if (isNVidia && m_gpuInfoNVidia->detectGpu())
+    else if (isNVidia && m_gpuInfoNVidia->init())
     {
         m_gpuManufacturer = GpuManufacturer::NVIDIA;
         m_gpuDetected = true;
+        qDebug() << "GpuInfo::detectGpu(): " << "NVIDIA Gpu detected!";
     }
     else
     {
         m_gpuManufacturer = GpuManufacturer::UNKNOWN;
         m_gpuDetected = false;
+        qDebug() << "GpuInfo::detectGpu(): " << "No Gpu detected!";
     }
 }
 

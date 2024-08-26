@@ -22,11 +22,22 @@ public:
         return m_dynamicInfo;
     }
 
-    bool detectGpu();
+    bool init();
     void fetchStaticInfo();
     void fetchDynamicInfo();
 
 private:
+    bool initNvApi();
+    bool initNvml();
+
+    bool readGpuUsage(int* gpuHandle);
+    bool readGpuFrequencies(int* gpuHandle);
+    bool readGpuMemory(int* gpuHandle);
+    bool readGpuTemperature(int* gpuHandle);
+    bool readGpuFanSpeed(int* gpuHandle);
+
+    bool readGpuPowerUsage();
+    void nvmlGpuTempAndFanspeed();
 
     QMap<uint8_t,QVariant> m_staticInfo;
     QMap<uint8_t,QVariant> m_dynamicInfo;
@@ -36,6 +47,9 @@ private:
     std::string m_gpuModel;
     uint16_t m_gpuMemorySize;
     std::string m_gpuMemoryType;
+    std::string m_gpuMemoryVendor;
+    std::string m_gpuDriverInfo;
+    std::string m_gpuDriverVersion;
 
     double m_gpuUsage{ 0 }; // Current graphic activity level in percentage
     double m_gpuVramUsage{ 0 }; // Current memory activity level in percentage
@@ -43,6 +57,7 @@ private:
     uint16_t m_gpuVramClockSpeed{ 0 }; // Current memory clock value in MHz
     uint16_t m_gpuVramUsed{ 0 };
     double m_gpuPower{ 0 }; //in Watt
+    uint8_t m_gpuPowerState{ 0 };
     double m_gpuTotalBoardPower{ 0 }; //in Watt
     uint16_t m_gpuVoltage{ 0 }; // Current graphic voltage in mV
     double m_gpuTemperature{ 0 };

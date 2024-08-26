@@ -14,11 +14,10 @@ GpuInfoAmd::GpuInfoAmd()
     m_adlxManager = new AdlxManager();
 }
 
-bool GpuInfoAmd::detectGpu()
+bool GpuInfoAmd::init()
 {
-    m_adlxManager->init();
+    return m_adlxManager->init();
     //m_adlManager->fetchInfo();
-    return true;
 }
 
 void GpuInfoAmd::fetchStaticInfo()

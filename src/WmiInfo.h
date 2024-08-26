@@ -49,6 +49,7 @@ private:
 
     void readCpuFrequency();
     void readCpuInfo();
+    void readTemperature();
     void readFanSpeed();
     void readNetworkSpeed();
 

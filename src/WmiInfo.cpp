@@ -199,6 +199,7 @@ void WmiInfo::update()
     if (m_readCpuParameters)
     {
         readCpuFrequency();
+        readTemperature();
         readFanSpeed();
     }
 
@@ -292,6 +293,7 @@ void WmiInfo::readCpuInfo()
 
     if (!fieldMap["MaxClockSpeed"].empty()) {
         m_cpuBaseFrequency = std::stoi(fieldMap["MaxClockSpeed"][0]);
+        m_cpuMaxFrequency = m_cpuBaseFrequency; //currently there is no way to get the max turbo frequency in windows
     }
 }
 
@@ -323,17 +325,21 @@ void WmiInfo::readFanSpeed()
 }
 
 //@note: tested, not supported
-//void WmiInfo::readThermalZoneTemperature()
-//{
+void WmiInfo::readTemperature()
+{
+    const std::vector<std::wstring> fields = { L"InstanceName",L"CurrentTemperature"};
+    std::map<std::string, std::vector<std::string>> fieldMap = queryArray(L"MSAcpi_ThermalZoneTemperature", fields);
+    if (!fieldMap["InstanceName"].empty()) {
+
+    }
+    if (!fieldMap["CurrentTemperature"].empty()) {
+        //const double temperature = std::stod(fieldMap["CurrentTemperature"]);
+        //m_cpuTemperature = temperature;
+    }
     //BSTR query = SysAllocString(L"SELECT * FROM MSAcpi_ThermalZoneTemperature");
     //auto thermalZoneTemperature = query(L"MSAcpi_ThermalZoneTemperature", L"InstanceName,CurrentTemperature");
     //auto thermalZoneTemperature = query(L"MSAcpi_ThermalZoneTemperature", L"*");
-    //if (!thermalZoneTemperature.empty()) {
-    //    //return;
-    //    const double temperature = std::stod(thermalZoneTemperature[0]);
-    //    m_cpuTemperature = temperature;
-    //}
-//}
+}
 
 void WmiInfo::readNetworkSpeed()
 {
