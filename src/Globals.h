@@ -15,7 +15,7 @@ public:
         Key_Cpu_MaxFrequency,
         Key_Cpu_L1CacheSize,
         Key_Cpu_L2CacheSize,
-        Key_Cpu_L3CacheSize,   
+        Key_Cpu_L3CacheSize,
 
         Key_Cpu_TotalUsage,
         Key_Cpu_CoreUsages,

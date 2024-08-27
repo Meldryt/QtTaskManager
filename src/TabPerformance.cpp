@@ -461,6 +461,7 @@ void TabPerformance::slotCpuDynamicInfo(const QMap<uint8_t, QVariant>& dynamicIn
         }
         else
         {
+            m_cpuTableInfos[i] = "";
             for (int j = 0; j < m_cpuGraphs[i]->values.size(); ++j)
             {
                 m_cpuTableInfos[i] += QString::number(static_cast<int>(std::round(m_cpuGraphs[i]->values[j]))) + " | ";

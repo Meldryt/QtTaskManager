@@ -584,9 +584,6 @@ void CpuInfo::readSystemInfo()
     m_cpuL1CacheSize = processorL1CacheSize/1024;
     m_cpuL2CacheSize = processorL2CacheSize/1024;
     m_cpuL3CacheSize = processorL3CacheSize/1024;
-
-    m_cpuThreadFrequencies.resize(logicalProcessorCount);
-    m_cpuThreadUsages.resize(logicalProcessorCount);
 }
 #else
 void CpuInfo::readStaticInfoLinux()
@@ -613,8 +610,6 @@ void CpuInfo::readDynamicInfo()
     m_dynamicInfo[Globals::SysInfoAttr::Key_Cpu_CoreUsages] = QVariant::fromValue(m_cpuCoreUsages);
     m_dynamicInfo[Globals::SysInfoAttr::Key_Cpu_CoreFrequencies] = QVariant::fromValue(m_cpuCoreFrequencies);
     m_dynamicInfo[Globals::SysInfoAttr::Key_Cpu_CurrentMaxFrequency] = m_cpuCurrentMaxFrequency;
-    m_dynamicInfo[Globals::SysInfoAttr::Key_Cpu_ThreadFrequencies] = QVariant::fromValue(m_cpuThreadFrequencies);
-    m_dynamicInfo[Globals::SysInfoAttr::Key_Cpu_ThreadUsages] = QVariant::fromValue(m_cpuThreadUsages);
     m_dynamicInfo[Globals::SysInfoAttr::Key_Cpu_Voltage] = m_cpuVoltage;
     m_dynamicInfo[Globals::SysInfoAttr::Key_Cpu_Power] = m_cpuPower;
     m_dynamicInfo[Globals::SysInfoAttr::Key_Cpu_SocPower] = m_cpuSocPower;

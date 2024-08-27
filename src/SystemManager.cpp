@@ -91,8 +91,8 @@ SystemManager::SystemManager(QWidget* parent) : QTabWidget(parent)
 
     connect(m_wmiWorker.get(), &WmiWorker::signalDynamicInfo, this, [&](const QMap<uint8_t,QVariant>& dynamicInfo)
     {
-        m_dynamicInfoNetwork = dynamicInfo;
-        m_dynamicInfoNetworkChanged = true;
+        m_dynamicInfoWmi = dynamicInfo;
+        m_dynamicInfoWmiChanged = true;
     });
 
     for (int i = 0; i < m_workerThreads.size(); ++i)
@@ -137,6 +137,9 @@ void SystemManager::update()
 
     if (m_dynamicInfoCpuChanged)
     {
+        m_dynamicInfoCpu[Globals::SysInfoAttr::Key_Cpu_ThreadFrequencies] = m_dynamicInfoWmi[Globals::SysInfoAttr::Key_Cpu_ThreadFrequencies];
+        m_dynamicInfoCpu[Globals::SysInfoAttr::Key_Cpu_ThreadUsages] = m_dynamicInfoWmi[Globals::SysInfoAttr::Key_Cpu_ThreadUsages];
+
         m_tabPerformance->slotCpuDynamicInfo(m_dynamicInfoCpu);
         m_dynamicInfoCpuChanged = false;
     }
@@ -184,16 +187,16 @@ void SystemManager::update()
         m_dynamicInfoMemoryChanged = false;
     }
 
-    if (m_dynamicInfoNetworkChanged)
+    if (m_dynamicInfoWmiChanged)
     {
-        QVariant variant = m_dynamicInfoNetwork[Globals::Key_Network_BytesReceivedPerSec];
+        QVariant variant = m_dynamicInfoWmi[Globals::Key_Network_BytesReceivedPerSec];
         if (variant.canConvert<uint32_t>())
         {
             const uint32_t usedBytesReceivedPerSec = variant.value<uint32_t>();
             m_tabPerformance->slotUsedNetworkSpeed(usedBytesReceivedPerSec);
         }
 
-        m_dynamicInfoNetworkChanged = false;
+        m_dynamicInfoWmiChanged = false;
     }
 
     m_tabHardware->process();
@@ -202,7 +205,7 @@ void SystemManager::update()
 
     elapsedTime = elapsedTimer.nsecsElapsed() * 0.000000001;
 
-    if(elapsedTime > 0)
+    if(elapsedTime > 1)
     {
         qDebug() << "SystemManager::update(): " << elapsedTime;        
     }  

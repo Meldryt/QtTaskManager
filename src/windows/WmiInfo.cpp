@@ -203,7 +203,7 @@ void WmiInfo::readStaticInfo()
 
 void WmiInfo::update()
 {
-    if (m_readCpuParameters)
+    //if (m_readCpuParameters)
     {
         readCpuFrequency();
         readTemperature();
