@@ -26,18 +26,30 @@ find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets Charts Concurrent
 
 set(PROJECT_SOURCES
     src/Globals.h
-    src/AdlxManager.h
-    src/AdlxManager.cpp
-    src/CpuInfo.h
-    src/CpuInfo.cpp
+
+    src/gpu/AdlxManager.h
+    src/gpu/AdlxManager.cpp
+    src/gpu/GlGlobals.h
+    src/gpu/GpuInfoAmd.h
+    src/gpu/GpuInfoAmd.cpp
+    src/gpu/GpuInfo.h
+    src/gpu/GpuInfo.Cpp
+    src/gpu/GpuInfoNVidia.h
+    src/gpu/GpuInfoNVidia.cpp
+    src/gpu/GpuWorker.h
+    src/gpu/GpuWorker.cpp
+    src/gpu/NvapiHandler.h
+    src/gpu/NvapiHandler.cpp
+    src/gpu/NvmlHandler.h
+    src/gpu/NvmlHandler.cpp
+
+    src/cpu/CpuInfo.h
+    src/cpu/CpuInfo.cpp
+    src/cpu/CpuWorker.cpp
+    src/cpu/CpuWorker.h
+
     src/DevicesInfo.h
     src/DevicesInfo.cpp
-    src/GpuInfo.h
-    src/GpuInfo.cpp
-    src/GpuInfoNVidia.h
-    src/GpuInfoNVidia.cpp
-    src/GpuInfoAmd.h
-    src/GpuInfoAmd.cpp
     src/MemoryInfo.h
     src/MemoryInfo.cpp
     src/ProcessInfo.h
@@ -57,10 +69,12 @@ set(PROJECT_SOURCES
     src/TabBenchmark.h
     src/ProcessWorker.cpp
     src/ProcessWorker.h
-    src/CpuWorker.cpp
-    src/CpuWorker.h
-    src/GpuWorker.cpp
-    src/GpuWorker.h
+
+    src/windows/WmiInfo.h
+    src/windows/WmiInfo.cpp
+    src/windows/WmiWorker.h
+    src/windows/WmiWorker.cpp
+
     src/MemoryWorker.cpp
     src/MemoryWorker.h
     src/Worker.h
@@ -70,11 +84,8 @@ set(PROJECT_SOURCES
     src/GlWindow.cpp
 	src/GlWindow.h
     src/MainWindow.ui
-    src/WmiInfo.h
-    src/WmiInfo.cpp
-    src/WmiWorker.h
-    src/WmiWorker.cpp
-    src/GlGlobals.h
+
+    
 
     external/ADLX/SDK/ADLXHelper/Windows/Cpp/ADLXHelper.h
     external/ADLX/SDK/ADLXHelper/Windows/Cpp/ADLXHelper.cpp

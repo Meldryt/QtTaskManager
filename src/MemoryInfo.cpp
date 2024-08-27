@@ -15,15 +15,15 @@ MemoryInfo::~MemoryInfo()
 
 void MemoryInfo::init()
 {
-    fetchStaticInfo();
+    readStaticInfo();
 }
 
 void MemoryInfo::update()
 {
-    fetchDynamicInfo();
+    readDynamicInfo();
 }
 
-void MemoryInfo::fetchStaticInfo()
+void MemoryInfo::readStaticInfo()
 {
     MEMORYSTATUSEX memInfo;
     memInfo.dwLength = sizeof(MEMORYSTATUSEX);
@@ -39,7 +39,7 @@ void MemoryInfo::fetchStaticInfo()
     m_staticInfo[Globals::SysInfoAttr::Key_Memory_TotalPhysicalMemory] = m_totalPhysicalMemory;
 }
 
-void MemoryInfo::fetchDynamicInfo()
+void MemoryInfo::readDynamicInfo()
 {
     MEMORYSTATUSEX memInfo;
     memInfo.dwLength = sizeof(MEMORYSTATUSEX);

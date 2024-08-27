@@ -4,7 +4,7 @@
 #include <Wbemidl.h>
 #endif
 
-#include "Globals.h"
+#include "../Globals.h"
 
 #include <QMap>
 #include <QVariant>

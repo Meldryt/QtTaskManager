@@ -21,8 +21,8 @@ public:
     }
 
     bool init();
-    void fetchStaticInfo();
-    void fetchDynamicInfo();
+    void readStaticInfo();
+    void readDynamicInfo();
 
 private:
     void initAgs();

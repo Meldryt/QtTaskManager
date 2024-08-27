@@ -3,7 +3,7 @@
 
 #include <QGridLayout>
 
-#include "GlGlobals.h"
+#include "gpu/GlGlobals.h"
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)

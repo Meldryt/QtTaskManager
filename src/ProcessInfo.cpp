@@ -4,6 +4,7 @@
 
 #ifdef _WIN32
 #include <psapi.h>
+#include <system_error>
 #else
 #endif
 
@@ -46,6 +47,7 @@ EnumWindows(StaticEnumWindowsProc, reinterpret_cast<LPARAM>(this));
 }
 
 #ifdef _WIN32
+
 void ProcessInfo::updateRunningProcesses()
 {
     auto process = std::begin(m_processMap);
@@ -152,11 +154,9 @@ BOOL ProcessInfo::EnumWindowsProc(HWND hwnd)
     int result = GetWindowText(hwnd, title, 255);
     if(result == 0)
     {
-        DWORD error = GetLastError();
-//        LPVOID lpMsgBuf;
-//        LPVOID lpDisplayBuf;
-//        std::string message = std::system_category().message(error);
-//        qDebug() << "GetLastError: " << message.c_str();
+        //DWORD error = GetLastError();
+        //std::string message = std::system_category().message(error);
+        //qWarning() << __FUNCTION__ << " GetWindowText failed with error " << message.c_str();
     }
     else
     {
@@ -167,9 +167,12 @@ BOOL ProcessInfo::EnumWindowsProc(HWND hwnd)
         DWORD processId;
         GetWindowThreadProcessId(hwnd, &processId);
 
-        HANDLE processHandle = OpenProcess(PROCESS_ALL_ACCESS, FALSE, processId);
+        HANDLE processHandle = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, processId);
         if(processHandle == NULL)
         {
+            DWORD error = GetLastError();
+            std::string message = std::system_category().message(error);
+            qWarning() << __FUNCTION__ << " OpenProcess failed with error " << message.c_str();
             return false;
         }
 
@@ -180,6 +183,8 @@ BOOL ProcessInfo::EnumWindowsProc(HWND hwnd)
         else
         {
             DWORD error = GetLastError();
+            std::string message = std::system_category().message(error);
+            qWarning() << __FUNCTION__ << " GetModuleBaseName failed with error " << message.c_str();
         }
 
         TCHAR moduleFileName[MAX_PATH] = TEXT("<unknown>");
@@ -189,6 +194,8 @@ BOOL ProcessInfo::EnumWindowsProc(HWND hwnd)
         else
         {
             DWORD error = GetLastError();
+            std::string message = std::system_category().message(error);
+            qWarning() << __FUNCTION__ << " GetModuleFileNameEx failed with error " << message.c_str();
         }
 
         //std::string processBaseName = QString::fromWCharArray(moduleBaseName);

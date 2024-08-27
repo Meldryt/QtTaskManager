@@ -5,7 +5,10 @@
 #include <QVariant>
 #include <string>
 
-#include "Globals.h"
+#include "../Globals.h"
+
+class NvapiHandler;
+class NvmlHandler;
 
 class GpuInfoNVidia
 {
@@ -24,21 +27,13 @@ public:
     }
 
     bool init();
-    void fetchStaticInfo();
-    void fetchDynamicInfo();
+    void readStaticInfo();
+    void readDynamicInfo();
 
 private:
-    bool initNvApi();
-    bool initNvml();
 
-    bool readGpuUsage(int* gpuHandle);
-    bool readGpuFrequencies(int* gpuHandle);
-    bool readGpuMemory(int* gpuHandle);
-    bool readGpuTemperature(int* gpuHandle);
-    bool readGpuFanSpeed(int* gpuHandle);
-
-    bool readGpuPowerUsage();
-    void nvmlGpuTempAndFanspeed();
+    NvapiHandler* m_nvapiHandler{ nullptr };
+    NvmlHandler* m_nvmlHandler{ nullptr };
 
     QMap<uint8_t,QVariant> m_staticInfo;
     QMap<uint8_t,QVariant> m_dynamicInfo;

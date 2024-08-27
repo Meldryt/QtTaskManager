@@ -6,7 +6,7 @@
 
 #include <string>
 
-#include "Globals.h"
+#include "../Globals.h"
 
 class GpuInfoNVidia;
 class GpuInfoAmd;
@@ -40,8 +40,8 @@ public:
 
 private:
     void detectGpu();
-    void fetchStaticInfo();
-    void fetchDynamicInfo();
+    void readStaticInfo();
+    void readDynamicInfo();
 
     bool m_gpuDetected{false};
     GpuManufacturer m_gpuManufacturer{AMD};

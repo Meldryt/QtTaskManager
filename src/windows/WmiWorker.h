@@ -1,8 +1,8 @@
 #pragma once
 
-#include "Worker.h"
+#include "../Worker.h"
 
-#include "Globals.h"
+#include "../Globals.h"
 
 #include <QMap>
 #include <QVariant>

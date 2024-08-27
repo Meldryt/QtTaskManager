@@ -29,8 +29,8 @@ public:
     }
 
 private:
-    void fetchStaticInfo();
-    void fetchDynamicInfo();
+    void readStaticInfo();
+    void readDynamicInfo();
 
     QMap<uint8_t, QVariant> m_staticInfo;
     QMap<uint8_t, QVariant> m_dynamicInfo;

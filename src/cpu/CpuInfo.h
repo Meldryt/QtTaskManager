@@ -16,7 +16,7 @@
 #include "sys/sysinfo.h"
 #endif
 
-#include "Globals.h"
+#include "../Globals.h"
 
 
 class ICPUEx;
@@ -35,7 +35,7 @@ public:
     const QMap<uint8_t,QVariant> &dynamicInfo() const;
 
 private:
-    void fetchStaticInfo();
+    void readStaticInfo();
 
     void readSystemInfo();
 
@@ -52,12 +52,12 @@ private:
 
 
 
-    void fetchStaticInfoLinux();
-    void fetchDynamicInfo();
+    void readStaticInfoLinux();
+    void readDynamicInfo();
 #ifdef _WIN32
-    void fetchDynamicInfoWindows();
+    void readDynamicInfoWindows();
 #else
-    void fetchDynamicInfoLinux();
+    void readDynamicInfoLinux();
 #endif
     void readPdhBaseFrequency();
     void readPdhFrequency();

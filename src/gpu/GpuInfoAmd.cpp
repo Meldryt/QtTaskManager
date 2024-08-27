@@ -27,17 +27,17 @@ bool GpuInfoAmd::init()
     //m_adlManager->fetchInfo();
 }
 
-void GpuInfoAmd::fetchStaticInfo()
+void GpuInfoAmd::readStaticInfo()
 {
-    m_adlxManager->fetchStaticInfo();
+    m_adlxManager->readStaticInfo();
     m_staticInfo = m_adlxManager->staticInfo();
 
     initAgs();
 }
 
-void GpuInfoAmd::fetchDynamicInfo()
+void GpuInfoAmd::readDynamicInfo()
 {
-    m_adlxManager->fetchDynamicInfo();
+    m_adlxManager->readDynamicInfo();
 }
 
 void GpuInfoAmd::initAgs()

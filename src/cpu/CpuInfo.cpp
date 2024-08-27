@@ -66,7 +66,7 @@ CpuInfo::~CpuInfo()
 
 void CpuInfo::init()
 {
-    fetchStaticInfo();
+    readStaticInfo();
 }
 
 const QMap<uint8_t,QVariant>& CpuInfo::staticInfo() const
@@ -92,7 +92,7 @@ void CpuInfo::update()
 
     readPdhFrequency();
 
-    fetchDynamicInfo();
+    readDynamicInfo();
 }
 
 void CpuInfo::initPdh()
@@ -437,7 +437,7 @@ DWORD CountSetBits(ULONG_PTR bitMask)
 }
 #endif
 
-void CpuInfo::fetchStaticInfo()
+void CpuInfo::readStaticInfo()
 {
     readSystemInfo();
 
@@ -589,14 +589,14 @@ void CpuInfo::readSystemInfo()
     m_cpuThreadUsages.resize(logicalProcessorCount);
 }
 #else
-void CpuInfo::fetchStaticInfoLinux()
+void CpuInfo::readStaticInfoLinux()
 {
 
 }
 #endif
 
 
-void CpuInfo::fetchDynamicInfo()
+void CpuInfo::readDynamicInfo()
 {
 //    PdhOpenQuery(NULL, NULL, &cpuQuery);
 //    // You can also use L"\\Processor(*)\\% Processor Time" and get individual CPU values with PdhGetFormattedCounterArray()
@@ -604,9 +604,9 @@ void CpuInfo::fetchDynamicInfo()
 //    PdhCollectQueryData(cpuQuery);
 
 #ifdef _WIN32
-    fetchDynamicInfoWindows();
+    readDynamicInfoWindows();
 #else
-    fetchDynamicInfoLinux();
+    readDynamicInfoLinux();
 #endif
 
     m_dynamicInfo[Globals::SysInfoAttr::Key_Cpu_TotalUsage] = m_cpuTotalUsage;
@@ -623,7 +623,7 @@ void CpuInfo::fetchDynamicInfo()
 }
 
 #ifdef _WIN32
-void CpuInfo::fetchDynamicInfoWindows()
+void CpuInfo::readDynamicInfoWindows()
 {
     PDH_FMT_COUNTERVALUE counterVal;
     PdhCollectQueryData(totalCPUQuery);
@@ -638,7 +638,7 @@ void CpuInfo::fetchDynamicInfoWindows()
     }
 }
 #else
-void CpuInfo::fetchDynamicInfoLinux()
+void CpuInfo::readDynamicInfoLinux()
 {
 
 }

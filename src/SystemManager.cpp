@@ -1,10 +1,10 @@
 #include "SystemManager.h"
 
 #include "ProcessWorker.h"
-#include "CpuWorker.h"
-#include "GpuWorker.h"
+#include "cpu/CpuWorker.h"
+#include "gpu/GpuWorker.h"
 #include "MemoryWorker.h"
-#include "WmiWorker.h"
+#include "windows/WmiWorker.h"
 
 #include <QElapsedTimer>
 #include <QDebug>

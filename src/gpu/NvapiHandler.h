@@ -1,0 +1,60 @@
+#pragma once
+
+#include <string>
+
+class NvapiHandler
+{
+public:
+    NvapiHandler();
+    ~NvapiHandler();
+
+    bool init();
+
+    void readStaticInfo();
+    void readDynamicInfo();
+
+    const std::string& gpuCardManufacturer() const { return m_gpuCardManufacturer; };
+    const std::string& gpuModel() const { return m_gpuModel; };
+    const uint16_t& gpuMemorySize() const { return m_gpuMemorySize; };
+    const std::string& gpuMemoryType() const { return m_gpuMemoryType; };
+    const std::string& gpuMemoryVendor() const { return m_gpuMemoryVendor; };
+    const std::string& gpuDriverInfo() const { return m_gpuDriverInfo; };
+    const std::string& gpuDriverVersion() const { return m_gpuDriverVersion; };
+
+    const double& gpuUsage() const { return m_gpuUsage; };
+    const double& gpuVramUsage() const { return m_gpuVramUsage; };
+    const uint16_t& gpuClockSpeed() const { return m_gpuClockSpeed; };
+    const uint16_t& gpuVramClockSpeed() const { return m_gpuVramClockSpeed; };
+    const uint16_t& gpuVramUsed() const { return m_gpuVramUsed; };
+    const double& gpuTemperature() const { return m_gpuTemperature; };
+    const double& gpuHotspotTemperature() const { return m_gpuHotspotTemperature; };
+    const uint16_t& gpuFanSpeed() const { return m_gpuFanSpeed; };
+    const uint8_t& gpuFanSpeedUsage() const { return m_gpuFanSpeedUsage; };
+
+private:
+    void readGpuUsage();
+    void readGpuFrequencies();
+    void readGpuMemory();
+    void readGpuTemperature();
+    void readGpuFanSpeed();
+
+    int* m_gpuHandle{ nullptr };
+
+    std::string m_gpuCardManufacturer;
+    std::string m_gpuModel;
+    uint16_t m_gpuMemorySize;
+    std::string m_gpuMemoryType;
+    std::string m_gpuMemoryVendor;
+    std::string m_gpuDriverInfo;
+    std::string m_gpuDriverVersion;
+
+    double m_gpuUsage{ 0 }; // Current graphic activity level in percentage
+    double m_gpuVramUsage{ 0 }; // Current memory activity level in percentage
+    uint16_t m_gpuClockSpeed{ 0 }; // Current graphic clock value in MHz
+    uint16_t m_gpuVramClockSpeed{ 0 }; // Current memory clock value in MHz
+    uint16_t m_gpuVramUsed{ 0 };
+    double m_gpuTemperature{ 0 };
+    double m_gpuHotspotTemperature{ 0 }; // Current center of the die temperature value in C
+    uint16_t m_gpuFanSpeed{ 0 }; // Current fan RPM value
+    uint8_t m_gpuFanSpeedUsage{ 0 }; // Current ratio of fan RPM and max RPM
+};

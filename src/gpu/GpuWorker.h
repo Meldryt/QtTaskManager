@@ -1,19 +1,16 @@
 #pragma once
 
-#include "Worker.h"
+#include "../Worker.h"
+#include "../Globals.h"
 
-#include "Globals.h"
+class GpuInfo;
 
-#include <QElapsedTimer>
-
-class CpuInfo;
-
-class CpuWorker : public Worker
+class GpuWorker : public Worker
 {
     Q_OBJECT
 public:
-    explicit CpuWorker(int timerInterval, QObject *parent = nullptr);
-    ~CpuWorker();
+    explicit GpuWorker(int timerInterval, QObject* parent = nullptr);
+    ~GpuWorker();
 
 public slots:
     virtual void start() override;
@@ -25,8 +22,6 @@ signals:
     void signalDynamicInfo(const QMap<uint8_t,QVariant>&);
 
 private:
-    std::unique_ptr<CpuInfo> m_cpuInfo{nullptr};
-    QElapsedTimer* m_elapsedTimer{ nullptr };
-
+    std::unique_ptr<GpuInfo> m_gpuInfo{nullptr};
 };
 

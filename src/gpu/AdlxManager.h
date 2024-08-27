@@ -9,7 +9,7 @@
 
 #include <QMap>
 #include <QVariant>
-#include "Globals.h"
+#include "../Globals.h"
 
 // Use ADLX namespace
 using namespace adlx;
@@ -32,8 +32,8 @@ public:
         return m_dynamicInfo;
     }
 
-    bool fetchStaticInfo();
-    bool fetchDynamicInfo();
+    bool readStaticInfo();
+    bool readDynamicInfo();
 
 private:
 

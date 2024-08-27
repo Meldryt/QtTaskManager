@@ -84,7 +84,7 @@ bool AdlxManager::init()
 	return true;
 }
 
-bool AdlxManager::fetchStaticInfo()
+bool AdlxManager::readStaticInfo()
 {
     if (!m_initialized)
     {
@@ -132,7 +132,7 @@ bool AdlxManager::fetchStaticInfo()
 	return true;
 }
 
-bool AdlxManager::fetchDynamicInfo()
+bool AdlxManager::readDynamicInfo()
 {
     ShowCurrentAllMetrics(m_perfMonitoringService, m_oneGPU);
 
@@ -197,9 +197,19 @@ void AdlxManager::ShowGPUInfo()
     ret = m_oneGPU->VRAMType(&vramTypeString);
     qDebug() << "VRAMType: " << vramTypeString << ", return code is: " << ret << "(0 means success)";
 
-    adlx_int id;
-    ret = m_oneGPU->UniqueId(&id);
-    qDebug() << "UniqueId: " << id;
+    const char* partNumber = nullptr;
+    const char* biosVersion = nullptr;
+    const char* biosDate = nullptr;
+    ret = m_oneGPU->BIOSInfo(&partNumber, &biosVersion, &biosDate);
+    qDebug() << "BIOSInfo: partNumber: " << partNumber << " biosVersion: " << biosVersion << " biosDate: " << biosDate << ", return code is : " << ret << "(0 means success)";
+
+    const char* deviceId;
+    ret = m_oneGPU->DeviceId(&deviceId);
+    qDebug() << "DeviceId: " << deviceId;
+
+    adlx_int uid;
+    ret = m_oneGPU->UniqueId(&uid);
+    qDebug() << "UniqueId: " << uid;
 
     const char* subSystemIdString = nullptr;
     ret = m_oneGPU->SubSystemId(&subSystemIdString);
@@ -434,7 +444,15 @@ void AdlxManager::ShowGPUClockSpeed(IADLXGPUMetricsSupportPtr gpuMetricsSupport,
             adlx_int gpuClock = 0;
             res = gpuMetrics->GPUClockSpeed(&gpuClock);
             if (ADLX_SUCCEEDED(res))
+            {
                 m_gpuClockSpeed = gpuClock;
+            }
+
+            //adlx_int minValue = 0, maxValue = 0;
+            //res = gpuMetricsSupport->GetGPUClockSpeedRange(&minValue, &maxValue);
+            //if (ADLX_SUCCEEDED(res))
+            //{
+            //}
         }
     }
 }
@@ -453,7 +471,15 @@ void AdlxManager::ShowGPUVRAMClockSpeed(IADLXGPUMetricsSupportPtr gpuMetricsSupp
             adlx_int memoryClock = 0;
             res = gpuMetrics->GPUVRAMClockSpeed(&memoryClock);
             if (ADLX_SUCCEEDED(res))
+            {
                 m_gpuVramClockSpeed = memoryClock;
+            }
+
+            //adlx_int minValue = 0, maxValue = 0;
+            //res = gpuMetricsSupport->GetGPUVRAMRange(&minValue, &maxValue);
+            //if (ADLX_SUCCEEDED(res))
+            //{
+            //}
         }
     }
 }
@@ -510,7 +536,9 @@ void AdlxManager::ShowGPUPower(IADLXGPUMetricsSupportPtr gpuMetricsSupport, IADL
             adlx_double power = 0;
             res = gpuMetrics->GPUPower(&power);
             if (ADLX_SUCCEEDED(res))
+            {
                 m_gpuPower = power;
+            }
         }
     }
 }
@@ -529,7 +557,16 @@ void AdlxManager::ShowGPUFanSpeed(IADLXGPUMetricsSupportPtr gpuMetricsSupport, I
             adlx_int fanSpeed = 0;
             res = gpuMetrics->GPUFanSpeed(&fanSpeed);
             if (ADLX_SUCCEEDED(res))
+            {
                 m_gpuFanSpeed = fanSpeed;
+            }
+
+            adlx_int minValue = 0, maxValue = 0;
+            res = gpuMetricsSupport->GetGPUFanSpeedRange(&minValue, &maxValue);
+            if (ADLX_SUCCEEDED(res))
+            {
+                m_gpuFanSpeedUsage = 100.0 * double(fanSpeed) / maxValue;
+            }
         }
     }
 }
