@@ -1,9 +1,10 @@
 #pragma once
 
-#include "TabHardware.h"
-#include "TabPerformance.h"
-#include "TabProcesses.h"
-#include "TabBenchmark.h"
+#include "tabs/TabHardware.h"
+#include "tabs/TabPerformance.h"
+#include "tabs/TabProcesses.h"
+#include "tabs/TabBenchmark.h"
+#include "tabs/TabApiSupport.h"
 
 #include "Worker.h"
 
@@ -31,6 +32,8 @@ private:
     TabProcesses* m_tabProcesses{nullptr};
     TabPerformance* m_tabPerformance{nullptr};
     TabBenchmark* m_tabBenchmark{ nullptr };
+    TabApiSupport* m_tabApiSupport{ nullptr };
+
     std::vector<QThread*> m_workerThreads;
     std::vector<Worker*> m_worker;
 
@@ -53,6 +56,7 @@ private:
     bool m_staticInfoMemoryChanged{ false };
     bool m_dynamicInfoMemoryChanged{ false };
 
+    bool m_staticInfoWmiChanged{ false };
     bool m_dynamicInfoWmiChanged{ false };
 
     QMap<uint8_t,QVariant> m_staticInfoCpu;
@@ -66,6 +70,7 @@ private:
     QMap<uint8_t,QVariant> m_staticInfoMemory;
     QMap<uint8_t,QVariant> m_dynamicInfoMemory;
 
+    QMap<uint8_t, QVariant> m_staticInfoWmi;
     QMap<uint8_t, QVariant> m_dynamicInfoWmi;
 };
 

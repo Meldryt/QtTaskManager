@@ -37,6 +37,8 @@ MainWindow::MainWindow(QWidget *parent)
     qDebug() << "GL_VERSION: " << QLatin1String(glVersion);
     qDebug() << "GL_SHADING_LANGUAGE_VERSION: " << QLatin1String(glslVersion);
 
+    setWindowTitle("SystemMonitor");
+
     systemManager = new SystemManager(this);
     setCentralWidget(systemManager);
 }

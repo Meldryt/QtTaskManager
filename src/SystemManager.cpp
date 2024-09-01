@@ -13,14 +13,16 @@ SystemManager::SystemManager(QWidget* parent) : QTabWidget(parent)
 {
     qDebug() << __FUNCTION__;
 
-    m_tabHardware = new TabHardware(parent);
     m_tabProcesses = new TabProcesses(parent);
     m_tabPerformance = new TabPerformance(parent);
+    m_tabHardware = new TabHardware(parent);
+    m_tabApiSupport = new TabApiSupport(parent);
     m_tabBenchmark = new TabBenchmark(parent);
 
     addTab(m_tabProcesses, QString("Processes"));
     addTab(m_tabPerformance, QString("Performance"));
     addTab(m_tabHardware, QString("Hardware"));
+    addTab(m_tabApiSupport, QString("ApiSupport"));
     addTab(m_tabBenchmark, QString("Benchmark"));
 
     m_processWorker = std::make_unique<ProcessWorker>(500);
@@ -89,6 +91,24 @@ SystemManager::SystemManager(QWidget* parent) : QTabWidget(parent)
         m_dynamicInfoMemoryChanged = true;
     });
 
+    connect(m_wmiWorker.get(), &WmiWorker::signalStaticInfo, this, [&](const QMap<uint8_t, QVariant>& staticInfo)
+    {
+        m_staticInfoWmi = staticInfo;
+        m_staticInfoWmiChanged = true;
+
+        //Key_Api_Functions_StatusSupport_Adlx,
+        //    Key_Api_Functions_StatusSupport_Nvapi,
+        //    Key_Api_Functions_StatusSupport_Nvml,
+        //    Key_Api_Functions_StatusSupport_RyzenMaster,
+        //    Key_Api_Functions_StatusSupport_Wmi,
+
+        //    Key_Api_Functions_ErrorMessage_Adlx,
+        //    Key_Api_Functions_ErrorMessage_Nvapi,
+        //    Key_Api_Functions_ErrorMessage_Nvml,
+        //    Key_Api_Functions_ErrorMessage_RyzenMaster,
+        //    Key_Api_Functions_ErrorMessage_Wmi,
+    });
+
     connect(m_wmiWorker.get(), &WmiWorker::signalDynamicInfo, this, [&](const QMap<uint8_t,QVariant>& dynamicInfo)
     {
         m_dynamicInfoWmi = dynamicInfo;
@@ -120,9 +140,14 @@ void SystemManager::update()
 
     elapsedTimer.start();
 
+    bool processTabHardware = false;
+    bool processTabApiSupport = false;
+
     if (m_staticInfoCpuChanged)
     {
         m_tabHardware->slotCpuStaticInfo(m_staticInfoCpu);
+        processTabHardware = true;
+
         if (m_processWorker)
         {
             QVariant variant = m_staticInfoCpu[Globals::Key_Cpu_ProcessorCount];
@@ -147,7 +172,10 @@ void SystemManager::update()
     if (m_staticInfoGpuChanged)
     {
         m_tabHardware->slotGpuStaticInfo(m_staticInfoGpu);
+        m_tabApiSupport->slotApiSupportStaticInfo(m_staticInfoGpu);
         m_staticInfoGpuChanged = false;
+        processTabHardware = true;
+        processTabApiSupport = true;
     }
 
     if (m_dynamicInfoGpuChanged)
@@ -170,6 +198,7 @@ void SystemManager::update()
             const uint32_t totalPhysicalMemory = variant.value<uint32_t>();
             m_tabHardware->slotTotalPhysicalMemory(totalPhysicalMemory);
             m_tabPerformance->slotTotalMemory(totalPhysicalMemory);
+            processTabHardware = true;
         }
         
         m_staticInfoMemoryChanged = false;
@@ -187,6 +216,13 @@ void SystemManager::update()
         m_dynamicInfoMemoryChanged = false;
     }
 
+    if (m_staticInfoWmiChanged)
+    {
+        m_tabApiSupport->slotApiSupportStaticInfo(m_staticInfoWmi);
+        m_staticInfoWmiChanged = false;
+        processTabApiSupport = true;
+    }
+
     if (m_dynamicInfoWmiChanged)
     {
         QVariant variant = m_dynamicInfoWmi[Globals::Key_Network_BytesReceivedPerSec];
@@ -199,7 +235,16 @@ void SystemManager::update()
         m_dynamicInfoWmiChanged = false;
     }
 
-    m_tabHardware->process();
+    if (processTabHardware)
+    {
+        m_tabHardware->process();
+    }
+
+    if (processTabApiSupport)
+    {
+        m_tabApiSupport->process();
+    }
+    
     m_tabProcesses->process();
     m_tabPerformance->process();
 

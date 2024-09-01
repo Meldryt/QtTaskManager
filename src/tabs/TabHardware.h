@@ -5,7 +5,7 @@
 #include <QLabel>
 #include <QTableWidget>
 
-#include "Globals.h"
+#include "../Globals.h"
 
 class TabHardware : public QWidget
 {
@@ -53,7 +53,8 @@ private:
         "Graphics Memory Type",
         "Graphics Memory Bandwidth",
         "Graphics Driver",
-        "Graphics Driver Version"
+        "Graphics Driver Version",
+        "Graphics Pnp Device Id",
     };
     std::map<int, QString> m_gpuTableInfos;
 

@@ -41,6 +41,12 @@ void GpuInfoNVidia::readStaticInfo()
     m_staticInfo[Globals::SysInfoAttr::Key_Gpu_MemoryVendor] = QString::fromStdString(m_nvapiHandler->gpuMemoryVendor());
     m_staticInfo[Globals::SysInfoAttr::Key_Gpu_DriverInfo] = QString::fromStdString(m_nvapiHandler->gpuDriverInfo());
     m_staticInfo[Globals::SysInfoAttr::Key_Gpu_DriverVersion] = QString::fromStdString(m_nvapiHandler->gpuDriverVersion());
+
+    m_staticInfo[Globals::SysInfoAttr::Key_Api_Functions_StatusSupport_Nvapi] = QVariant::fromValue(m_nvapiHandler->functionsSupportStatus());
+    m_staticInfo[Globals::SysInfoAttr::Key_Api_Functions_StatusSupport_Nvapi] = QVariant::fromValue(m_nvapiHandler->functionsStatusMessage());
+
+    m_staticInfo[Globals::SysInfoAttr::Key_Api_Functions_StatusSupport_Nvml] = QVariant::fromValue(m_nvmlHandler->functionsSupportStatus());
+    m_staticInfo[Globals::SysInfoAttr::Key_Api_Functions_StatusSupport_Nvml] = QVariant::fromValue(m_nvmlHandler->functionsStatusMessage());
 }
 
 void GpuInfoNVidia::readDynamicInfo()

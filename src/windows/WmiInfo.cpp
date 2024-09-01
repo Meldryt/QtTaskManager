@@ -172,24 +172,43 @@ bool WmiInfo::init()
         qWarning() << "CoSetProxyBlanket failed! reason: " << std::system_category().message(hr).c_str();
     }
 
-    const std::vector<std::wstring> fields = { L"PercentProcessorPerformance",L"PercentProcessorUtility"};
-    std::map<std::string, std::vector<std::string>> fieldMap = queryArray(L"Win32_PerfFormattedData_Counters_ProcessorInformation", fields);
-
-     if (!fieldMap["PercentProcessorPerformance"].empty() && !fieldMap["PercentProcessorUtility"].empty()) {
-         m_isWmiFrequencyInfoAvailable = true;
-     }
-
-     auto fanInfo = query(L"Win32_Fan", L"*");
-     if (!fanInfo.empty()) {
-         m_isWmiFanInfoAvailable = true;
-     }
-
     return true;
+}
+
+void WmiInfo::checkSupportedFunctions()
+{
+    std::vector<std::string> queryResult;
+    queryResult = query(L"Win32_PerfFormattedData_Counters_ProcessorInformation", L"Name");
+    m_functionsSupportStatus["Win32_PerfFormattedData_Counters_ProcessorInformation"] = !queryResult.empty();
+
+    queryResult = query(L"Win32_Fan", L"Name");
+    m_functionsSupportStatus["Win32_Fan"] = !queryResult.empty();
+
+    queryResult = query(L"Win32_Processor", L"Name");
+    m_functionsSupportStatus["Win32_Processor"] = !queryResult.empty();
+
+    queryResult = query(L"Win32_TemperatureProbe", L"Name");
+    m_functionsSupportStatus["Win32_TemperatureProbe"] = !queryResult.empty();
+
+    queryResult = query(L"Win32_VideoController", L"Name");
+    m_functionsSupportStatus["Win32_VideoController"] = !queryResult.empty();
+
+    queryResult = query(L"Win32_PerfFormattedData_Tcpip_NetworkInterface", L"Name");
+    m_functionsSupportStatus["Win32_PerfFormattedData_Tcpip_NetworkInterface"] = !queryResult.empty();
+
+    queryResult = query(L"CIM_PowerSupply", L"Name");
+    m_functionsSupportStatus["CIM_PowerSupply"] = !queryResult.empty();
+   
+    queryResult = query(L"MSAcpi_ThermalZoneTemperature", L"CurrentTemperature");
+    m_functionsSupportStatus["MSAcpi_ThermalZoneTemperature"] = !queryResult.empty();
 }
 
 void WmiInfo::readStaticInfo()
 {
+    checkSupportedFunctions();
+
     readCpuInfo();
+    readGpuInfo();
 
     m_staticInfo[Globals::SysInfoAttr::Key_Cpu_Brand] = QString::fromStdString(m_cpuBrand);
     m_staticInfo[Globals::SysInfoAttr::Key_Cpu_ProcessorCount] = m_cpuProcessorCount;
@@ -199,6 +218,8 @@ void WmiInfo::readStaticInfo()
     //m_staticInfo[Globals::SysInfoAttr::Key_Cpu_L1CacheSize] = m_cpuL1CacheSize;
     //m_staticInfo[Globals::SysInfoAttr::Key_Cpu_L2CacheSize] = m_cpuL2CacheSize;
     //m_staticInfo[Globals::SysInfoAttr::Key_Cpu_L3CacheSize] = m_cpuL3CacheSize;
+    m_staticInfo[Globals::SysInfoAttr::Key_Gpu_PnpString] = QString::fromStdString(m_gpuPnpString);
+    m_staticInfo[Globals::SysInfoAttr::Key_Api_Functions_StatusSupport_Wmi] = QVariant::fromValue(m_functionsSupportStatus);
 }
 
 void WmiInfo::update()
@@ -211,6 +232,7 @@ void WmiInfo::update()
     }
 
     readNetworkSpeed();
+    //readPowerSupply();
 
     m_dynamicInfo[Globals::SysInfoAttr::Key_Cpu_CurrentMaxFrequency] = m_cpuCurrentMaxFrequency;
     m_dynamicInfo[Globals::SysInfoAttr::Key_Cpu_ThreadFrequencies] = QVariant::fromValue(m_cpuThreadFrequencies);
@@ -229,7 +251,7 @@ void WmiInfo::update()
 //@note: CallNtPowerInformation does not give current frequency anymore since Windows 10 21H1 (19043)
 void WmiInfo::readCpuFrequency()
 {
-    if (!m_isWmiFrequencyInfoAvailable)
+    if (!m_functionsSupportStatus["Win32_PerfFormattedData_Counters_ProcessorInformation"])
     {
         return;
     }
@@ -277,19 +299,24 @@ void WmiInfo::readCpuFrequency()
 
 void WmiInfo::readCpuInfo()
 {
-    const std::vector<std::wstring> fields = { L"Name",L"Manufacturer",L"NumberOfCores",L"NumberOfLogicalProcessors",L"MaxClockSpeed" };
+    if (!m_functionsSupportStatus["Win32_Processor"])
+    {
+        return;
+    }
+
+    std::vector<std::wstring> fields = { L"Name",L"Manufacturer",L"NumberOfCores",L"NumberOfLogicalProcessors",L"MaxClockSpeed" };
     std::map<std::string, std::vector<std::string>> fieldMap = queryArray(L"Win32_Processor", fields);
 
     if (!fieldMap["Name"].empty()) {
-
+        m_cpuBrand = fieldMap["Name"][0];
     }
 
     if (!fieldMap["Manufacturer"].empty()) {
-
+        const std::string manuFacturer = fieldMap["Manufacturer"][0];
     }
 
     if (!fieldMap["NumberOfCores"].empty()) {
-
+        m_cpuProcessorCount = std::stoi(fieldMap["NumberOfCores"][0]);
     }
 
     if (!fieldMap["NumberOfLogicalProcessors"].empty()) {
@@ -306,7 +333,7 @@ void WmiInfo::readCpuInfo()
 
 void WmiInfo::readFanSpeed()
 {
-    if (m_isWmiFanInfoAvailable)
+    if (!m_functionsSupportStatus["Win32_Fan"])
     {
         return;
     }
@@ -334,8 +361,14 @@ void WmiInfo::readFanSpeed()
 //@note: tested, not supported
 void WmiInfo::readTemperature()
 {
-    const std::vector<std::wstring> fields = { L"InstanceName",L"CurrentTemperature"};
-    std::map<std::string, std::vector<std::string>> fieldMap = queryArray(L"MSAcpi_ThermalZoneTemperature", fields);
+    if (!m_functionsSupportStatus["Win32_TemperatureProbe"])
+    {
+        return;
+    }
+
+    const std::vector<std::wstring> fields = { L"Name",L"CurrentReading"};
+    std::map<std::string, std::vector<std::string>> fieldMap = queryArray(L"Win32_TemperatureProbe", fields);
+
     if (!fieldMap["InstanceName"].empty()) {
 
     }
@@ -348,8 +381,28 @@ void WmiInfo::readTemperature()
     //auto thermalZoneTemperature = query(L"MSAcpi_ThermalZoneTemperature", L"*");
 }
 
+void WmiInfo::readGpuInfo()
+{
+    if (!m_functionsSupportStatus["Win32_VideoController"])
+    {
+        return;
+    }
+
+    const std::vector<std::wstring> fields = { L"PNPDeviceID",L"DriverVersion",L"DriverDate",L"PowerManagementSupported",L"MaxRefreshRate" };
+    std::map<std::string, std::vector<std::string>> fieldMap = queryArray(L"Win32_VideoController", fields);
+
+    if (!fieldMap["PNPDeviceID"].empty()) {
+        m_gpuPnpString = fieldMap["PNPDeviceID"][0];
+    }
+}
+
 void WmiInfo::readNetworkSpeed()
 {
+    if (!m_functionsSupportStatus["Win32_PerfFormattedData_Tcpip_NetworkInterface"])
+    {
+        return;
+    }
+
     const std::vector<std::wstring> fields = { L"Name",L"BytesReceivedPerSec",L"BytesSentPerSec",L"BytesTotalPerSec",L"CurrentBandwidth" };
     std::map<std::string, std::vector<std::string>> fieldMap = queryArray(L"Win32_PerfFormattedData_Tcpip_NetworkInterface", fields);
 
@@ -392,6 +445,19 @@ void WmiInfo::readNetworkSpeed()
             m_networkCurrentBandwidth.push_back(std::stoi(currentBandwidth));
         }
     }
+}
+
+//@note: needs ConnectServer(_bstr_t("ROOT\\CIMV2\\power")
+//currently unused
+void WmiInfo::readPowerSupply()
+{
+    if (!m_functionsSupportStatus["CIM_PowerSupply"])
+    {
+        return;
+    }
+
+    const std::vector<std::wstring> fields = { L"Name",L"ActiveInputVoltage",L"Status",L"StatusInfo",L"TotalOutputPower" };
+    std::map<std::string, std::vector<std::string>> fieldMap = queryArray(L"CIM_PowerSupply", fields);
 }
 
 
@@ -464,7 +530,11 @@ std::vector<std::string> WmiInfo::query(const std::wstring& wmi_class, const std
                 break;
             }
             VARIANT vt_prop;
-            HRESULT hr = obj->Get(field.c_str(), 0, &vt_prop, nullptr, nullptr);
+            VariantInit(&vt_prop);
+            CIMTYPE pType;
+            long plFlavor;
+
+            HRESULT hr = obj->Get(field.c_str(), 0, &vt_prop, &pType, &plFlavor);
             if (SUCCEEDED(hr)) {
                 if (vt_prop.vt == VT_BSTR)
                 {
@@ -504,7 +574,11 @@ std::vector<std::string> WmiInfo::query(const std::wstring& wmi_class, const std
             for (ULONG n = 0; n < uReturned; n++)
             {
                 VARIANT vt_prop;
-                HRESULT hr = obj[n]->Get(field.c_str(), 0, &vt_prop, nullptr, nullptr);
+                VariantInit(&vt_prop);
+                CIMTYPE pType;
+                long plFlavor;
+
+                HRESULT hr = obj[n]->Get(field.c_str(), 0, &vt_prop, &pType, &plFlavor);
 
                 if (SUCCEEDED(hr)) {
                     if (vt_prop.vt == VT_BSTR)
@@ -572,8 +646,10 @@ std::map<std::string, std::vector<std::string>> WmiInfo::queryArray(const std::w
             {
                 VARIANT vt_prop;
                 VariantInit(&vt_prop);
+                CIMTYPE pType;
+                long plFlavor;
 
-                HRESULT hr = obj->Get(field.c_str(), 0, &vt_prop, nullptr, nullptr);
+                HRESULT hr = obj->Get(field.c_str(), 0, &vt_prop, &pType, &plFlavor);
 
                 if (SUCCEEDED(hr)) {
                     std::string text;
@@ -618,8 +694,10 @@ std::map<std::string, std::vector<std::string>> WmiInfo::queryArray(const std::w
                 {
                     VARIANT vt_prop;
                     VariantInit(&vt_prop);
+                    CIMTYPE pType;
+                    long plFlavor;
 
-                    HRESULT hr = obj[n]->Get(field.c_str(), 0, &vt_prop, nullptr, nullptr);
+                    HRESULT hr = obj[n]->Get(field.c_str(), 0, &vt_prop, &pType, &plFlavor);
 
                     if (SUCCEEDED(hr)) {
                         std::string text;

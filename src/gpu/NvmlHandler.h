@@ -1,6 +1,8 @@
 #pragma once
 
 #include <string>
+#include <QMap>
+#include <QString>
 
 class NvmlHandler
 {
@@ -17,6 +19,14 @@ public:
     const double& gpuTemperature() const { return m_gpuTemperature; };
     const uint16_t& gpuFanSpeed() const { return m_gpuFanSpeed; };
 
+    const QMap<QString, bool>& functionsSupportStatus() const {
+        return m_functionsSupportStatus;
+    };
+
+    const QMap<QString, QString>& functionsStatusMessage() const {
+        return m_functionsStatusMessage;
+    };
+
 private:
     
     void readGpuMemory();
@@ -29,4 +39,7 @@ private:
     double m_gpuTemperature{ 0 };
     uint16_t m_gpuFanSpeed{ 0 }; // Current fan RPM value
     bool m_powerManagementModeEnabled{ false };
+
+    QMap<QString, bool> m_functionsSupportStatus;
+    QMap<QString, QString> m_functionsStatusMessage;
 };

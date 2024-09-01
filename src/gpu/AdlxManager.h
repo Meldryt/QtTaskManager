@@ -36,6 +36,8 @@ public:
     bool readDynamicInfo();
 
 private:
+    void checkSupportedDynamicFunctions();
+    void setFunctionStatus(const char* key, const bool support, const ADLX_RESULT res);
 
     void ShowGPUInfo();
     // Show current all metrics
@@ -83,6 +85,24 @@ private:
         {0x1179, "Toshiba"}
     };
 
+    const std::map<ADLX_RESULT, std::string> AdlxResultMap = {
+        {ADLX_OK, "ADLX_OK"},
+        {ADLX_ALREADY_ENABLED, "ADLX_ALREADY_ENABLED"},
+        {ADLX_ALREADY_INITIALIZED, "ADLX_ALREADY_INITIALIZED"},
+        {ADLX_FAIL, "ADLX_FAIL"},
+        {ADLX_INVALID_ARGS, "ADLX_INVALID_ARGS"},
+        {ADLX_BAD_VER, "ADLX_BAD_VER"},
+        {ADLX_UNKNOWN_INTERFACE, "ADLX_UNKNOWN_INTERFACE"},
+        {ADLX_TERMINATED, "ADLX_TERMINATED"},
+        {ADLX_ADL_INIT_ERROR, "ADLX_ADL_INIT_ERROR"},
+        {ADLX_NOT_FOUND, "ADLX_NOT_FOUND"},
+        {ADLX_INVALID_OBJECT, "ADLX_INVALID_OBJECT"},
+        {ADLX_ORPHAN_OBJECTS, "ADLX_ORPHAN_OBJECTS"},
+        {ADLX_NOT_SUPPORTED, "ADLX_NOT_SUPPORTED"},
+        {ADLX_PENDING_OPERATION, "ADLX_PENDING_OPERATION"},
+        {ADLX_GPU_INACTIVE, "ADLX_GPU_INACTIVE"},
+    };
+
     QMap<uint8_t, QVariant> m_staticInfo;
     QMap<uint8_t, QVariant> m_dynamicInfo;
 
@@ -91,6 +111,7 @@ private:
     std::string m_gpuModel;
     uint16_t m_gpuMemorySize;
     std::string m_gpuMemoryType;
+    std::string m_gpuPnpString;
 
     double m_gpuUsage{ 0 }; // Current graphic activity level in percentage
     double m_gpuVramUsage{ 0 }; // Current memory activity level in percentage
@@ -105,11 +126,11 @@ private:
     uint16_t m_gpuFanSpeed{ 0 }; // Current fan RPM value
     uint8_t m_gpuFanSpeedUsage{ 0 }; // Current ratio of fan RPM and max RPM
 
-    // ASCII �
-    static const signed char g_degree = 248;
-
     IADLXGPUPtr m_oneGPU{ nullptr };
     IADLXPerformanceMonitoringServicesPtr m_perfMonitoringService{ nullptr };
 
     bool m_initialized{ false };
+
+    QMap<QString, bool> m_functionsSupportStatus;
+    QMap<QString, QString> m_functionsStatusMessage;
 };

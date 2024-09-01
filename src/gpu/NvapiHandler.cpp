@@ -210,22 +210,22 @@ typedef NvAPI_Status(*NvAPI_GetErrorMessage_t)(NvAPI_Status, NvAPI_ShortString);
 typedef NvAPI_Status(*NvAPI_SYS_GetDisplayDriverInfo_t)(NV_DISPLAY_DRIVER_INFO* pDriverInfo);
 
 // nvapi.dll internal function pointers
-NvAPI_QueryInterface_t              _NvAPI_QueryInterface = NULL;
-NvAPI_Initialize_t                  _NvAPI_Initialize = NULL;
-NvAPI_EnumPhysicalGPUs_t            _NvAPI_EnumPhysicalGPUs = NULL;
-NvAPI_GPU_GetUsages_t               _NvAPI_GPU_GetUsages = NULL;
-NvAPI_GPU_GetThermalSettings_t	    _NvAPI_GPU_GetThermalSettings = NULL;
-NvAPI_GPU_GetMemoryInfoEx_t         _NvAPI_GPU_GetMemoryInfoEx = NULL;
-NvAPI_GPU_GetMemoryInfo_t           _NvAPI_GPU_GetMemoryInfo = NULL;
-NvAPI_GPU_GetTachReading_t          _NvAPI_GPU_GetTachReading = NULL;
-NvAPI_GPU_GetCoolerSettings_t       _NvAPI_GPU_GetCoolerSettings = NULL;
-NvAPI_GPU_GetFullName_t             _NvAPI_GPU_GetFullName = NULL;
-NvAPI_GPU_GetAllClockFrequencies_t  _NvAPI_GPU_GetAllClockFrequencies = NULL;
-NvAPI_GPU_GetDynamicPstatesInfoEx_t _NvAPI_GPU_GetDynamicPstatesInfoEx = NULL;
-NvAPI_GPU_GetRamMaker_t             _NvAPI_GPU_GetRamMaker = NULL;
-NvAPI_GPU_GetRamType_t              _NvAPI_GPU_GetRamType = NULL;
-NvAPI_GetErrorMessage_t             _NvAPI_GetErrorMessage = NULL;
-NvAPI_SYS_GetDisplayDriverInfo_t    _NvAPI_SYS_GetDisplayDriverInfo = NULL;
+NvAPI_QueryInterface_t              _NvAPI_QueryInterface = nullptr;
+NvAPI_Initialize_t                  _NvAPI_Initialize = nullptr;
+NvAPI_EnumPhysicalGPUs_t            _NvAPI_EnumPhysicalGPUs = nullptr;
+NvAPI_GPU_GetUsages_t               _NvAPI_GPU_GetUsages = nullptr;
+NvAPI_GPU_GetThermalSettings_t	    _NvAPI_GPU_GetThermalSettings = nullptr;
+NvAPI_GPU_GetMemoryInfoEx_t         _NvAPI_GPU_GetMemoryInfoEx = nullptr;
+NvAPI_GPU_GetMemoryInfo_t           _NvAPI_GPU_GetMemoryInfo = nullptr;
+NvAPI_GPU_GetTachReading_t          _NvAPI_GPU_GetTachReading = nullptr;
+NvAPI_GPU_GetCoolerSettings_t       _NvAPI_GPU_GetCoolerSettings = nullptr;
+NvAPI_GPU_GetFullName_t             _NvAPI_GPU_GetFullName = nullptr;
+NvAPI_GPU_GetAllClockFrequencies_t  _NvAPI_GPU_GetAllClockFrequencies = nullptr;
+NvAPI_GPU_GetDynamicPstatesInfoEx_t _NvAPI_GPU_GetDynamicPstatesInfoEx = nullptr;
+NvAPI_GPU_GetRamMaker_t             _NvAPI_GPU_GetRamMaker = nullptr;
+NvAPI_GPU_GetRamType_t              _NvAPI_GPU_GetRamType = nullptr;
+NvAPI_GetErrorMessage_t             _NvAPI_GetErrorMessage = nullptr;
+NvAPI_SYS_GetDisplayDriverInfo_t    _NvAPI_SYS_GetDisplayDriverInfo = nullptr;
 
 NvapiHandler::NvapiHandler()
 {
@@ -252,12 +252,8 @@ bool NvapiHandler::init()
 
     if (hmod == NULL)
     {
-        //qDebug() << "Couldn't find " << NVAPI_DLL;
+        qWarning() << "Couldn't find " << NVAPI_DLL;
         return false;
-    }
-    else
-    {
-        //qDebug() << "GPU Detected";
     }
 
     // nvapi_QueryInterface is a function used to retrieve other internal functions in nvapi.dll
@@ -282,76 +278,28 @@ bool NvapiHandler::init()
     _NvAPI_GPU_GetRamType = (NvAPI_GPU_GetRamType_t)(*_NvAPI_QueryInterface)(0x57F7CAAC);
     _NvAPI_SYS_GetDisplayDriverInfo = (NvAPI_SYS_GetDisplayDriverInfo_t)(*_NvAPI_QueryInterface)(0x721faceb);
 
-    if (_NvAPI_Initialize == NULL)
+    if (_NvAPI_Initialize)
     {
-        qWarning() << "Couldn't get function _NvAPI_Initialize in nvapi.dll";
-        return false;
+        NvAPI_Status status = (*_NvAPI_Initialize)();
+        if (status != NVAPI_OK) {
+            NvAPI_ShortString string;
+            (*_NvAPI_GetErrorMessage)(status, string);
+            m_functionsStatusMessage["NvAPI_Initialize"] = string;
+            qWarning() << __FUNCTION__ << " : " << "_NvAPI_Initialize failed! status: " << string;
+        }
+        else
+        {
+            m_initialized = true;
+        }
     }
-    if (_NvAPI_GetErrorMessage == NULL)
+    else
     {
-        qWarning() << "Couldn't get function _NvAPI_GetErrorMessage in nvapi.dll";
-        return false;
-    }
-    if (_NvAPI_EnumPhysicalGPUs == NULL)
-    {
-        qWarning() << "Couldn't get function _NvAPI_EnumPhysicalGPUs in nvapi.dll";
-        return false;
-    }
-    if (_NvAPI_GPU_GetUsages == NULL)
-    {
-        qWarning() << "Couldn't get function _NvAPI_GPU_GetUsages in nvapi.dll";
-    }
-    if (_NvAPI_GPU_GetThermalSettings == NULL)
-    {
-        qWarning() << "Couldn't get function _NvAPI_GPU_GetThermalSettings in nvapi.dll";
-    }
-    if (_NvAPI_GPU_GetMemoryInfoEx == NULL)
-    {
-        qWarning() << "Couldn't get function _NvAPI_GPU_GetMemoryInfoEx in nvapi.dll";
-    }
-    if (_NvAPI_GPU_GetMemoryInfo == NULL)
-    {
-        qWarning() << "Couldn't get function _NvAPI_GPU_GetMemoryInfo in nvapi.dll";
-    }
-    if (_NvAPI_GPU_GetTachReading == NULL)
-    {
-        qWarning() << "Couldn't get function _NvAPI_GPU_GetTachReading in nvapi.dll";
-    }
-    if (_NvAPI_GPU_GetAllClockFrequencies == NULL)
-    {
-        qWarning() << "Couldn't get function _NvAPI_GPU_GetAllClockFrequencies in nvapi.dll";
-    }
-    if (_NvAPI_GPU_GetDynamicPstatesInfoEx == NULL)
-    {
-        qWarning() << "Couldn't get function _NvAPI_GPU_GetDynamicPstatesInfoEx in nvapi.dll";
-    }
-    if (_NvAPI_GPU_GetCoolerSettings == NULL)
-    {
-        qWarning() << "Couldn't get function _NvAPI_GPU_GetCoolerSettings in nvapi.dll";
-    }
-    if (_NvAPI_GPU_GetFullName == NULL)
-    {
-        qWarning() << "Couldn't get function _NvAPI_GPU_GetFullName in nvapi.dll";
-    }
-    if (_NvAPI_GPU_GetRamMaker == NULL)
-    {
-        qWarning() << "Couldn't get function _NvAPI_GPU_GetRamMaker in nvapi.dll";
-    }
-    if (_NvAPI_GPU_GetRamType == NULL)
-    {
-        qWarning() << "Couldn't get function _NvAPI_GPU_GetRamType in nvapi.dll";
-    }
-    if (_NvAPI_SYS_GetDisplayDriverInfo == NULL)
-    {
-        qWarning() << "Couldn't get function _NvAPI_SYS_GetDisplayDriverInfo in nvapi.dll";
-    }
-    // initialize NvAPI library, call it once before calling any other NvAPI functions
-    if ((*_NvAPI_Initialize)() != 0)
-    {
-        qWarning() << "Could not initialize nvapi!";
+        qWarning() << __FUNCTION__ << " : " << "_NvAPI_Initialize is null!";
     }
 
-    return true;
+    m_functionsSupportStatus["NvAPI_Initialize"] = m_initialized;
+
+    return m_initialized;
 }
 
 /*
@@ -363,95 +311,125 @@ void NvapiHandler::readStaticInfo()
     qDebug() << __FUNCTION__;
 
     NvAPI_Status status;
+    NvAPI_ShortString string;
 
-    status = (*_NvAPI_Initialize)();
-    if (status != NVAPI_OK) {
-        NvAPI_ShortString string;
-        (*_NvAPI_GetErrorMessage)(status, string);
-        qWarning() << "_NvAPI_Initialize failed! status: " << string;
-        return;
-    }
+    m_functionsSupportStatus["NvAPI_GetErrorMessage"] = false;
+    m_functionsSupportStatus["NvAPI_EnumPhysicalGPUs"] = false;
+    m_functionsSupportStatus["NvAPI_GPU_GetFullName"] = false;
+    m_functionsSupportStatus["NvAPI_GPU_GetMemoryInfo"] = false;
+    m_functionsSupportStatus["NvAPI_GPU_GetMemoryInfoEx"] = false;
+    m_functionsSupportStatus["NvAPI_GPU_GetRamType"] = false;
+    m_functionsSupportStatus["NvAPI_GPU_GetRamMaker"] = false;
+    m_functionsSupportStatus["NvAPI_GPU_GetCoolerSettings"] = false;
 
-    int          gpuCount = 0;
-    int* gpuHandles[NVAPI_MAX_PHYSICAL_GPUS] = { NULL };
-    char gpuName[256] = { 0 };
-
-    status = (*_NvAPI_EnumPhysicalGPUs)(gpuHandles, &gpuCount);
-    if (status != NVAPI_OK) {
-        NvAPI_ShortString string;
-        (*_NvAPI_GetErrorMessage)(status, string);
-        qWarning() << "_NvAPI_EnumPhysicalGPUs failed! status: " << string;
-        return;
-    }
-
-    m_gpuHandle = gpuHandles[0];
-
-    if (_NvAPI_GPU_GetFullName != NULL)
+    if (!m_initialized)
     {
-        status = (*_NvAPI_GPU_GetFullName)(m_gpuHandle, gpuName);
+        return;
+    }
+
+    if (_NvAPI_EnumPhysicalGPUs)
+    {
+        int gpuCount = 0;
+        int* gpuHandles[NVAPI_MAX_PHYSICAL_GPUS] = { NULL };
+
+        status = (*_NvAPI_EnumPhysicalGPUs)(gpuHandles, &gpuCount);
         if (status != NVAPI_OK) {
-            NvAPI_ShortString string;
             (*_NvAPI_GetErrorMessage)(status, string);
-            qWarning() << "_NvAPI_GPU_GetFullName failed! status: " << string;
+            m_functionsStatusMessage["NvAPI_EnumPhysicalGPUs"] = string;
+
+            qWarning() << "_NvAPI_EnumPhysicalGPUs failed! status: " << string;
             return;
         }
-
-        m_gpuModel = gpuName;
+        else
+        {
+            m_functionsSupportStatus["NvAPI_EnumPhysicalGPUs"] = true;
+            m_gpuHandle = gpuHandles[0];
+        }
     }
 
-    if (_NvAPI_GPU_GetMemoryInfo != NULL)
+    if (_NvAPI_GPU_GetFullName)
+    {
+        char gpuName[256] = { 0 };
+        status = (*_NvAPI_GPU_GetFullName)(m_gpuHandle, gpuName);
+        if (status != NVAPI_OK) {
+            (*_NvAPI_GetErrorMessage)(status, string);
+            m_functionsStatusMessage["NvAPI_GPU_GetFullName"] = string;
+
+            qWarning() << "_NvAPI_GPU_GetFullName failed! status: " << string;
+        }
+        else
+        {
+            m_functionsSupportStatus["NvAPI_GPU_GetFullName"] = true;
+            m_gpuModel = gpuName;
+        }
+    }
+
+    if (_NvAPI_GPU_GetMemoryInfo)
     {
         NV_DISPLAY_DRIVER_MEMORY_INFO memory_info;
         memory_info.version = NV_DISPLAY_DRIVER_MEMORY_INFO_VER;
         status = (*_NvAPI_GPU_GetMemoryInfo)(m_gpuHandle, &memory_info);
         if (status != NVAPI_OK) {
-            NvAPI_ShortString string;
             (*_NvAPI_GetErrorMessage)(status, string);
+            m_functionsStatusMessage["NvAPI_GPU_GetMemoryInfo"] = string;
             qWarning() << "_NvAPI_GPU_GetMemoryInfo failed! status: " << string;
-            return;
         }
-
-        m_gpuMemorySize = memory_info.dedicatedVideoMemory / 1024 / 1024;
+        else
+        {
+            m_functionsSupportStatus["NvAPI_GPU_GetMemoryInfo"] = true;
+            m_gpuMemorySize = memory_info.dedicatedVideoMemory / 1024 / 1024;
+        }  
     }
-    else if (_NvAPI_GPU_GetMemoryInfoEx != NULL)
+    else if (_NvAPI_GPU_GetMemoryInfoEx)
     {
         NV_GPU_MEMORY_INFO_EX memory_info;
         memory_info.version = NV_GPU_MEMORY_INFO_EX_VER;
         status = (*_NvAPI_GPU_GetMemoryInfoEx)(m_gpuHandle, &memory_info);
         if (status != NVAPI_OK) {
-            NvAPI_ShortString string;
             (*_NvAPI_GetErrorMessage)(status, string);
-            qWarning() << "_NvAPI_GPU_GetMemoryInfoEx failed! status: " << string;
-            return;
-        }
+            m_functionsStatusMessage["NvAPI_GPU_GetMemoryInfoEx"] = string;
 
-        m_gpuMemorySize = memory_info.dedicatedVideoMemory / 1024 / 1024;
+            qWarning() << "_NvAPI_GPU_GetMemoryInfoEx failed! status: " << string;
+        }
+        else
+        {
+            m_functionsSupportStatus["NvAPI_GPU_GetMemoryInfoEx"] = true;
+            m_gpuMemorySize = memory_info.dedicatedVideoMemory / 1024 / 1024;
+        }
     }
 
-    if (_NvAPI_GPU_GetRamType != NULL)
+    if (_NvAPI_GPU_GetRamType)
     {
         NV_RAM_TYPE ramType;
         status = (*_NvAPI_GPU_GetRamType)(m_gpuHandle, &ramType);
         if (status != NVAPI_OK) {
-            NvAPI_ShortString string;
             (*_NvAPI_GetErrorMessage)(status, string);
+            m_functionsStatusMessage["NvAPI_GPU_GetRamType"] = string;
+
             qWarning() << "_NvAPI_GPU_GetRamType failed! status: " << string;
-            return;
         }
-        m_gpuMemoryType = _NV_RAM_TYPE_NAME[ramType];
+        else
+        {
+            m_functionsSupportStatus["NvAPI_GPU_GetRamType"] = true;
+            m_gpuMemoryType = _NV_RAM_TYPE_NAME[ramType];
+        }  
     }
 
-    if (_NvAPI_GPU_GetRamMaker != NULL)
+    if (_NvAPI_GPU_GetRamMaker)
     {
         NV_RAM_MAKER ramMaker;
         status = (*_NvAPI_GPU_GetRamMaker)(m_gpuHandle, &ramMaker);
         if (status != NVAPI_OK) {
-            NvAPI_ShortString string;
             (*_NvAPI_GetErrorMessage)(status, string);
+            m_functionsStatusMessage["NvAPI_GPU_GetRamMaker"] = string;
+
             qWarning() << "_NvAPI_GPU_GetRamMaker failed! status: " << string;
-            return;
         }
-        m_gpuMemoryVendor = _NV_RAM_MAKER_NAME[ramMaker];
+        else
+        {
+            m_functionsSupportStatus["NvAPI_GPU_GetRamMaker"] = true;
+            m_gpuMemoryVendor = _NV_RAM_MAKER_NAME[ramMaker];
+        }    
     }
 
     if (_NvAPI_SYS_GetDisplayDriverInfo)
@@ -459,27 +437,31 @@ void NvapiHandler::readStaticInfo()
         NV_DISPLAY_DRIVER_INFO driverInfo = { NV_DISPLAY_DRIVER_INFO_VER };
         status = (*_NvAPI_SYS_GetDisplayDriverInfo)(&driverInfo);
         if (status != NVAPI_OK) {
-            NvAPI_ShortString string;
             (*_NvAPI_GetErrorMessage)(status, string);
+            m_functionsStatusMessage["NvAPI_SYS_GetDisplayDriverInfo"] = string;
+
             qWarning() << "_NvAPI_SYS_GetDisplayDriverInfo failed! status: " << string;
-            return;
         }
+        else
+        {
+            m_functionsSupportStatus["NvAPI_SYS_GetDisplayDriverInfo"] = true;
 
-        if (driverInfo.bIsNVIDIAGameReadyPackage)
-        {
-            m_gpuDriverInfo = "NVIDIA GameReady";
-        }
-        else if (driverInfo.bIsNVIDIAStudioPackage)
-        {
-            m_gpuDriverInfo = "NVIDIA Studio";
-        }
-        else if (driverInfo.bIsDCHDriver)
-        {
-            m_gpuDriverInfo = "Standard Display Driver";
-        }
+            if (driverInfo.bIsNVIDIAGameReadyPackage)
+            {
+                m_gpuDriverInfo = "NVIDIA GameReady";
+            }
+            else if (driverInfo.bIsNVIDIAStudioPackage)
+            {
+                m_gpuDriverInfo = "NVIDIA Studio";
+            }
+            else if (driverInfo.bIsDCHDriver)
+            {
+                m_gpuDriverInfo = "Standard Display Driver";
+            }
 
-        m_gpuDriverVersion = std::to_string(driverInfo.driverVersion);
-        m_gpuDriverVersion = m_gpuDriverVersion.substr(0, 3) + "." + m_gpuDriverVersion.substr(3);
+            m_gpuDriverVersion = std::to_string(driverInfo.driverVersion);
+            m_gpuDriverVersion = m_gpuDriverVersion.substr(0, 3) + "." + m_gpuDriverVersion.substr(3);
+        }
     }
 
     //NvU32 DriverVersion;
@@ -505,65 +487,120 @@ void NvapiHandler::readStaticInfo()
     //NvAPI_GPU_GetRamType
 }
 
+void NvapiHandler::checkSupportedDynamicFunctions()
+{
+    NvAPI_Status status;
+    NvAPI_ShortString string;
+
+    m_functionsSupportStatus["NvAPI_GPU_GetDynamicPstatesInfoEx"] = false;
+    m_functionsSupportStatus["NvAPI_GPU_GetAllClockFrequencies"] = false;
+    m_functionsSupportStatus["NvAPI_GPU_GetThermalSettings"] = false;
+    m_functionsSupportStatus["NvAPI_GPU_GetTachReading"] = false;
+    m_functionsSupportStatus["NvAPI_GPU_GetTachReading"] = false;
+
+    if (_NvAPI_GPU_GetDynamicPstatesInfoEx)
+    {
+        NV_GPU_DYNAMIC_PSTATES_INFO_EX pstates_info;
+        pstates_info.version = NV_GPU_DYNAMIC_PSTATES_INFO_EX_VER;
+        status = (*_NvAPI_GPU_GetDynamicPstatesInfoEx)(m_gpuHandle, &pstates_info);
+        if (status != NVAPI_OK) {
+            (*_NvAPI_GetErrorMessage)(status, string);
+            m_functionsStatusMessage["NvAPI_GPU_GetDynamicPstatesInfoEx"] = string;
+        }
+        else {
+            m_functionsSupportStatus["NvAPI_GPU_GetDynamicPstatesInfoEx"] = true;
+        }
+    }
+
+    if (_NvAPI_GPU_GetAllClockFrequencies)
+    {
+        NV_GPU_CLOCK_FREQUENCIES frequencies;
+        frequencies.version = NV_GPU_CLOCK_FREQUENCIES_VER;
+        frequencies.ClockType = NV_GPU_CLOCK_FREQUENCIES_CURRENT_FREQ;
+        status = (*_NvAPI_GPU_GetAllClockFrequencies)(m_gpuHandle, &frequencies);
+        if (status != NVAPI_OK) {
+            (*_NvAPI_GetErrorMessage)(status, string);
+            m_functionsStatusMessage["NvAPI_GPU_GetAllClockFrequencies"] = string;
+        }
+        else {
+            m_functionsSupportStatus["NvAPI_GPU_GetAllClockFrequencies"] = true;
+        }
+    }
+
+    if (_NvAPI_GPU_GetThermalSettings)
+    {
+        NV_GPU_THERMAL_SETTINGS thermalSettings;
+        thermalSettings.version = NV_GPU_THERMAL_SETTINGS_VER;
+        thermalSettings.count = 0;
+        thermalSettings.sensor[0].controller = NV_THERMAL_CONTROLLER::NVAPI_THERMAL_CONTROLLER_UNKNOWN;
+        thermalSettings.sensor[0].target = NVAPI_THERMAL_TARGET_GPU;
+
+        status = (*_NvAPI_GPU_GetThermalSettings)(m_gpuHandle, 0, &thermalSettings);
+        if (status != NVAPI_OK) {
+            (*_NvAPI_GetErrorMessage)(status, string);
+            m_functionsStatusMessage["NvAPI_GPU_GetThermalSettings"] = string;
+        }
+        else
+        {
+            m_functionsSupportStatus["NvAPI_GPU_GetThermalSettings"] = true;
+        }
+
+    }
+
+    if (_NvAPI_GPU_GetTachReading)
+    {
+        unsigned long rpmSpeed = 0;
+        //@note: fails on some gpus because of no support.
+        status = (*_NvAPI_GPU_GetTachReading)(m_gpuHandle, &rpmSpeed);
+        if (status != NVAPI_OK) {
+            (*_NvAPI_GetErrorMessage)(status, string);
+            m_functionsStatusMessage["NvAPI_GPU_GetTachReading"] = string;
+        }
+        else {
+            m_functionsSupportStatus["NvAPI_GPU_GetTachReading"] = true;
+        }
+    }
+
+    if (_NvAPI_GPU_GetCoolerSettings)
+    {
+        NvAPI_Status status;
+
+        NV_GPU_COOLER_SETTINGS cooler_settings;
+        cooler_settings.version = NV_GPU_COOLER_SETTINGS_VER;
+        status = (*_NvAPI_GPU_GetCoolerSettings)(m_gpuHandle, NVAPI_COOLER_TARGET_GPU, &cooler_settings);
+        if (status != NVAPI_OK) {
+            (*_NvAPI_GetErrorMessage)(status, string);
+            m_functionsStatusMessage["NvAPI_GPU_GetCoolerSettings"] = string;
+            return;
+        }
+        else {
+            m_functionsSupportStatus["NvAPI_GPU_GetCoolerSettings"] = true;
+        }
+    }
+}
+
 /*
  * Name: NvGetGpuInfoNVidia
  * Desc: Returns the NVIDIA Gpu's current load percentage.
  */
 void NvapiHandler::readDynamicInfo()
 {
-    qDebug() << __FUNCTION__;
-
-    //NvAPI_Status status;
-
-    //status = (*_NvAPI_Initialize)();
-    //if (status != NVAPI_OK) {
-    //    NvAPI_ShortString string;
-    //    (*_NvAPI_GetErrorMessage)(status, string);
-    //    qWarning() << "_NvAPI_Initialize failed! status: " << string;
-    //    return;
-    //}
-
-    //int          gpuCount = 0;
-    //int* gpuHandles[NVAPI_MAX_PHYSICAL_GPUS] = { NULL };
-
-    //status = (*_NvAPI_EnumPhysicalGPUs)(gpuHandles, &gpuCount);
-    //if (status != NVAPI_OK) {
-    //    NvAPI_ShortString string;
-    //    (*_NvAPI_GetErrorMessage)(status, string);
-    //    qWarning() << "_NvAPI_EnumPhysicalGPUs failed! status: " << string;
-    //    return;
-    //}
+    if (!m_initialized)
+    {
+        return;
+    }
 
     readGpuUsage();
     readGpuFrequencies();
     readGpuMemory();
     readGpuTemperature();
     readGpuFanSpeed();
-
-    //if (_NvAPI_GPU_GetCoolerSettings != NULL)
-    //{
-    //    NV_GPU_COOLER_SETTINGS cooler_settings;
-    //    cooler_settings.version = NV_GPU_COOLER_SETTINGS_VER;
-    //    status = (*_NvAPI_GPU_GetCoolerSettings)(m_gpuHandle, NVAPI_COOLER_TARGET_GPU, &cooler_settings);
-    //    if (status != NVAPI_OK) {
-    //        NvAPI_ShortString string;
-    //        (*_NvAPI_GetErrorMessage)(status, string);
-    //        qWarning() << "_NvAPI_GPU_GetCoolerSettings failed! status: " << string;
-    //        return;
-    //    }
-    //    status = (*_NvAPI_GPU_GetCoolerSettings)(m_gpuHandle, NVAPI_COOLER_TARGET_ALL, &cooler_settings);
-    //    if (status != NVAPI_OK) {
-    //        NvAPI_ShortString string;
-    //        (*_NvAPI_GetErrorMessage)(status, string);
-    //        qWarning() << "_NvAPI_GPU_GetCoolerSettings failed! status: " << string;
-    //        return;
-    //    }
-    //}
+    readGpuCooler();
 }
 
 void NvapiHandler::readGpuUsage()
 {
-    if (_NvAPI_GPU_GetDynamicPstatesInfoEx != NULL)
+    if (m_functionsSupportStatus["NvAPI_GPU_GetDynamicPstatesInfoEx"])
     {
         NvAPI_Status status;
         unsigned int gpuUsages[NVAPI_MAX_USAGES_PER_GPU] = { 0 };
@@ -584,9 +621,6 @@ void NvapiHandler::readGpuUsage()
         pstates_info.version = NV_GPU_DYNAMIC_PSTATES_INFO_EX_VER;
         status = (*_NvAPI_GPU_GetDynamicPstatesInfoEx)(m_gpuHandle, &pstates_info);
         if (status != NVAPI_OK) {
-            NvAPI_ShortString string;
-            (*_NvAPI_GetErrorMessage)(status, string);
-            qWarning() << "_NvAPI_GPU_GetDynamicPstatesInfoEx failed! status: " << string;
             return;
         }
         m_gpuUsage = pstates_info.utilization[0].percentage;
@@ -596,7 +630,7 @@ void NvapiHandler::readGpuUsage()
 
 void NvapiHandler::readGpuFrequencies()
 {
-    if (_NvAPI_GPU_GetAllClockFrequencies != NULL)
+    if (m_functionsSupportStatus["NvAPI_GPU_GetAllClockFrequencies"])
     {
         NvAPI_Status status;
 
@@ -605,9 +639,6 @@ void NvapiHandler::readGpuFrequencies()
         frequencies.ClockType = NV_GPU_CLOCK_FREQUENCIES_CURRENT_FREQ;
         status = (*_NvAPI_GPU_GetAllClockFrequencies)(m_gpuHandle, &frequencies);
         if (status != NVAPI_OK) {
-            NvAPI_ShortString string;
-            (*_NvAPI_GetErrorMessage)(status, string);
-            qWarning() << "_NvAPI_GPU_GetAllClockFrequencies failed! status: " << string;
             return;
         }
 
@@ -633,7 +664,7 @@ void NvapiHandler::readGpuFrequencies()
 
 void NvapiHandler::readGpuMemory()
 {
-    if (_NvAPI_GPU_GetMemoryInfoEx != NULL)
+    if (m_functionsSupportStatus["NvAPI_GPU_GetMemoryInfoEx"])
     {
         NvAPI_Status status;
 
@@ -641,9 +672,6 @@ void NvapiHandler::readGpuMemory()
         memory_info.version = NV_GPU_MEMORY_INFO_EX_VER;
         status = (*_NvAPI_GPU_GetMemoryInfoEx)(m_gpuHandle, &memory_info);
         if (status != NVAPI_OK) {
-            NvAPI_ShortString string;
-            (*_NvAPI_GetErrorMessage)(status, string);
-            qWarning() << "_NvAPI_GPU_GetMemoryInfoEx failed! status: " << string;
             return;
         }
 
@@ -655,7 +683,7 @@ void NvapiHandler::readGpuMemory()
 
 void NvapiHandler::readGpuTemperature()
 {
-    if (_NvAPI_GPU_GetThermalSettings != NULL)
+    if (m_functionsSupportStatus["NvAPI_GPU_GetThermalSettings"])
     {
         NvAPI_Status status;
         NV_GPU_THERMAL_SETTINGS thermalSettings;
@@ -666,9 +694,6 @@ void NvapiHandler::readGpuTemperature()
 
         status = (*_NvAPI_GPU_GetThermalSettings)(m_gpuHandle, 0, &thermalSettings);
         if (status != NVAPI_OK) {
-            NvAPI_ShortString string;
-            (*_NvAPI_GetErrorMessage)(status, string);
-            qWarning() << "_NvAPI_GPU_GetThermalSettings for TARGET_GPU failed! status: " << string;
             return;
         }
 
@@ -678,9 +703,6 @@ void NvapiHandler::readGpuTemperature()
         thermalSettings.sensor[0].target = NVAPI_THERMAL_TARGET_MEMORY;
         status = (*_NvAPI_GPU_GetThermalSettings)(m_gpuHandle, 0, &thermalSettings);
         if (status != NVAPI_OK) {
-            NvAPI_ShortString string;
-            (*_NvAPI_GetErrorMessage)(status, string);
-            qWarning() << "_NvAPI_GPU_GetThermalSettings for TARGET_MEMORY failed! status: " << string;
             return;
         }
         else if (thermalSettings.sensor[0].currentTemp > m_gpuHotspotTemperature)
@@ -692,9 +714,6 @@ void NvapiHandler::readGpuTemperature()
         thermalSettings.sensor[0].target = NVAPI_THERMAL_TARGET_POWER_SUPPLY;
         status = (*_NvAPI_GPU_GetThermalSettings)(m_gpuHandle, 0, &thermalSettings);
         if (status != NVAPI_OK) {
-            NvAPI_ShortString string;
-            (*_NvAPI_GetErrorMessage)(status, string);
-            qWarning() << "_NvAPI_GPU_GetThermalSettings POWER_SUPPLY failed! status: " << string;
             return;
         }
         else if (thermalSettings.sensor[0].currentTemp > m_gpuHotspotTemperature)
@@ -705,9 +724,6 @@ void NvapiHandler::readGpuTemperature()
         thermalSettings.sensor[0].target = NVAPI_THERMAL_TARGET_BOARD;
         status = (*_NvAPI_GPU_GetThermalSettings)(m_gpuHandle, 0, &thermalSettings);
         if (status != NVAPI_OK) {
-            NvAPI_ShortString string;
-            (*_NvAPI_GetErrorMessage)(status, string);
-            qWarning() << "_NvAPI_GPU_GetThermalSettings TARGET_BOARD failed! status: " << string;
             return;
         }
         else if (thermalSettings.sensor[0].currentTemp > m_gpuHotspotTemperature)
@@ -718,9 +734,6 @@ void NvapiHandler::readGpuTemperature()
         thermalSettings.sensor[0].target = NVAPI_THERMAL_TARGET_ALL;
         status = (*_NvAPI_GPU_GetThermalSettings)(m_gpuHandle, 0, &thermalSettings);
         if (status != NVAPI_OK) {
-            NvAPI_ShortString string;
-            (*_NvAPI_GetErrorMessage)(status, string);
-            qWarning() << "_NvAPI_GPU_GetThermalSettings TARGET_ALL failed! status: " << string;
             return;
         }
         else if (thermalSettings.sensor[0].currentTemp > m_gpuHotspotTemperature)
@@ -732,21 +745,35 @@ void NvapiHandler::readGpuTemperature()
 
 void NvapiHandler::readGpuFanSpeed()
 {
-    if (_NvAPI_GPU_GetTachReading != NULL)
+    if (m_functionsSupportStatus["NvAPI_GPU_GetTachReading"])
     {
         NvAPI_Status status;
 
         unsigned long rpmSpeed = 0;
         //@note: fails on some gpus because of no support.
         status = (*_NvAPI_GPU_GetTachReading)(m_gpuHandle, &rpmSpeed);
-        if (status != NVAPI_OK) {
-            NvAPI_ShortString string;
-            (*_NvAPI_GetErrorMessage)(status, string);
-            qWarning() << "_NvAPI_GPU_GetTachReading failed! status: " << string;
-        }
-        else
-        {
+        if (status == NVAPI_OK) {
             m_gpuFanSpeed = rpmSpeed;
+        }
+    }
+}
+
+
+void NvapiHandler::readGpuCooler()
+{
+    if (m_functionsSupportStatus["NvAPI_GPU_GetCoolerSettings"])
+    {
+        NvAPI_Status status;
+
+        NV_GPU_COOLER_SETTINGS cooler_settings;
+        cooler_settings.version = NV_GPU_COOLER_SETTINGS_VER;
+        status = (*_NvAPI_GPU_GetCoolerSettings)(m_gpuHandle, NVAPI_COOLER_TARGET_GPU, &cooler_settings);
+        if (status != NVAPI_OK) {
+            return;
+        }
+        status = (*_NvAPI_GPU_GetCoolerSettings)(m_gpuHandle, NVAPI_COOLER_TARGET_ALL, &cooler_settings);
+        if (status != NVAPI_OK) {
+            return;
         }
     }
 }

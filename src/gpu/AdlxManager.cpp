@@ -29,59 +29,99 @@ AdlxManager::~AdlxManager()
 
 bool AdlxManager::init()
 {
-
     ADLX_RESULT res = ADLX_FAIL;
 
     // Initialize ADLX
     res = g_ADLXHelp.Initialize();
 
-    if (!ADLX_SUCCEEDED(res))
+    if (ADLX_FAILED(res))
     {
-        qDebug() << "\tg_ADLXHelp initialize failed";
+        qWarning() << "\tg_ADLXHelp initialize failed";
     }
     else
     {
         m_initialized = true;
-
-        // Get Performance Monitoring services
-        ADLX_RESULT res = g_ADLXHelp.GetSystemServices()->GetPerformanceMonitoringServices(&m_perfMonitoringService);
-        if (ADLX_SUCCEEDED(res))
-        {
-            IADLXGPUListPtr gpus;
-            // Get GPU list
-            res = g_ADLXHelp.GetSystemServices()->GetGPUs(&gpus);
-            if (ADLX_SUCCEEDED(res))
-            {
-                // Use the first GPU in the list
-                //IADLXGPUPtr oneGPU;
-                res = gpus->At(gpus->Begin(), &m_oneGPU);
-                if (ADLX_SUCCEEDED(res))
-                {
-                    ShowGPUInfo();
-                    //// Display main menu options
-                    //MainMenu();
-                    //// Get and execute the choice
-                    //MenuControl(perfMonitoringService, oneGPU);
-                }
-                else
-                    qDebug() << "\tGet particular GPU failed";
-            }
-            else
-                qDebug() << "\tGet GPU list failed";
-        }
-        else
-        {
-            qDebug() << "\tGet performance monitoring services failed";
-        }
     }
-    //else
-    //    return WaitAndExit("\tg_ADLXHelp initialize failed", 0);
-
-    // Destroy ADLX
-    //res = g_ADLXHelp.Terminate();
-    //qDebug() << "Destroy ADLX result: " << res;
+    setFunctionStatus("ADLXHelper::Initialize", m_initialized, res);
 
 	return true;
+}
+
+void AdlxManager::checkSupportedDynamicFunctions()
+{
+    adlx_bool supported;
+    ADLX_RESULT res;
+
+    IADLXSystemMetricsSupportPtr systemMetricsSupport;
+    res = m_perfMonitoringService->GetSupportedSystemMetrics(&systemMetricsSupport);
+    setFunctionStatus("IADLXPerformanceMonitoringServices::GetSupportedSystemMetrics", systemMetricsSupport, res);
+
+    if (!systemMetricsSupport || ADLX_FAILED(res))
+    {
+        return;
+    }
+
+    IADLXGPUMetricsSupportPtr gpuMetricsSupport;
+    res = m_perfMonitoringService->GetSupportedGPUMetrics(m_oneGPU, &gpuMetricsSupport);
+    setFunctionStatus("IADLXPerformanceMonitoringServices::GetSupportedGPUMetrics", systemMetricsSupport, res);
+
+    if (!systemMetricsSupport || ADLX_FAILED(res))
+    {
+        return;
+    }
+
+    res = systemMetricsSupport->IsSupportedCPUUsage(&supported);
+    setFunctionStatus("IADLXSystemMetricsSupport::CPUUsage", supported, res);
+
+    res = systemMetricsSupport->IsSupportedSystemRAM(&supported);
+    setFunctionStatus("IADLXSystemMetricsSupport::SystemRAM", supported, res);
+
+    res = systemMetricsSupport->IsSupportedSmartShift(&supported);
+    setFunctionStatus("IADLXSystemMetricsSupport::SmartShift", supported, res);
+
+    res = gpuMetricsSupport->IsSupportedGPUUsage(&supported);
+    setFunctionStatus("IADLXGPUMetricsSupport::GPUUsage", supported, res);
+
+    res = gpuMetricsSupport->IsSupportedGPUClockSpeed(&supported);
+    setFunctionStatus("IADLXGPUMetricsSupport::GPUClockSpeed", supported, res);
+
+    res = gpuMetricsSupport->IsSupportedGPUVRAMClockSpeed(&supported);
+    setFunctionStatus("IADLXGPUMetricsSupport::GPUVRAMClockSpeed", supported, res);
+
+    res = gpuMetricsSupport->IsSupportedGPUTemperature(&supported);
+    setFunctionStatus("IADLXGPUMetricsSupport::GPUTemperature", supported, res);
+
+    res = gpuMetricsSupport->IsSupportedGPUHotspotTemperature(&supported);
+    setFunctionStatus("IADLXGPUMetricsSupport::GPUHotspotTemperature", supported, res);
+
+    res = gpuMetricsSupport->IsSupportedGPUPower(&supported);
+    setFunctionStatus("IADLXGPUMetricsSupport::GPUPowe", supported, res);
+
+    res = gpuMetricsSupport->IsSupportedGPUFanSpeed(&supported);
+    setFunctionStatus("IADLXGPUMetricsSupport::GPUFanSpeed", supported, res);
+
+    res = gpuMetricsSupport->IsSupportedGPUVRAM(&supported);
+    setFunctionStatus("IADLXGPUMetricsSupport::GPUVRAM", supported, res);
+
+    res = gpuMetricsSupport->IsSupportedGPUVoltage(&supported);
+    setFunctionStatus("IADLXGPUMetricsSupport::GPUVoltage", supported, res);
+
+    res = gpuMetricsSupport->IsSupportedGPUTotalBoardPower(&supported);
+    setFunctionStatus("IADLXGPUMetricsSupport::GPUTotalBoardPower", supported, res);
+
+    res = gpuMetricsSupport->IsSupportedGPUIntakeTemperature(&supported);
+    setFunctionStatus("IADLXGPUMetricsSupport::GPUIntakeTemperature", supported, res);
+}
+
+void AdlxManager::setFunctionStatus(const char* key, const bool support, const ADLX_RESULT res) {
+    ADLX_RESULT _res = res;
+    if (!support)
+    {
+        _res = ADLX_NOT_SUPPORTED;
+    }
+
+    m_functionsSupportStatus[key] = support && ADLX_SUCCEEDED(res);
+    m_functionsStatusMessage[key] = QString::fromStdString(AdlxResultMap.at(_res));
 }
 
 bool AdlxManager::readStaticInfo()
@@ -92,43 +132,55 @@ bool AdlxManager::readStaticInfo()
     }
 
     // Get Performance Monitoring services
-    //IADLXPerformanceMonitoringServicesPtr perfMonitoringService;
     ADLX_RESULT res = g_ADLXHelp.GetSystemServices()->GetPerformanceMonitoringServices(&m_perfMonitoringService);
     if (ADLX_SUCCEEDED(res))
     {
+        setFunctionStatus("IADLXSystemServices::GetPerformanceMonitoringServices", true, res);
+
         IADLXGPUListPtr gpus;
-        // Get GPU list
         res = g_ADLXHelp.GetSystemServices()->GetGPUs(&gpus);
         if (ADLX_SUCCEEDED(res))
         {
-            // Use the first GPU in the list
-            //IADLXGPUPtr oneGPU;
+            setFunctionStatus("IADLXSystemServices::GetSystemServices", true, res);
+            setFunctionStatus("IADLXSystem::GetGPUs", true, res);
+
             res = gpus->At(gpus->Begin(), &m_oneGPU);
             if (ADLX_SUCCEEDED(res))
             {
                 ShowGPUInfo();
-                //// Display main menu options
-                //MainMenu();
-                //// Get and execute the choice
-                //MenuControl(perfMonitoringService, oneGPU);
             }
             else
-                qDebug() << "\tGet particular GPU failed";
+            {
+                qWarning() << "\tGet particular GPU failed";
+            }
+
         }
         else
-            qDebug() << "\tGet GPU list failed";
+        {
+            setFunctionStatus("IADLXSystemServices::GetSystemServices", false, res);
+            setFunctionStatus("IADLXSystem::GetGPUs", false, res);
+
+            qWarning() << "\tGet GPU list failed";
+        }
     }
     else
     {
-        qDebug() << "\tGet performance monitoring services failed";
+        setFunctionStatus("IADLXSystemServices::GetPerformanceMonitoringServices", false, res);
+
+        qWarning() << "\tGet performance monitoring services failed";
     }
+
+    checkSupportedDynamicFunctions();
 
     m_staticInfo[Globals::SysInfoAttr::Key_Gpu_ChipDesigner] = QString::fromStdString(m_gpuChipDesigner.c_str());
     m_staticInfo[Globals::SysInfoAttr::Key_Gpu_CardManufacturer] = QString::fromStdString(m_gpuCardManufacturer);
     m_staticInfo[Globals::SysInfoAttr::Key_Gpu_Model] = QString::fromStdString(m_gpuModel);
     m_staticInfo[Globals::SysInfoAttr::Key_Gpu_MemorySize] = m_gpuMemorySize;
     m_staticInfo[Globals::SysInfoAttr::Key_Gpu_MemoryType] = QString::fromStdString(m_gpuMemoryType);
-        
+    m_staticInfo[Globals::SysInfoAttr::Key_Gpu_PnpString] = QString::fromStdString(m_gpuPnpString);
+    m_staticInfo[Globals::SysInfoAttr::Key_Api_Functions_StatusSupport_Adlx] = QVariant::fromValue(m_functionsSupportStatus);
+    m_staticInfo[Globals::SysInfoAttr::Key_Api_Functions_ErrorMessage_Adlx] = QVariant::fromValue(m_functionsStatusMessage);
+
 	return true;
 }
 
@@ -155,99 +207,93 @@ bool AdlxManager::readDynamicInfo()
 // Get and dump GPU vender id and name
 void AdlxManager::ShowGPUInfo()
 {
-    qDebug() << "\n==== GPU info ====";
     // Display GPU info
     const char* vendorId = nullptr;
     ADLX_RESULT ret = m_oneGPU->VendorId(&vendorId);
-    qDebug() << "VendorId: " << vendorId << "return code is: " << ret << "(0 means success)";
+    setFunctionStatus("IADLXGPU::VendorId", ADLX_SUCCEEDED(ret), ret);
 
     ADLX_ASIC_FAMILY_TYPE asicFamilyType = ASIC_UNDEFINED;
     ret = m_oneGPU->ASICFamilyType(&asicFamilyType);
-    qDebug() << "ASICFamilyType: " << asicFamilyType << "return code is: " << ret << "(0 means success)";
+    setFunctionStatus("IADLXGPU::ASICFamilyType", ADLX_SUCCEEDED(ret), ret);
 
     ADLX_GPU_TYPE gpuType = GPUTYPE_UNDEFINED;
     ret = m_oneGPU->Type(&gpuType);
-    qDebug() << "Type: " << gpuType;
+    setFunctionStatus("IADLXGPU::Type", ADLX_SUCCEEDED(ret), ret);
 
     adlx_bool isExternal = false;
     ret = m_oneGPU->IsExternal(&isExternal);
-    qDebug() << "IsExternal: " << isExternal << ", return code is: " << ret << "(0 means success)";
+    setFunctionStatus("IADLXGPU::IsExternal", ADLX_SUCCEEDED(ret), ret);
 
     const char* gpuName = nullptr;
     ret = m_oneGPU->Name(&gpuName);
-    qDebug() << "Name: " << gpuName << ", return code is: " << ret << "(0 means success)";
+    setFunctionStatus("IADLXGPU::Name", ADLX_SUCCEEDED(ret), ret);
 
     const char* driverPath = nullptr;
     ret = m_oneGPU->DriverPath(&driverPath);
-    qDebug() << "DriverPath: " << driverPath << ", return code is: " << ret << "(0 means success)";
+    setFunctionStatus("IADLXGPU::DriverPath", ADLX_SUCCEEDED(ret), ret);
 
     const char* pnpString = nullptr;
     ret = m_oneGPU->PNPString(&pnpString);
-    qDebug() << "PNPString: " << pnpString << ", return code is: " << ret << "(0 means success)";
+    setFunctionStatus("IADLXGPU::PNPString", ADLX_SUCCEEDED(ret), ret);
 
     adlx_bool hasDesktops = false;
     ret = m_oneGPU->HasDesktops(&hasDesktops);
-    qDebug() << "HasDesktops: " << hasDesktops << ", return code is: " << ret << "(0 means success)";
+    setFunctionStatus("IADLXGPU::HasDesktops", ADLX_SUCCEEDED(ret), ret);
 
     adlx_uint totalVRAM;
     ret = m_oneGPU->TotalVRAM(&totalVRAM);
-    qDebug() << "TotalVRAM: " << totalVRAM << " MB" << ", return code is: " << ret << "(0 means success)";
+    setFunctionStatus("IADLXGPU::TotalVRAM", ADLX_SUCCEEDED(ret), ret);
 
     const char* vramTypeString = nullptr;
     ret = m_oneGPU->VRAMType(&vramTypeString);
-    qDebug() << "VRAMType: " << vramTypeString << ", return code is: " << ret << "(0 means success)";
+    setFunctionStatus("IADLXGPU::VRAMType", ADLX_SUCCEEDED(ret), ret);
 
     const char* partNumber = nullptr;
     const char* biosVersion = nullptr;
     const char* biosDate = nullptr;
     ret = m_oneGPU->BIOSInfo(&partNumber, &biosVersion, &biosDate);
-    qDebug() << "BIOSInfo: partNumber: " << partNumber << " biosVersion: " << biosVersion << " biosDate: " << biosDate << ", return code is : " << ret << "(0 means success)";
+    setFunctionStatus("IADLXGPU::BIOSInfo", ADLX_SUCCEEDED(ret), ret);
 
     const char* deviceId;
     ret = m_oneGPU->DeviceId(&deviceId);
-    qDebug() << "DeviceId: " << deviceId;
+    setFunctionStatus("IADLXGPU::DeviceId", ADLX_SUCCEEDED(ret), ret);
 
     adlx_int uid;
     ret = m_oneGPU->UniqueId(&uid);
-    qDebug() << "UniqueId: " << uid;
+    setFunctionStatus("IADLXGPU::UniqueId", ADLX_SUCCEEDED(ret), ret);
 
     const char* subSystemIdString = nullptr;
     ret = m_oneGPU->SubSystemId(&subSystemIdString);
-    qDebug() << "SubSystemId: " << subSystemIdString << ", return code is: " << ret << "(0 means success)";
+    setFunctionStatus("IADLXGPU::SubSystemId", ADLX_SUCCEEDED(ret), ret);
 
     const char* subSystemVendorIdString = nullptr;
     ret = m_oneGPU->SubSystemVendorId(&subSystemVendorIdString);
-    qDebug() << "SubSystemVendorId: " << subSystemVendorIdString << ", return code is: " << ret << "(0 means success)";
+    setFunctionStatus("IADLXGPU::SubSystemVendorId", ADLX_SUCCEEDED(ret), ret);
+
     const int subSystemVendorId = std::stoi(subSystemVendorIdString, 0, 16);
 
     const char* revisionId = nullptr;
     ret = m_oneGPU->RevisionId(&revisionId);
-    qDebug() << "RevisionId: " << revisionId << ", return code is: " << ret << "(0 means success)";
+    setFunctionStatus("IADLXGPU::RevisionId", ADLX_SUCCEEDED(ret), ret);
 
     IADLXGPU1Ptr gpu1(m_oneGPU);
     if (gpu1)
     {
         const char* productName = nullptr;
         ret = gpu1->ProductName(&productName);
-        qDebug() << "ProductName: " << productName;
+        setFunctionStatus("IADLXGPU1::ProductName", ADLX_SUCCEEDED(ret), ret);
 
         ADLX_MGPU_MODE mode = MGPU_NONE;
         ret = gpu1->MultiGPUMode(&mode);
-        printf("Multi-GPU Mode: ");
-        if (mode == MGPU_PRIMARY)
-            qDebug() << "GPU is the primary GPU";
-        else if (mode == MGPU_SECONDARY)
-            qDebug() << "GPU is the secondary GPU";
-        else
-            qDebug() << "GPU is not in Multi-GPU";
+        setFunctionStatus("IADLXGPU1::MultiGPUMode", ADLX_SUCCEEDED(ret), ret);
 
         ADLX_PCI_BUS_TYPE busType = UNDEFINED;
         ret = gpu1->PCIBusType(&busType);
-        qDebug() << "PCIBusType: " << busType;
+        setFunctionStatus("IADLXGPU1::PCIBusType", ADLX_SUCCEEDED(ret), ret);
 
         adlx_uint laneWidth = 0;
         ret = gpu1->PCIBusLaneWidth(&laneWidth);
-        qDebug() << "PCIBusLaneWidth: " << laneWidth;
+        setFunctionStatus("IADLXGPU1::PCIBusLaneWidth", ADLX_SUCCEEDED(ret), ret);
     }
 
     if (MapVendorIdName.find(subSystemVendorId) != MapVendorIdName.end())
@@ -258,6 +304,7 @@ void AdlxManager::ShowGPUInfo()
     m_gpuModel = gpuName;
     m_gpuMemorySize = totalVRAM;
     m_gpuMemoryType = vramTypeString;
+    m_gpuPnpString = pnpString;
 }
 
 // Show current all metrics
@@ -348,57 +395,39 @@ void AdlxManager::GetTimeStamp(IADLXSystemMetricsPtr systemMetrics)
 // Show CPU usage(in %)
 void AdlxManager::ShowCPUUsage(IADLXSystemMetricsSupportPtr systemMetricsSupport, IADLXSystemMetricsPtr systemMetrics)
 {
-    adlx_bool supported = false;
     // Display CPU usage support status
-    ADLX_RESULT res = systemMetricsSupport->IsSupportedCPUUsage(&supported);
-    if (ADLX_SUCCEEDED(res))
+    if (m_functionsSupportStatus["IADLXSystemMetricsSupport::CPUUsage"])
     {
-        //qDebug() << "CPU usage support status: " << supported;
-        if (supported)
-        {
-            adlx_double cpuUsage = 0;
-            res = systemMetrics->CPUUsage(&cpuUsage);
-            //if (ADLX_SUCCEEDED(res))
-                //qDebug() << "The CPU usage is: " << cpuUsage << "%";
-        }
+        adlx_double cpuUsage = 0;
+        ADLX_RESULT res = systemMetrics->CPUUsage(&cpuUsage);
+        //if (ADLX_SUCCEEDED(res))
+            //qDebug() << "The CPU usage is: " << cpuUsage << "%";
     }
 }
 
 // Display system RAM (in MB)
 void AdlxManager::ShowSystemRAM(IADLXSystemMetricsSupportPtr systemMetricsSupport, IADLXSystemMetricsPtr systemMetrics)
 {
-    adlx_bool supported = false;
     // Display system RAM usage support status
-    ADLX_RESULT res = systemMetricsSupport->IsSupportedSystemRAM(&supported);
-    if (ADLX_SUCCEEDED(res))
+    if (m_functionsSupportStatus["IADLXSystemMetricsSupport::SystemRAM"])
     {
-        //qDebug() << "System RAM usage support status: " << supported;
-        if (supported)
-        {
-            adlx_int systemRAM = 0;
-            res = systemMetrics->SystemRAM(&systemRAM);
-            //if (ADLX_SUCCEEDED(res))
-                //qDebug() << "The system RAM is: " << systemRAM << "MB";
-        }
+        adlx_int systemRAM = 0;
+        ADLX_RESULT res = systemMetrics->SystemRAM(&systemRAM);
+        //if (ADLX_SUCCEEDED(res))
+            //qDebug() << "The system RAM is: " << systemRAM << "MB";
     }
 }
 
 // Display SmartShift
 void AdlxManager::ShowSmartShift(IADLXSystemMetricsSupportPtr systemMetricsSupport, IADLXSystemMetricsPtr systemMetrics)
 {
-    adlx_bool supported = false;
     // Display SmartShift support status
-    ADLX_RESULT res = systemMetricsSupport->IsSupportedSmartShift(&supported);
-    if (ADLX_SUCCEEDED(res))
+    if (m_functionsSupportStatus["IADLXSystemMetricsSupport::SmartShift"])
     {
-        //qDebug() << "SmartShift support status: " << supported;
-        if (supported)
-        {
-            adlx_int smartShift;
-            res = systemMetrics->SmartShift(&smartShift);
-            //if (ADLX_SUCCEEDED(res))
-                //qDebug() << "The SmartShift is: " << smartShift;
-        }
+        adlx_int smartShift;
+        ADLX_RESULT res = systemMetrics->SmartShift(&smartShift);
+        //if (ADLX_SUCCEEDED(res))
+            //qDebug() << "The SmartShift is: " << smartShift;
     }
 }
 
@@ -414,18 +443,18 @@ void AdlxManager::GetTimeStamp(IADLXGPUMetricsPtr gpuMetrics)
 // Display GPU usage (in %)
 void AdlxManager::ShowGPUUsage(IADLXGPUMetricsSupportPtr gpuMetricsSupport, IADLXGPUMetricsPtr gpuMetrics)
 {
-    adlx_bool supported = false;
     // Display GPU usage support status
-    ADLX_RESULT res = gpuMetricsSupport->IsSupportedGPUUsage(&supported);
-    if (ADLX_SUCCEEDED(res))
+    if (m_functionsSupportStatus["IADLXGPUMetricsSupport::GPUUsage"])
     {
-        //qDebug() << "GPU usage support status: " << supported;
-        if (supported)
+        adlx_double usage = 0;
+        ADLX_RESULT res = gpuMetrics->GPUUsage(&usage);
+        if (ADLX_SUCCEEDED(res))
         {
-            adlx_double usage = 0;
-            res = gpuMetrics->GPUUsage(&usage);
-            if (ADLX_SUCCEEDED(res))
-                m_gpuUsage = usage;
+            m_gpuUsage = usage;
+        }
+        else
+        {
+            qDebug() << __FUNCTION__ << " failed! reason: " << AdlxResultMap.at(res).c_str();
         }
     }
 }
@@ -433,72 +462,68 @@ void AdlxManager::ShowGPUUsage(IADLXGPUMetricsSupportPtr gpuMetricsSupport, IADL
 // Display GPU clock speed (in MHz)
 void AdlxManager::ShowGPUClockSpeed(IADLXGPUMetricsSupportPtr gpuMetricsSupport, IADLXGPUMetricsPtr gpuMetrics)
 {
-    adlx_bool supported = false;
     // Display GPU clock speed support status
-    ADLX_RESULT res = gpuMetricsSupport->IsSupportedGPUClockSpeed(&supported);
-    if (ADLX_SUCCEEDED(res))
+    if (m_functionsSupportStatus["IADLXGPUMetricsSupport::GPUClockSpeed"])
     {
-        //qDebug() << "Get if the GPU clock speed is supported: " << supported;
-        if (supported)
+        adlx_int gpuClock = 0;
+        ADLX_RESULT res = gpuMetrics->GPUClockSpeed(&gpuClock);
+        if (ADLX_SUCCEEDED(res))
         {
-            adlx_int gpuClock = 0;
-            res = gpuMetrics->GPUClockSpeed(&gpuClock);
-            if (ADLX_SUCCEEDED(res))
-            {
-                m_gpuClockSpeed = gpuClock;
-            }
-
-            //adlx_int minValue = 0, maxValue = 0;
-            //res = gpuMetricsSupport->GetGPUClockSpeedRange(&minValue, &maxValue);
-            //if (ADLX_SUCCEEDED(res))
-            //{
-            //}
+            m_gpuClockSpeed = gpuClock;
         }
+        else
+        {
+            qDebug() << __FUNCTION__ << " failed! reason: " << AdlxResultMap.at(res).c_str();
+        }
+
+        //adlx_int minValue = 0, maxValue = 0;
+        //res = gpuMetricsSupport->GetGPUClockSpeedRange(&minValue, &maxValue);
+        //if (ADLX_SUCCEEDED(res))
+        //{
+        //}
     }
 }
 
 // Show GPU VRAM clock speed(MHz)
 void AdlxManager::ShowGPUVRAMClockSpeed(IADLXGPUMetricsSupportPtr gpuMetricsSupport, IADLXGPUMetricsPtr gpuMetrics)
 {
-    adlx_bool supported = false;
     // Get if the GPU VRAM clock speed is supported
-    ADLX_RESULT res = gpuMetricsSupport->IsSupportedGPUVRAMClockSpeed(&supported);
-    if (ADLX_SUCCEEDED(res))
+    if (m_functionsSupportStatus["IADLXGPUMetricsSupport::GPUVRAMClockSpeed"])
     {
-        //qDebug() << "Get if the GPU VRAM clock speed is supported: " << supported;
-        if (supported)
+        adlx_int memoryClock = 0;
+        ADLX_RESULT res = gpuMetrics->GPUVRAMClockSpeed(&memoryClock);
+        if (ADLX_SUCCEEDED(res))
         {
-            adlx_int memoryClock = 0;
-            res = gpuMetrics->GPUVRAMClockSpeed(&memoryClock);
-            if (ADLX_SUCCEEDED(res))
-            {
-                m_gpuVramClockSpeed = memoryClock;
-            }
-
-            //adlx_int minValue = 0, maxValue = 0;
-            //res = gpuMetricsSupport->GetGPUVRAMRange(&minValue, &maxValue);
-            //if (ADLX_SUCCEEDED(res))
-            //{
-            //}
+            m_gpuVramClockSpeed = memoryClock;
         }
+        else
+        {
+            qDebug() << __FUNCTION__ << " failed! reason: " << AdlxResultMap.at(res).c_str();
+        }
+
+        //adlx_int minValue = 0, maxValue = 0;
+        //res = gpuMetricsSupport->GetGPUVRAMRange(&minValue, &maxValue);
+        //if (ADLX_SUCCEEDED(res))
+        //{
+        //}
     }
 }
 
 // Show GPU temperature(�C)
 void AdlxManager::ShowGPUTemperature(IADLXGPUMetricsSupportPtr gpuMetricsSupport, IADLXGPUMetricsPtr gpuMetrics)
 {
-    adlx_bool supported = false;
     // Get if the GPU tempetature is supported
-    ADLX_RESULT res = gpuMetricsSupport->IsSupportedGPUTemperature(&supported);
-    if (ADLX_SUCCEEDED(res))
+    if (m_functionsSupportStatus["IADLXGPUMetricsSupport::GPUTemperature"])
     {
-        //qDebug() << "Get if the GPU temperture is supported: " << supported;
-        if (supported)
+        adlx_double temperature = 0;
+        ADLX_RESULT res = gpuMetrics->GPUTemperature(&temperature);
+        if (ADLX_SUCCEEDED(res))
         {
-            adlx_double temperature = 0;
-            res = gpuMetrics->GPUTemperature(&temperature);
-            if (ADLX_SUCCEEDED(res))
-                m_gpuTemperature = temperature;
+            m_gpuTemperature = temperature;
+        }
+        else
+        {
+            qDebug() << __FUNCTION__ << " failed! reason: " << AdlxResultMap.at(res).c_str();
         }
     }
 }
@@ -506,18 +531,18 @@ void AdlxManager::ShowGPUTemperature(IADLXGPUMetricsSupportPtr gpuMetricsSupport
 // Show GPU hotspot temperature(�C)
 void AdlxManager::ShowGPUHotspotTemperature(IADLXGPUMetricsSupportPtr gpuMetricsSupport, IADLXGPUMetricsPtr gpuMetrics)
 {
-    adlx_bool supported = false;
     // Get if the GPU hotspot temperature is supported
-    ADLX_RESULT res = gpuMetricsSupport->IsSupportedGPUHotspotTemperature(&supported);
-    if (ADLX_SUCCEEDED(res))
+    if (m_functionsSupportStatus["IADLXGPUMetricsSupport::GPUHotspotTemperature"])
     {
-        //qDebug() << "Get if the GPU hotspot temperature is supported: " << supported;
-        if (supported)
+        adlx_double hotspotTemperature = 0;
+        ADLX_RESULT res = gpuMetrics->GPUHotspotTemperature(&hotspotTemperature);
+        if (ADLX_SUCCEEDED(res))
         {
-            adlx_double hotspotTemperature = 0;
-            res = gpuMetrics->GPUHotspotTemperature(&hotspotTemperature);
-            if (ADLX_SUCCEEDED(res))
-                m_gpuHotspotTemperature = hotspotTemperature;
+            m_gpuHotspotTemperature = hotspotTemperature;
+        }
+        else
+        {
+            qDebug() << __FUNCTION__ << " failed! reason: " << AdlxResultMap.at(res).c_str();
         }
     }
 }
@@ -525,20 +550,18 @@ void AdlxManager::ShowGPUHotspotTemperature(IADLXGPUMetricsSupportPtr gpuMetrics
 // Show GPU power(W)
 void AdlxManager::ShowGPUPower(IADLXGPUMetricsSupportPtr gpuMetricsSupport, IADLXGPUMetricsPtr gpuMetrics)
 {
-    adlx_bool supported = false;
     // Get if the GPU power is supported
-    ADLX_RESULT res = gpuMetricsSupport->IsSupportedGPUPower(&supported);
-    if (ADLX_SUCCEEDED(res))
+    if (m_functionsSupportStatus["IADLXGPUMetricsSupport::GPUPower"])
     {
-        //qDebug() << "Get if the GPU power is supported: " << supported;
-        if (supported)
+        adlx_double power = 0;
+        ADLX_RESULT res = gpuMetrics->GPUPower(&power);
+        if (ADLX_SUCCEEDED(res))
         {
-            adlx_double power = 0;
-            res = gpuMetrics->GPUPower(&power);
-            if (ADLX_SUCCEEDED(res))
-            {
-                m_gpuPower = power;
-            }
+            m_gpuPower = power;
+        }
+        else
+        {
+            qDebug() << __FUNCTION__ << " failed! reason: " << AdlxResultMap.at(res).c_str();
         }
     }
 }
@@ -546,27 +569,29 @@ void AdlxManager::ShowGPUPower(IADLXGPUMetricsSupportPtr gpuMetricsSupport, IADL
 // Show GPU fan speed(RPM)
 void AdlxManager::ShowGPUFanSpeed(IADLXGPUMetricsSupportPtr gpuMetricsSupport, IADLXGPUMetricsPtr gpuMetrics)
 {
-    adlx_bool supported = false;
     // Get if the GPU fan speed is supported
-    ADLX_RESULT res = gpuMetricsSupport->IsSupportedGPUFanSpeed(&supported);
-    if (ADLX_SUCCEEDED(res))
+    if (m_functionsSupportStatus["IADLXGPUMetricsSupport::GPUFanSpeed"])
     {
-        //qDebug() << "Get if the GPU fan speed is supported: " << supported;
-        if (supported)
+        adlx_int fanSpeed = 0;
+        ADLX_RESULT res = gpuMetrics->GPUFanSpeed(&fanSpeed);
+        if (ADLX_SUCCEEDED(res))
         {
-            adlx_int fanSpeed = 0;
-            res = gpuMetrics->GPUFanSpeed(&fanSpeed);
-            if (ADLX_SUCCEEDED(res))
-            {
-                m_gpuFanSpeed = fanSpeed;
-            }
+            m_gpuFanSpeed = fanSpeed;
+        }
+        else
+        {
+            qDebug() << __FUNCTION__ << " failed! reason: " << AdlxResultMap.at(res).c_str();
+        }
 
-            adlx_int minValue = 0, maxValue = 0;
-            res = gpuMetricsSupport->GetGPUFanSpeedRange(&minValue, &maxValue);
-            if (ADLX_SUCCEEDED(res))
-            {
-                m_gpuFanSpeedUsage = 100.0 * double(fanSpeed) / maxValue;
-            }
+        adlx_int minValue = 0, maxValue = 0;
+        res = gpuMetricsSupport->GetGPUFanSpeedRange(&minValue, &maxValue);
+        if (ADLX_SUCCEEDED(res))
+        {
+            m_gpuFanSpeedUsage = 100.0 * double(fanSpeed) / maxValue;
+        }
+        else
+        {
+            qDebug() << __FUNCTION__ << " failed! reason: " << AdlxResultMap.at(res).c_str();
         }
     }
 }
@@ -574,22 +599,19 @@ void AdlxManager::ShowGPUFanSpeed(IADLXGPUMetricsSupportPtr gpuMetricsSupport, I
 // Show GPU VRAM(MB)
 void AdlxManager::ShowGPUVRAM(IADLXGPUMetricsSupportPtr gpuMetricsSupport, IADLXGPUMetricsPtr gpuMetrics)
 {
-    adlx_bool supported = false;
     // Get if the GPU VRAM is supported
-    ADLX_RESULT res = gpuMetricsSupport->IsSupportedGPUVRAM(&supported);
-    if (ADLX_SUCCEEDED(res))
+    if (m_functionsSupportStatus["IADLXGPUMetricsSupport::GPUVRAM"])
     {
-        //qDebug() << "Get if the GPU VRAM is supported: " << supported;
-        if (supported)
+        adlx_int VRAM = 0;
+        ADLX_RESULT res = gpuMetrics->GPUVRAM(&VRAM);
+        if (ADLX_SUCCEEDED(res))
         {
-            adlx_int VRAM = 0;
-            res = gpuMetrics->GPUVRAM(&VRAM);
-            if (ADLX_SUCCEEDED(res))
-            {
-                m_gpuVramUsed = VRAM;
-                m_gpuVramUsage = (static_cast<double>(m_gpuVramUsed) / m_gpuMemorySize) * 100.0;
-            }
-            
+            m_gpuVramUsed = VRAM;
+            m_gpuVramUsage = (static_cast<double>(m_gpuVramUsed) / m_gpuMemorySize) * 100.0;
+        }
+        else
+        {
+            qDebug() << __FUNCTION__ << " failed! reason: " << AdlxResultMap.at(res).c_str();
         }
     }
 }
@@ -597,18 +619,18 @@ void AdlxManager::ShowGPUVRAM(IADLXGPUMetricsSupportPtr gpuMetricsSupport, IADLX
 // Show GPU Voltage(mV)
 void AdlxManager::ShowGPUVoltage(IADLXGPUMetricsSupportPtr gpuMetricsSupport, IADLXGPUMetricsPtr gpuMetrics)
 {
-    adlx_bool supported = false;
     // Get if the GPU voltage is supported
-    ADLX_RESULT res = gpuMetricsSupport->IsSupportedGPUVoltage(&supported);
-    if (ADLX_SUCCEEDED(res))
+    if (m_functionsSupportStatus["IADLXGPUMetricsSupport::GPUVoltage"])
     {
-        //qDebug() << "Get if the GPU voltage is supported: " << supported;
-        if (supported)
+        adlx_int voltage = 0;
+        ADLX_RESULT res = gpuMetrics->GPUVoltage(&voltage);
+        if (ADLX_SUCCEEDED(res))
         {
-            adlx_int voltage = 0;
-            res = gpuMetrics->GPUVoltage(&voltage);
-            if (ADLX_SUCCEEDED(res))
-                m_gpuVoltage = voltage;
+            m_gpuVoltage = voltage;
+        }
+        else
+        {
+            qDebug() << __FUNCTION__ << " failed! reason: " << AdlxResultMap.at(res).c_str();
         }
     }
 }
@@ -616,18 +638,18 @@ void AdlxManager::ShowGPUVoltage(IADLXGPUMetricsSupportPtr gpuMetricsSupport, IA
 // Show GPU Total Board Power(W)
 void AdlxManager::ShowGPUTotalBoardPower(IADLXGPUMetricsSupportPtr gpuMetricsSupport, IADLXGPUMetricsPtr gpuMetrics)
 {
-    adlx_bool supported = false;
     // Get if the GPU voltage is supported
-    ADLX_RESULT res = gpuMetricsSupport->IsSupportedGPUTotalBoardPower(&supported);
-    if (ADLX_SUCCEEDED(res))
+    if (m_functionsSupportStatus["IADLXGPUMetricsSupport::GPUTotalBoardPower"])
     {
-        //qDebug() << "Get if the GPU voltage is supported: " << supported;
-        if (supported)
+        adlx_double power = 0;
+        ADLX_RESULT res = gpuMetrics->GPUTotalBoardPower(&power);
+        if (ADLX_SUCCEEDED(res))
         {
-            adlx_double power = 0;
-            res = gpuMetrics->GPUTotalBoardPower(&power);
-            if (ADLX_SUCCEEDED(res))
-                m_gpuTotalBoardPower = power;
+            m_gpuTotalBoardPower = power;
+        }
+        else
+        {
+            qDebug() << __FUNCTION__ << " failed! reason: " << AdlxResultMap.at(res).c_str();
         }
     }
 }
@@ -635,19 +657,18 @@ void AdlxManager::ShowGPUTotalBoardPower(IADLXGPUMetricsSupportPtr gpuMetricsSup
 // Display GPU intake temperature(in °C)
 void AdlxManager::ShowGPUIntakeTemperature (IADLXGPUMetricsSupportPtr gpuMetricsSupport, IADLXGPUMetricsPtr gpuMetrics)
 {
-    adlx_bool supported = false;
-
     // Display the GPU temperature support status
-    ADLX_RESULT res = gpuMetricsSupport->IsSupportedGPUIntakeTemperature (&supported);
-    if (ADLX_SUCCEEDED (res))
+    if (m_functionsSupportStatus["IADLXGPUMetricsSupport::GPUIntakeTemperature"])
     {
-        //qDebug() << "GPU intake temperature support status: " << supported;
-        if (supported)
+        adlx_double temperature = 0;
+        ADLX_RESULT res = gpuMetrics->GPUIntakeTemperature(&temperature);
+        if (ADLX_SUCCEEDED(res))
         {
-            adlx_double temperature = 0;
-            res = gpuMetrics->GPUIntakeTemperature (&temperature);
-            //if (ADLX_SUCCEEDED (res))
-            //    qDebug() << "The GPU intake temperature is: " << temperature << g_degree;
+
+        }
+        else
+        {
+            qDebug() << __FUNCTION__ << " failed! reason: " << AdlxResultMap.at(res).c_str();
         }
     }
 }

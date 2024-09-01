@@ -335,12 +335,12 @@ void CpuInfo::readRyzenDynamicCpuInfo()
         if (!iRet)
         {
             m_cpuTemperature = stData.dTemperature;
-            //dynamicInfo.cpuPower = stData.fVDDCR_VDD_Power;
             m_cpuPower = stData.fPPTValue;
             m_cpuSocPower = stData.fVDDCR_SOC_Power;
-            //dynamicInfo.cpuMaxFrequency = stData.fCCLK_Fmax;
+            m_cpuCoreVoltage = stData.dAvgCoreVoltage;
+            m_cpuBaseFrequency = stData.fCCLK_Fmax;
+            m_cpuMaxFrequency = stData.dPeakSpeed;
 
-            double maxFrequency = 0.0;
             if (m_cpuCoreFrequencies.empty())
             {
                 m_cpuCoreFrequencies.resize(stData.stFreqData.uLength);
@@ -351,16 +351,9 @@ void CpuInfo::readRyzenDynamicCpuInfo()
                 if (stData.stFreqData.dFreq[i] != 0)
                 {
                     m_cpuCoreFrequencies[i] = stData.stFreqData.dFreq[i];
-                    if (m_cpuCoreFrequencies[i] > maxFrequency)
-                    {
-                        maxFrequency = m_cpuCoreFrequencies[i];
-                    }
                 }
             }
-            m_cpuBaseFrequency = stData.fCCLK_Fmax; //is this correct?
-            m_cpuMaxFrequency = maxFrequency;
-            //qDebug() << "stData.fVDDCR_VDD_Power: " << stData.fVDDCR_VDD_Power << " stData.fVDDCR_SOC_Power: " << stData.fVDDCR_SOC_Power; //null
-            //qDebug() << " stData.fPPTValue: " << stData.fPPTValue << " stData.fPPTLimit: " << stData.fPPTLimit << " stData.fCCLK_Fmax: " << stData.fCCLK_Fmax << " stData.dPeakSpeed: " << stData.dPeakSpeed;
+
         }
     }
 #endif
@@ -610,7 +603,7 @@ void CpuInfo::readDynamicInfo()
     m_dynamicInfo[Globals::SysInfoAttr::Key_Cpu_CoreUsages] = QVariant::fromValue(m_cpuCoreUsages);
     m_dynamicInfo[Globals::SysInfoAttr::Key_Cpu_CoreFrequencies] = QVariant::fromValue(m_cpuCoreFrequencies);
     m_dynamicInfo[Globals::SysInfoAttr::Key_Cpu_CurrentMaxFrequency] = m_cpuCurrentMaxFrequency;
-    m_dynamicInfo[Globals::SysInfoAttr::Key_Cpu_Voltage] = m_cpuVoltage;
+    m_dynamicInfo[Globals::SysInfoAttr::Key_Cpu_CoreVoltage] = m_cpuCoreVoltage;
     m_dynamicInfo[Globals::SysInfoAttr::Key_Cpu_Power] = m_cpuPower;
     m_dynamicInfo[Globals::SysInfoAttr::Key_Cpu_SocPower] = m_cpuSocPower;
     m_dynamicInfo[Globals::SysInfoAttr::Key_Cpu_Temperature] = m_cpuTemperature;

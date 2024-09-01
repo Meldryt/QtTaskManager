@@ -48,6 +48,22 @@ set(PROJECT_SOURCES
     src/cpu/CpuWorker.cpp
     src/cpu/CpuWorker.h
 
+    src/tabs/TabHardware.cpp
+    src/tabs/TabHardware.h
+    src/tabs/TabProcesses.cpp
+    src/tabs/TabProcesses.h
+    src/tabs/TabPerformance.cpp
+    src/tabs/TabPerformance.h
+    src/tabs/TabBenchmark.cpp
+    src/tabs/TabBenchmark.h
+    src/tabs/TabApiSupport.cpp
+    src/tabs/TabApiSupport.h
+
+    src/windows/WmiInfo.h
+    src/windows/WmiInfo.cpp
+    src/windows/WmiWorker.h
+    src/windows/WmiWorker.cpp
+
     src/DevicesInfo.h
     src/DevicesInfo.cpp
     src/MemoryInfo.h
@@ -59,21 +75,9 @@ set(PROJECT_SOURCES
     src/main.cpp
     src/MainWindow.cpp
     src/MainWindow.h
-    src/TabHardware.cpp
-    src/TabHardware.h
-    src/TabProcesses.cpp
-    src/TabProcesses.h
-    src/TabPerformance.cpp
-    src/TabPerformance.h
-    src/TabBenchmark.cpp
-    src/TabBenchmark.h
+
     src/ProcessWorker.cpp
     src/ProcessWorker.h
-
-    src/windows/WmiInfo.h
-    src/windows/WmiInfo.cpp
-    src/windows/WmiWorker.h
-    src/windows/WmiWorker.cpp
 
     src/MemoryWorker.cpp
     src/MemoryWorker.h

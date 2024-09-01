@@ -12,7 +12,7 @@
 #include <QGroupBox>
 #include <QGraphicsLayout>
 
-#include "Globals.h"
+#include "../Globals.h"
 
 class TabPerformance : public QWidget
 {
@@ -104,7 +104,7 @@ private:
         "CurrentMaxFrequency",
         "CpuPower",
         "CpuSocPower",
-        "Voltage",
+        "CoreVoltage",
         "Temperature",
         "FanSpeed",
         "CoreUsages",

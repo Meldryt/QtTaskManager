@@ -3,8 +3,8 @@
 #include <QWidget>
 #include <QPushButton>
 
-#include "GlWidget.h"
-#include "GlWindow.h"
+#include "../GlWidget.h"
+#include "../GlWindow.h"
 
 class TabBenchmark : public QWidget
 {

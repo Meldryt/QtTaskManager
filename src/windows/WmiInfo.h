@@ -38,6 +38,7 @@ public:
     }
 
 private:
+    void checkSupportedFunctions();
 
     bool executeQuery(const std::wstring& query);
     //bool executeQueryAsync(const std::wstring& query);
@@ -52,7 +53,9 @@ private:
     void readCpuInfo();
     void readTemperature();
     void readFanSpeed();
+    void readGpuInfo();
     void readNetworkSpeed();
+    void readPowerSupply();
 
     bool m_readCpuParameters{ true };
 
@@ -60,9 +63,6 @@ private:
     IWbemLocator* m_locator{ nullptr };
     IWbemServices* m_service{ nullptr };
     IEnumWbemClassObject* m_enumerator{ nullptr };
-
-    bool m_isWmiFrequencyInfoAvailable{ false };
-    bool m_isWmiFanInfoAvailable{ false };
 
     QMap<uint8_t, QVariant> m_staticInfo;
     QMap<uint8_t, QVariant> m_dynamicInfo;
@@ -77,10 +77,15 @@ private:
     std::vector<double> m_cpuThreadFrequencies;
     std::vector<double> m_cpuThreadUsages;
 
+    std::string m_gpuPnpString;
+
     std::vector<std::string> m_networkNames;
     std::vector<uint32_t> m_networkBytesReceivedPerSec;
     std::vector<uint32_t> m_networkBytesSentPerSec;
     std::vector<uint32_t> m_networkBytesTotalPerSec;
     std::vector<uint32_t> m_networkCurrentBandwidth;
+
+    QMap<QString, bool> m_functionsSupportStatus;
+    QMap<QString, QString> m_functionsStatusMessage;
 
 };

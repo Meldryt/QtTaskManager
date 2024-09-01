@@ -447,7 +447,7 @@ void TabPerformance::slotCpuDynamicInfo(const QMap<uint8_t, QVariant>& dynamicIn
     m_cpuGraphs[index++]->values[0] = dynamicInfo[Globals::SysInfoAttr::Key_Cpu_CurrentMaxFrequency].value<double>();
     m_cpuGraphs[index++]->values[0] = dynamicInfo[Globals::SysInfoAttr::Key_Cpu_Power].value<double>();
     m_cpuGraphs[index++]->values[0] = dynamicInfo[Globals::SysInfoAttr::Key_Cpu_SocPower].value<double>();
-    m_cpuGraphs[index++]->values[0] = dynamicInfo[Globals::SysInfoAttr::Key_Cpu_Voltage].value<double>();
+    m_cpuGraphs[index++]->values[0] = dynamicInfo[Globals::SysInfoAttr::Key_Cpu_CoreVoltage].value<double>();
     m_cpuGraphs[index++]->values[0] = dynamicInfo[Globals::SysInfoAttr::Key_Cpu_Temperature].value<double>();
     m_cpuGraphs[index++]->values[0] = dynamicInfo[Globals::SysInfoAttr::Key_Cpu_Fanspeed].value<double>();
 

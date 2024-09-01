@@ -107,7 +107,7 @@ private:
     std::vector<double> m_cpuThreadFrequencies;
     std::vector<double> m_cpuThreadUsages;
     
-    uint16_t m_cpuVoltage{ 0 }; // Current voltage in mV
+    double m_cpuCoreVoltage{ 0 }; // Current voltage in V
     double m_cpuPower{ 0 }; //in Watt
     double m_cpuSocPower{ 0 }; //in Watt
 

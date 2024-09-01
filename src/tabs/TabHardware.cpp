@@ -151,6 +151,7 @@ void TabHardware::slotGpuStaticInfo(const QMap<uint8_t,QVariant>& staticInfo)
     m_gpuTableInfos[6] = staticInfo[Globals::SysInfoAttr::Key_Gpu_MemoryBandwidth].toString();
     m_gpuTableInfos[7] = staticInfo[Globals::SysInfoAttr::Key_Gpu_DriverInfo].toString();
     m_gpuTableInfos[8] = staticInfo[Globals::SysInfoAttr::Key_Gpu_DriverVersion].toString();
+    m_gpuTableInfos[9] = staticInfo[Globals::SysInfoAttr::Key_Gpu_PnpString].toString();
 }
 
 void TabHardware::slotTotalPhysicalMemory(const uint32_t& val)

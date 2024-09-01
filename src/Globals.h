@@ -1,7 +1,6 @@
 #pragma once
 
-#include <string>
-#include <vector>
+#include <stdint.h>
 
 class Globals
 {
@@ -23,7 +22,7 @@ public:
         Key_Cpu_CurrentMaxFrequency,
         Key_Cpu_ThreadFrequencies,
         Key_Cpu_ThreadUsages,
-        Key_Cpu_Voltage,
+        Key_Cpu_CoreVoltage,
         Key_Cpu_Power,
         Key_Cpu_SocPower,
         Key_Cpu_Temperature,
@@ -38,6 +37,7 @@ public:
         Key_Gpu_MemoryBandwidth,
         Key_Gpu_DriverInfo,
         Key_Gpu_DriverVersion,
+        Key_Gpu_PnpString,
 
         Key_Gpu_Usage,
         Key_Gpu_ClockSpeed,
@@ -62,5 +62,20 @@ public:
         Key_Network_BytesSentPerSec,
         Key_Network_TotalBytesPerSec,
         Key_Network_CurrentBandwidth,
+
+        Key_SysInfo_OpenGL,
+        Key_SysInfo_OS,
+
+        Key_Api_Functions_StatusSupport_Adlx,
+        Key_Api_Functions_StatusSupport_Nvapi,
+        Key_Api_Functions_StatusSupport_Nvml,
+        Key_Api_Functions_StatusSupport_RyzenMaster,
+        Key_Api_Functions_StatusSupport_Wmi,
+
+        Key_Api_Functions_ErrorMessage_Adlx,
+        Key_Api_Functions_ErrorMessage_Nvapi,
+        Key_Api_Functions_ErrorMessage_Nvml,
+        Key_Api_Functions_ErrorMessage_RyzenMaster,
+        Key_Api_Functions_ErrorMessage_Wmi,
     };
 };

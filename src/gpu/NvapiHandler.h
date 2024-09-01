@@ -2,6 +2,9 @@
 
 #include <string>
 
+#include <QMap>
+#include <QString>
+
 class NvapiHandler
 {
 public:
@@ -31,12 +34,25 @@ public:
     const uint16_t& gpuFanSpeed() const { return m_gpuFanSpeed; };
     const uint8_t& gpuFanSpeedUsage() const { return m_gpuFanSpeedUsage; };
 
+    const QMap<QString, bool>& functionsSupportStatus() const {
+        return m_functionsSupportStatus;
+    };
+
+    const QMap<QString, QString>& functionsStatusMessage() const {
+        return m_functionsStatusMessage;
+    };
+
 private:
+    void checkSupportedDynamicFunctions();
+
     void readGpuUsage();
     void readGpuFrequencies();
     void readGpuMemory();
     void readGpuTemperature();
     void readGpuFanSpeed();
+    void readGpuCooler();
+
+    bool m_initialized{ false };
 
     int* m_gpuHandle{ nullptr };
 
@@ -57,4 +73,7 @@ private:
     double m_gpuHotspotTemperature{ 0 }; // Current center of the die temperature value in C
     uint16_t m_gpuFanSpeed{ 0 }; // Current fan RPM value
     uint8_t m_gpuFanSpeedUsage{ 0 }; // Current ratio of fan RPM and max RPM
+
+    QMap<QString, bool> m_functionsSupportStatus;
+    QMap<QString, QString> m_functionsStatusMessage;
 };
