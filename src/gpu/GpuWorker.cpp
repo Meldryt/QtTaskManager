@@ -8,6 +8,8 @@
 GpuWorker::GpuWorker(int timerInterval, QObject* parent)
     : Worker{ timerInterval, parent}
 {
+    qDebug() << __FUNCTION__;
+    
     m_gpuInfo = std::make_unique<GpuInfo>();
 }
 

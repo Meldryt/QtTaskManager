@@ -214,7 +214,7 @@ void WmiInfo::readStaticInfo()
     m_staticInfo[Globals::SysInfoAttr::Key_Cpu_ProcessorCount] = m_cpuProcessorCount;
     m_staticInfo[Globals::SysInfoAttr::Key_Cpu_ThreadCount] = m_cpuThreadCount;
     m_staticInfo[Globals::SysInfoAttr::Key_Cpu_BaseFrequency] = m_cpuBaseFrequency;
-    m_staticInfo[Globals::SysInfoAttr::Key_Cpu_MaxFrequency] = m_cpuMaxFrequency;
+    m_staticInfo[Globals::SysInfoAttr::Key_Cpu_MaxTurboFrequency] = m_cpuMaxTurboFrequency;
     //m_staticInfo[Globals::SysInfoAttr::Key_Cpu_L1CacheSize] = m_cpuL1CacheSize;
     //m_staticInfo[Globals::SysInfoAttr::Key_Cpu_L2CacheSize] = m_cpuL2CacheSize;
     //m_staticInfo[Globals::SysInfoAttr::Key_Cpu_L3CacheSize] = m_cpuL3CacheSize;
@@ -327,7 +327,7 @@ void WmiInfo::readCpuInfo()
 
     if (!fieldMap["MaxClockSpeed"].empty()) {
         m_cpuBaseFrequency = std::stoi(fieldMap["MaxClockSpeed"][0]);
-        m_cpuMaxFrequency = m_cpuBaseFrequency; //currently there is no way to get the max turbo frequency in windows
+        m_cpuMaxTurboFrequency = m_cpuBaseFrequency; //currently there is no way to get the max turbo frequency in windows
     }
 }
 

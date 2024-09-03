@@ -28,17 +28,19 @@ public:
     };
 
 private:
+    void checkSupportedDynamicFunctions();
     
     void readGpuMemory();
     void readGpuTemperature();
     void readGpuFanSpeed();
     void readGpuPowerUsage();
 
+    bool m_initialized{ false };
+
     double m_gpuPower{ 0 }; //in Watt
     uint8_t m_gpuPowerState{ 0 };
     double m_gpuTemperature{ 0 };
     uint16_t m_gpuFanSpeed{ 0 }; // Current fan RPM value
-    bool m_powerManagementModeEnabled{ false };
 
     QMap<QString, bool> m_functionsSupportStatus;
     QMap<QString, QString> m_functionsStatusMessage;

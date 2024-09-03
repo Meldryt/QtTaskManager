@@ -1,11 +1,8 @@
 #pragma once
 
-#include <QObject>
 #include <QMap>
 #include <QVariant>
 #include <string>
-
-#include "../Globals.h"
 
 class NvapiHandler;
 class NvmlHandler;

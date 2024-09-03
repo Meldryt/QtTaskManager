@@ -71,7 +71,7 @@ private:
     uint8_t m_cpuProcessorCount{ 0 };
     uint8_t m_cpuThreadCount{ 0 };
     uint32_t m_cpuBaseFrequency{ 0 };
-    uint32_t m_cpuMaxFrequency{ 0 };
+    uint32_t m_cpuMaxTurboFrequency{ 0 };
 
     uint32_t m_cpuCurrentMaxFrequency{ 0 };
     std::vector<double> m_cpuThreadFrequencies;

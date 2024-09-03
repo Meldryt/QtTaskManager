@@ -1,7 +1,10 @@
 #pragma once
 
-#include "Worker.h"
+#include "../Worker.h"
+
 #include "ProcessInfo.h"
+
+#include <map>
 
 class ProcessWorker : public Worker
 {

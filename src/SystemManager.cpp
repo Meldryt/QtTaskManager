@@ -1,9 +1,9 @@
 #include "SystemManager.h"
 
-#include "ProcessWorker.h"
+#include "process/ProcessWorker.h"
 #include "cpu/CpuWorker.h"
 #include "gpu/GpuWorker.h"
-#include "MemoryWorker.h"
+#include "memory/MemoryWorker.h"
 #include "windows/WmiWorker.h"
 
 #include <QElapsedTimer>
@@ -95,18 +95,6 @@ SystemManager::SystemManager(QWidget* parent) : QTabWidget(parent)
     {
         m_staticInfoWmi = staticInfo;
         m_staticInfoWmiChanged = true;
-
-        //Key_Api_Functions_StatusSupport_Adlx,
-        //    Key_Api_Functions_StatusSupport_Nvapi,
-        //    Key_Api_Functions_StatusSupport_Nvml,
-        //    Key_Api_Functions_StatusSupport_RyzenMaster,
-        //    Key_Api_Functions_StatusSupport_Wmi,
-
-        //    Key_Api_Functions_ErrorMessage_Adlx,
-        //    Key_Api_Functions_ErrorMessage_Nvapi,
-        //    Key_Api_Functions_ErrorMessage_Nvml,
-        //    Key_Api_Functions_ErrorMessage_RyzenMaster,
-        //    Key_Api_Functions_ErrorMessage_Wmi,
     });
 
     connect(m_wmiWorker.get(), &WmiWorker::signalDynamicInfo, this, [&](const QMap<uint8_t,QVariant>& dynamicInfo)

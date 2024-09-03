@@ -1,5 +1,7 @@
 #include "MemoryInfo.h"
 
+#include "../Globals.h"
+
 #include <windows.h>
 #include <sysinfoapi.h>
 

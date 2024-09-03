@@ -6,8 +6,6 @@
 
 #include <cstdint>
 
-#include "Globals.h"
-
 class MemoryInfo
 {
 public:

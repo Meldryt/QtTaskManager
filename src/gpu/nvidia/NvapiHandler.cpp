@@ -229,11 +229,12 @@ NvAPI_SYS_GetDisplayDriverInfo_t    _NvAPI_SYS_GetDisplayDriverInfo = nullptr;
 
 NvapiHandler::NvapiHandler()
 {
+    qDebug() << __FUNCTION__;
 }
 
 NvapiHandler::~NvapiHandler()
 {
-
+    qDebug() << __FUNCTION__;
 }
 
 /*
@@ -246,8 +247,6 @@ NvapiHandler::~NvapiHandler()
  */
 bool NvapiHandler::init()
 {
-    qDebug() << __FUNCTION__;
-
     HMODULE hmod = LoadLibraryA(NVAPI_DLL);
 
     if (hmod == NULL)
@@ -308,8 +307,6 @@ bool NvapiHandler::init()
  */
 void NvapiHandler::readStaticInfo()
 {
-    qDebug() << __FUNCTION__;
-
     NvAPI_Status status;
     NvAPI_ShortString string;
 

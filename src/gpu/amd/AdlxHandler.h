@@ -3,22 +3,23 @@
 #include "external/ADLX/SDK/ADLXHelper/Windows/Cpp/ADLXHelper.h"
 #include "external/ADLX/SDK/Include/IPerformanceMonitoring.h"
 #include "external/ADLX/SDK/Include/ISystem.h"
+
 #include <map>
 #include <vector>
 #include <string>
 
 #include <QMap>
 #include <QVariant>
-#include "../Globals.h"
+#include <QString>
 
 // Use ADLX namespace
 using namespace adlx;
 
-class AdlxManager
+class AdlxHandler
 {
 public:
-    AdlxManager();
-    ~AdlxManager();
+    AdlxHandler();
+    ~AdlxHandler();
 
     bool init();
 

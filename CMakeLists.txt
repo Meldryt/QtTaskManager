@@ -27,26 +27,56 @@ find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets Charts Concurrent
 set(PROJECT_SOURCES
     src/Globals.h
 
-    src/gpu/AdlxManager.h
-    src/gpu/AdlxManager.cpp
-    src/gpu/GlGlobals.h
-    src/gpu/GpuInfoAmd.h
-    src/gpu/GpuInfoAmd.cpp
-    src/gpu/GpuInfo.h
-    src/gpu/GpuInfo.Cpp
-    src/gpu/GpuInfoNVidia.h
-    src/gpu/GpuInfoNVidia.cpp
-    src/gpu/GpuWorker.h
-    src/gpu/GpuWorker.cpp
-    src/gpu/NvapiHandler.h
-    src/gpu/NvapiHandler.cpp
-    src/gpu/NvmlHandler.h
-    src/gpu/NvmlHandler.cpp
-
     src/cpu/CpuInfo.h
     src/cpu/CpuInfo.cpp
     src/cpu/CpuWorker.cpp
     src/cpu/CpuWorker.h
+    src/cpu/amd/RyzenMasterSdkHandler.h
+    src/cpu/amd/RyzenMasterSdkHandler.cpp
+    src/cpu/amd/CpuInfoAmd.h
+    src/cpu/amd/CpuInfoAmd.cpp
+    src/cpu/intel/CpuInfoIntel.h
+    src/cpu/intel/CpuInfoIntel.cpp
+    src/cpu/linux/CpuInfoLinux.h
+    src/cpu/linux/CpuInfoLinux.cpp
+    src/cpu/windows/CpuInfoWindows.h
+    src/cpu/windows/CpuInfoWindows.cpp
+
+    src/gpu/GlGlobals.h
+    src/gpu/GpuInfo.h
+    src/gpu/GpuInfo.Cpp
+    src/gpu/GpuWorker.h
+    src/gpu/GpuWorker.cpp
+    src/gpu/amd/AdlxHandler.h
+    src/gpu/amd/AdlxHandler.cpp
+    src/gpu/amd/AgsHandler.h
+    src/gpu/amd/AgsHandler.cpp
+    src/gpu/amd/GpuInfoAmd.h
+    src/gpu/amd/GpuInfoAmd.cpp
+    src/gpu/nvidia/GpuInfoNVidia.h
+    src/gpu/nvidia/GpuInfoNVidia.cpp
+    src/gpu/nvidia/NvapiHandler.h
+    src/gpu/nvidia/NvapiHandler.cpp
+    src/gpu/nvidia/NvmlHandler.h
+    src/gpu/nvidia/NvmlHandler.cpp
+
+    src/memory/MemoryInfo.h
+    src/memory/MemoryInfo.cpp
+    src/memory/MemoryWorker.cpp
+    src/memory/MemoryWorker.h
+    src/memory/linux/MemoryInfoLinux.h
+    src/memory/linux/MemoryInfoLinux.cpp
+    src/memory/windows/MemoryInfoWindows.h
+    src/memory/windows/MemoryInfoWindows.cpp
+
+    src/process/ProcessInfo.h
+    src/process/ProcessInfo.cpp
+    src/process/ProcessWorker.cpp
+    src/process/ProcessWorker.h
+    src/process/linux/ProcessInfoLinux.h
+    src/process/linux/ProcessInfoLinux.cpp
+    src/process/windows/ProcessInfoWindows.h
+    src/process/windows/ProcessInfoWindows.cpp
 
     src/tabs/TabHardware.cpp
     src/tabs/TabHardware.h
@@ -66,21 +96,11 @@ set(PROJECT_SOURCES
 
     src/DevicesInfo.h
     src/DevicesInfo.cpp
-    src/MemoryInfo.h
-    src/MemoryInfo.cpp
-    src/ProcessInfo.h
-    src/ProcessInfo.cpp
     src/SystemManager.cpp
     src/SystemManager.h
     src/main.cpp
     src/MainWindow.cpp
     src/MainWindow.h
-
-    src/ProcessWorker.cpp
-    src/ProcessWorker.h
-
-    src/MemoryWorker.cpp
-    src/MemoryWorker.h
     src/Worker.h
     src/Worker.cpp
     src/GlWidget.cpp
@@ -89,12 +109,9 @@ set(PROJECT_SOURCES
 	src/GlWindow.h
     src/MainWindow.ui
 
-    
-
     external/ADLX/SDK/ADLXHelper/Windows/Cpp/ADLXHelper.h
     external/ADLX/SDK/ADLXHelper/Windows/Cpp/ADLXHelper.cpp
     external/ADLX/SDK/platform/Windows/WinAPIs.cpp
-    #external/nvml/nvml.h
 )
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)

@@ -3,7 +3,7 @@
 #include <QWidget>
 #include <QTableWidget>
 
-#include "../ProcessInfo.h"
+#include "../process/ProcessInfo.h"
 
 class TabProcesses : public QWidget
 {

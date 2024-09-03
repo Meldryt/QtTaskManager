@@ -38,11 +38,12 @@ nvmlDevice_t nvmlGpuHandle;
 
 NvmlHandler::NvmlHandler()
 {
-    
+    qDebug() << __FUNCTION__;
 }
 
 NvmlHandler::~NvmlHandler()
 {
+    qDebug() << __FUNCTION__;
 
     if (_nvmlShutdown)
     {
@@ -55,8 +56,6 @@ NvmlHandler::~NvmlHandler()
 
 bool NvmlHandler::init()
 {
-    qDebug() << __FUNCTION__;
-
     /* Not in system path, but could be local */
     hDLL = LoadLibraryA("nvml.dll");
     if (!hDLL) 
@@ -134,22 +133,43 @@ bool NvmlHandler::init()
     _nvmlDeviceGetTotalEnergyConsumption = (nvmlReturn_t(*)(nvmlDevice_t, unsigned long long*)) \
     dlsym(hDLL, "nvmlDeviceGetTotalEnergyConsumption");
 
-    nvmlReturn_t status = _nvmlInit();
-    if (status != NVML_SUCCESS) {
-        qWarning() << "_nvmlInit failed! status: " << _nvmlErrorString(status);
-        return false;
+    m_functionsSupportStatus["nvmlInit"] = false;
+    m_functionsSupportStatus["nvmlDeviceGetHandleByIndex"] = false;
+
+    nvmlReturn_t status;
+    if(_nvmlInit)
+    {
+        status = _nvmlInit();
+        if (status != NVML_SUCCESS) {
+            m_functionsStatusMessage["nvmlInit"] = _nvmlErrorString(status);
+            qWarning() << "_nvmlInit failed! status: " << _nvmlErrorString(status);
+            return false;
+        }
+        else
+        {
+            m_functionsSupportStatus["nvmlInit"] = true;
+        }
     }
 
     if (_nvmlDeviceGetHandleByIndex)
     {
         status = _nvmlDeviceGetHandleByIndex(0, &nvmlGpuHandle);
         if (status != NVML_SUCCESS) {
+            m_functionsStatusMessage["nvmlDeviceGetHandleByIndex"] = _nvmlErrorString(status);
             qWarning() << "_nvmlDeviceGetHandleByIndex failed! status: " << _nvmlErrorString(status);
             return false;
         }
+        else
+        {
+            m_functionsSupportStatus["nvmlDeviceGetHandleByIndex"] = true;
+            m_initialized = true;
+        }
     }
 
-    //nvmlShutdown();
+    if(!m_initialized)
+    {
+        _nvmlShutdown();
+    }
 
     return true;
 }
@@ -158,12 +178,25 @@ void NvmlHandler::readStaticInfo()
 {
     nvmlReturn_t status;
 
+    m_functionsSupportStatus["nvmlDeviceGetCount"] = false;
+    m_functionsSupportStatus["nvmlDeviceGetPowerManagementMode"] = false;
+    m_functionsSupportStatus["nvmlDeviceGetPciInfo"] = false;
+
+    if (!m_initialized)
+    {
+        return;
+    }
+
     if (_nvmlDeviceGetCount)
     {
         uint deviceCount;
         status = _nvmlDeviceGetCount(&deviceCount);
         if (status != NVML_SUCCESS) {
+            m_functionsStatusMessage["nvmlDeviceGetCount"] = _nvmlErrorString(status);
             qWarning() << "nvmlDeviceGetCount failed! status: " << _nvmlErrorString(status);
+        }
+        else{
+            m_functionsSupportStatus["nvmlDeviceGetCount"] = true;
         }
     }
 
@@ -172,9 +205,12 @@ void NvmlHandler::readStaticInfo()
         nvmlEnableState_t enableState;
         status = _nvmlDeviceGetPowerManagementMode(nvmlGpuHandle, &enableState);
         if (status != NVML_SUCCESS) {
+            m_functionsStatusMessage["nvmlDeviceGetPowerManagementMode"] = _nvmlErrorString(status);
             qWarning() << "_nvmlDeviceGetPowerManagementMode failed! status: " << _nvmlErrorString(status);
         }
-        m_powerManagementModeEnabled = enableState;
+        else{
+            m_functionsSupportStatus["nvmlDeviceGetPowerManagementMode"] = true;
+        }
     }
 
     if (_nvmlDeviceGetPciInfo)
@@ -184,13 +220,194 @@ void NvmlHandler::readStaticInfo()
         status = _nvmlDeviceGetPciInfo(nvmlGpuHandle, &pciInfo);
         if (status != NVML_SUCCESS)
         {
+            m_functionsStatusMessage["nvmlDeviceGetPciInfo"] = _nvmlErrorString(status);
             qWarning() << "_nvmlDeviceGetPciInfo failed! status: " << _nvmlErrorString(status);
+        }
+        else{
+            m_functionsSupportStatus["nvmlDeviceGetPciInfo"] = true;
+        }
+    }
+
+    checkSupportedDynamicFunctions();
+}
+
+void NvmlHandler::checkSupportedDynamicFunctions()
+{
+    nvmlReturn_t status;
+
+    m_functionsSupportStatus["nvmlDeviceGetMemoryInfo"] = false;
+    m_functionsSupportStatus["nvmlDeviceGetMemoryInfo_v2"] = false;
+    m_functionsSupportStatus["nvmlDeviceGetTemperature"] = false;
+    m_functionsSupportStatus["nvmlDeviceGetFanSpeed"] = false;
+    m_functionsSupportStatus["nvmlDeviceGetFanSpeed_v2"] = false;
+    m_functionsSupportStatus["nvmlDeviceGetNumFans"] = false;
+    m_functionsSupportStatus["nvmlDeviceGetPowerUsage"] = false;
+    m_functionsSupportStatus["nvmlDeviceGetTotalEnergyConsumption"] = false;
+    m_functionsSupportStatus["nvmlDeviceGetPowerSource"] = false;
+    m_functionsSupportStatus["nvmlDeviceGetPerformanceState"] = false;
+    m_functionsSupportStatus["nvmlDeviceGetPowerManagementLimitConstraints"] = false;
+
+    if (_nvmlDeviceGetMemoryInfo)
+    {
+        nvmlMemory_t memory;
+        status = _nvmlDeviceGetMemoryInfo(nvmlGpuHandle, &memory);
+        if (status != NVML_SUCCESS) {
+            m_functionsStatusMessage["nvmlDeviceGetMemoryInfo"] = _nvmlErrorString(status);
+            qWarning() << "_nvmlDeviceGetMemoryInfo failed! status: " << _nvmlErrorString(status);
+        }
+        else{
+            m_functionsSupportStatus["nvmlDeviceGetMemoryInfo"] = true;
+        }
+    }
+
+    if (_nvmlDeviceGetMemoryInfo_v2)
+    {
+        nvmlMemory_v2_t memory;
+        status = _nvmlDeviceGetMemoryInfo_v2(nvmlGpuHandle, &memory);
+        if (status != NVML_SUCCESS) {
+            m_functionsStatusMessage["nvmlDeviceGetMemoryInfo_v2"] = _nvmlErrorString(status);
+            qWarning() << "_nvmlDeviceGetMemoryInfo_v2 failed! status: " << _nvmlErrorString(status);
+        }
+        else{
+            m_functionsSupportStatus["nvmlDeviceGetMemoryInfo_v2"] = true;
+        }
+    }
+
+    if (_nvmlDeviceGetTemperature)
+    {
+        nvmlReturn_t status;
+        uint temperature;
+
+        status = _nvmlDeviceGetTemperature(nvmlGpuHandle, NVML_TEMPERATURE_GPU, &temperature);
+        if (status != NVML_SUCCESS) {
+            m_functionsStatusMessage["nvmlDeviceGetTemperature"] = _nvmlErrorString(status);
+            qWarning() << "_nvmlDeviceGetTemperature failed! status: " << _nvmlErrorString(status);
+        }
+        else{
+            m_functionsSupportStatus["nvmlDeviceGetTemperature"] = true;
+        }
+    }
+
+    uint fanSpeed;
+
+    if (_nvmlDeviceGetFanSpeed)
+    {
+        status = _nvmlDeviceGetFanSpeed(nvmlGpuHandle, &fanSpeed);
+        if (status != NVML_SUCCESS) {
+            m_functionsStatusMessage["nvmlDeviceGetFanSpeed"] = _nvmlErrorString(status);
+            qWarning() << "_nvmlDeviceGetFanSpeed failed! status: " << _nvmlErrorString(status);
+        }
+        else{
+            m_functionsSupportStatus["nvmlDeviceGetFanSpeed"] = true;
+        }
+    }
+
+    if (_nvmlDeviceGetFanSpeed_v2)
+    {
+        status = _nvmlDeviceGetFanSpeed_v2(nvmlGpuHandle, 0, &fanSpeed);
+        if (status != NVML_SUCCESS) {
+            m_functionsStatusMessage["nvmlDeviceGetFanSpeed_v2"] = _nvmlErrorString(status);
+            qWarning() << "_nvmlDeviceGetFanSpeed_v2 failed! status: " << _nvmlErrorString(status);
+        }
+        else{
+            m_functionsSupportStatus["nvmlDeviceGetFanSpeed_v2"] = true;
+        }
+    }
+
+    if (_nvmlDeviceGetNumFans)
+    {
+        unsigned int numFans;
+        status = _nvmlDeviceGetNumFans(nvmlGpuHandle, &numFans);
+        if (status != NVML_SUCCESS) {
+            m_functionsStatusMessage["nvmlDeviceGetNumFans"] = _nvmlErrorString(status);
+            qWarning() << "_nvmlDeviceGetNumFans failed! status: " << _nvmlErrorString(status);
+        }
+        else{
+            m_functionsSupportStatus["nvmlDeviceGetNumFans"] = true;
+        }
+    }
+
+    if (_nvmlDeviceGetPowerUsage)
+    {
+        unsigned int powerUsage;
+        status = _nvmlDeviceGetPowerUsage(nvmlGpuHandle, &powerUsage);
+        if (status != NVML_SUCCESS) {
+            m_functionsStatusMessage["nvmlDeviceGetPowerUsage"] = _nvmlErrorString(status);
+            qWarning() << "_nvmlDeviceGetPowerUsage failed! status: " << _nvmlErrorString(status); 
+        }
+        else{
+            m_functionsSupportStatus["nvmlDeviceGetPowerUsage"] = true;
+        }
+
+    }
+
+    if (_nvmlDeviceGetTotalEnergyConsumption)
+    {
+        unsigned long long totalConsumption;
+        status = _nvmlDeviceGetTotalEnergyConsumption(nvmlGpuHandle, &totalConsumption);
+        if (status != NVML_SUCCESS) {
+            m_functionsStatusMessage["nvmlDeviceGetTotalEnergyConsumption"] = _nvmlErrorString(status);
+            qWarning() << "_nvmlDeviceGetTotalEnergyConsumption failed! status: " << _nvmlErrorString(status);
+        }
+        else{
+            m_functionsSupportStatus["nvmlDeviceGetTotalEnergyConsumption"] = true;
+        }
+    }
+
+    if (_nvmlDeviceGetPowerSource)
+    {
+        nvmlPowerSource_t powerSource;
+
+        status = _nvmlDeviceGetPowerSource(nvmlGpuHandle, &powerSource);
+        if (status != NVML_SUCCESS) {
+            m_functionsStatusMessage["nvmlDeviceGetPowerSource"] = _nvmlErrorString(status);
+            qWarning() << "_nvmlDeviceGetPowerSource failed! status: " << _nvmlErrorString(status);
+        }
+        else{
+            m_functionsSupportStatus["nvmlDeviceGetPowerSource"] = true;
+        }
+    }
+
+    //nvmlPstates_t pStatesOld;
+    //status = _nvmlDeviceGetPowerState(nvmlGpuHandle, &pStatesOld);
+    //if (status != NVML_SUCCESS) {
+    //    qWarning() << "_nvmlDeviceGetPowerState failed! status: " << _nvmlErrorString(status);
+    //}
+
+    if (_nvmlDeviceGetPerformanceState)
+    {
+        nvmlPstates_t pStates;
+        status = _nvmlDeviceGetPerformanceState(nvmlGpuHandle, &pStates);
+        if (status != NVML_SUCCESS) {
+            m_functionsStatusMessage["nvmlDeviceGetPerformanceState"] = _nvmlErrorString(status);
+            qWarning() << "_nvmlDeviceGetPerformanceState failed! status: " << _nvmlErrorString(status);
+        }
+        else{
+            m_functionsSupportStatus["nvmlDeviceGetPerformanceState"] = true;
+        }
+    }
+
+    if (_nvmlDeviceGetPowerManagementLimitConstraints)
+    {
+        unsigned int minLimit, maxLimit;
+        status = _nvmlDeviceGetPowerManagementLimitConstraints(nvmlGpuHandle, &minLimit, &maxLimit);
+        if (status != NVML_SUCCESS) {
+            m_functionsStatusMessage["nvmlDeviceGetPowerManagementLimitConstraints"] = _nvmlErrorString(status);
+            qWarning() << "_nvmlDeviceGetPowerManagementLimitConstraints failed! status: " << _nvmlErrorString(status);
+        }
+        else{
+            m_functionsSupportStatus["nvmlDeviceGetPowerManagementLimitConstraints"] = true;
         }
     }
 }
 
 void NvmlHandler::readDynamicInfo()
 {
+    if (!m_initialized)
+    {
+        return;
+    }
+
     readGpuMemory();
     readGpuTemperature();
     readGpuFanSpeed();
@@ -201,37 +418,32 @@ void NvmlHandler::readGpuMemory()
 {
     nvmlReturn_t status;
 
-    if (_nvmlDeviceGetMemoryInfo)
+    if (m_functionsSupportStatus["nvmlDeviceGetMemoryInfo"])
     {
         nvmlMemory_t memory;
         status = _nvmlDeviceGetMemoryInfo(nvmlGpuHandle, &memory);
-        if (status != NVML_SUCCESS) {
-            qWarning() << "_nvmlDeviceGetMemoryInfo failed! status: " << _nvmlErrorString(status);
+        if (status == NVML_SUCCESS) {
         }
     }
 
-    if (_nvmlDeviceGetMemoryInfo_v2)
+    if (m_functionsSupportStatus["nvmlDeviceGetMemoryInfo_v2"])
     {
         nvmlMemory_v2_t memory;
         status = _nvmlDeviceGetMemoryInfo_v2(nvmlGpuHandle, &memory);
-        if (status != NVML_SUCCESS) {
-            qWarning() << "_nvmlDeviceGetMemoryInfo_v2 failed! status: " << _nvmlErrorString(status);
+        if (status == NVML_SUCCESS) {
         }
     }
 }
 
 void NvmlHandler::readGpuTemperature()
 {
-    if (_nvmlDeviceGetTemperature)
+    if (m_functionsSupportStatus["nvmlDeviceGetTemperature"])
     {
         nvmlReturn_t status;
         uint temperature;
 
         status = _nvmlDeviceGetTemperature(nvmlGpuHandle, NVML_TEMPERATURE_GPU, &temperature);
-        if (status != NVML_SUCCESS) {
-            qWarning() << "_nvmlDeviceGetTemperature failed! status: " << _nvmlErrorString(status);
-        }
-        else {
+        if (status == NVML_SUCCESS) {
             m_gpuTemperature = temperature;
         }
     }
@@ -242,34 +454,27 @@ void NvmlHandler::readGpuFanSpeed()
     nvmlReturn_t status;
     uint fanSpeed;
 
-    if (_nvmlDeviceGetFanSpeed)
+    if (m_functionsSupportStatus["nvmlDeviceGetFanSpeed"])
     {
         status = _nvmlDeviceGetFanSpeed(nvmlGpuHandle, &fanSpeed);
-        if (status != NVML_SUCCESS) {
-            qWarning() << "_nvmlDeviceGetFanSpeed failed! status: " << _nvmlErrorString(status);
-        }
-        else {
+        if (status == NVML_SUCCESS) {
             m_gpuFanSpeed = fanSpeed;
         }
     }
 
-    if (_nvmlDeviceGetFanSpeed_v2)
+    if (m_functionsSupportStatus["nvmlDeviceGetFanSpeed_v2"])
     {
         status = _nvmlDeviceGetFanSpeed_v2(nvmlGpuHandle, 0, &fanSpeed);
-        if (status != NVML_SUCCESS) {
-            qWarning() << "_nvmlDeviceGetFanSpeed_v2 failed! status: " << _nvmlErrorString(status);
-        }
-        else {
+        if (status == NVML_SUCCESS) {
             m_gpuFanSpeed = fanSpeed;
         }
     }
 
-    if (_nvmlDeviceGetNumFans)
+    if (m_functionsSupportStatus["nvmlDeviceGetNumFans"])
     {
         unsigned int numFans;
         status = _nvmlDeviceGetNumFans(nvmlGpuHandle, &numFans);
-        if (status != NVML_SUCCESS) {
-            qWarning() << "_nvmlDeviceGetNumFans failed! status: " << _nvmlErrorString(status);
+        if (status == NVML_SUCCESS) {
         }
     }
 }
@@ -278,35 +483,30 @@ void NvmlHandler::readGpuPowerUsage()
 {
     nvmlReturn_t status;
 
-    if (_nvmlDeviceGetPowerUsage != NULL)
+    if (m_functionsSupportStatus["nvmlDeviceGetPowerUsage"])
     {
         unsigned int powerUsage;
         status = _nvmlDeviceGetPowerUsage(nvmlGpuHandle, &powerUsage);
-        if (status != NVML_SUCCESS) {
-            qWarning() << "_nvmlDeviceGetPowerUsage failed! status: " << _nvmlErrorString(status); 
-        }
-        else {
+        if (status == NVML_SUCCESS) {
             m_gpuPower = powerUsage * 1000;
         }
 
     }
 
-    if (_nvmlDeviceGetTotalEnergyConsumption != NULL)
+    if (m_functionsSupportStatus["nvmlDeviceGetTotalEnergyConsumption"])
     {
         unsigned long long totalConsumption;
         status = _nvmlDeviceGetTotalEnergyConsumption(nvmlGpuHandle, &totalConsumption);
-        if (status != NVML_SUCCESS) {
-            qWarning() << "_nvmlDeviceGetTotalEnergyConsumption failed! status: " << _nvmlErrorString(status);
+        if (status == NVML_SUCCESS) {
         }
     }
 
-    if (_nvmlDeviceGetPowerSource != NULL)
+    if (m_functionsSupportStatus["nvmlDeviceGetPowerSource"])
     {
         nvmlPowerSource_t powerSource;
 
         status = _nvmlDeviceGetPowerSource(nvmlGpuHandle, &powerSource);
-        if (status != NVML_SUCCESS) {
-            qWarning() << "_nvmlDeviceGetPowerSource failed! status: " << _nvmlErrorString(status);
+        if (status == NVML_SUCCESS) {
         }
     }
 
@@ -316,25 +516,20 @@ void NvmlHandler::readGpuPowerUsage()
     //    qWarning() << "_nvmlDeviceGetPowerState failed! status: " << _nvmlErrorString(status);
     //}
 
-    if (_nvmlDeviceGetPerformanceState != NULL)
+    if (m_functionsSupportStatus["nvmlDeviceGetPerformanceState"])
     {
         nvmlPstates_t pStates;
         status = _nvmlDeviceGetPerformanceState(nvmlGpuHandle, &pStates);
-        if (status != NVML_SUCCESS) {
-            m_gpuPowerState = pStates;
-            qWarning() << "_nvmlDeviceGetPerformanceState failed! status: " << _nvmlErrorString(status);
-        }
-        else {
+        if (status == NVML_SUCCESS) {
             m_gpuPowerState = pStates;
         }
     }
 
-    if (_nvmlDeviceGetPowerManagementLimitConstraints != NULL)
+    if (m_functionsSupportStatus["nvmlDeviceGetPowerManagementLimitConstraints"])
     {
         unsigned int minLimit, maxLimit;
         status = _nvmlDeviceGetPowerManagementLimitConstraints(nvmlGpuHandle, &minLimit, &maxLimit);
-        if (status != NVML_SUCCESS) {
-            qWarning() << "_nvmlDeviceGetPowerManagementLimitConstraints failed! status: " << _nvmlErrorString(status);
+        if (status == NVML_SUCCESS) {
         }
     }
 }

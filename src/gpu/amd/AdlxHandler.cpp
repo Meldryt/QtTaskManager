@@ -1,7 +1,7 @@
 
-#include "AdlxManager.h"
-#include <string>
-#include <iostream>
+#include "AdlxHandler.h"
+
+#include "../../Globals.h"
 
 #include <QDebug>
 
@@ -12,14 +12,14 @@
 // Use global variables to ensure validity of the interface.
 static ADLXHelper g_ADLXHelp;
 
-AdlxManager::AdlxManager()
+AdlxHandler::AdlxHandler()
 {
     qDebug() << __FUNCTION__;
 
 	m_gpuChipDesigner = "AMD";
 }
 
-AdlxManager::~AdlxManager()
+AdlxHandler::~AdlxHandler()
 {
     qDebug() << __FUNCTION__;
 
@@ -27,7 +27,7 @@ AdlxManager::~AdlxManager()
     qDebug() << "Destroy ADLX result: " << res;
 }
 
-bool AdlxManager::init()
+bool AdlxHandler::init()
 {
     ADLX_RESULT res = ADLX_FAIL;
 
@@ -47,7 +47,7 @@ bool AdlxManager::init()
 	return true;
 }
 
-void AdlxManager::checkSupportedDynamicFunctions()
+void AdlxHandler::checkSupportedDynamicFunctions()
 {
     adlx_bool supported;
     ADLX_RESULT res;
@@ -95,7 +95,7 @@ void AdlxManager::checkSupportedDynamicFunctions()
     setFunctionStatus("IADLXGPUMetricsSupport::GPUHotspotTemperature", supported, res);
 
     res = gpuMetricsSupport->IsSupportedGPUPower(&supported);
-    setFunctionStatus("IADLXGPUMetricsSupport::GPUPowe", supported, res);
+    setFunctionStatus("IADLXGPUMetricsSupport::GPUPower", supported, res);
 
     res = gpuMetricsSupport->IsSupportedGPUFanSpeed(&supported);
     setFunctionStatus("IADLXGPUMetricsSupport::GPUFanSpeed", supported, res);
@@ -113,7 +113,7 @@ void AdlxManager::checkSupportedDynamicFunctions()
     setFunctionStatus("IADLXGPUMetricsSupport::GPUIntakeTemperature", supported, res);
 }
 
-void AdlxManager::setFunctionStatus(const char* key, const bool support, const ADLX_RESULT res) {
+void AdlxHandler::setFunctionStatus(const char* key, const bool support, const ADLX_RESULT res) {
     ADLX_RESULT _res = res;
     if (!support)
     {
@@ -124,7 +124,7 @@ void AdlxManager::setFunctionStatus(const char* key, const bool support, const A
     m_functionsStatusMessage[key] = QString::fromStdString(AdlxResultMap.at(_res));
 }
 
-bool AdlxManager::readStaticInfo()
+bool AdlxHandler::readStaticInfo()
 {
     if (!m_initialized)
     {
@@ -184,8 +184,13 @@ bool AdlxManager::readStaticInfo()
 	return true;
 }
 
-bool AdlxManager::readDynamicInfo()
+bool AdlxHandler::readDynamicInfo()
 {
+    if (!m_initialized)
+    {
+        return false;
+    }
+
     ShowCurrentAllMetrics(m_perfMonitoringService, m_oneGPU);
 
     m_dynamicInfo[Globals::SysInfoAttr::Key_Gpu_Usage] = m_gpuUsage;
@@ -205,7 +210,7 @@ bool AdlxManager::readDynamicInfo()
 }
 
 // Get and dump GPU vender id and name
-void AdlxManager::ShowGPUInfo()
+void AdlxHandler::ShowGPUInfo()
 {
     // Display GPU info
     const char* vendorId = nullptr;
@@ -308,13 +313,8 @@ void AdlxManager::ShowGPUInfo()
 }
 
 // Show current all metrics
-void AdlxManager::ShowCurrentAllMetrics(IADLXPerformanceMonitoringServicesPtr perfMonitoringServices, IADLXGPUPtr oneGPU)
+void AdlxHandler::ShowCurrentAllMetrics(IADLXPerformanceMonitoringServicesPtr perfMonitoringServices, IADLXGPUPtr oneGPU)
 {
-    if (!m_initialized)
-    {
-        return;
-    }
-
     // Get system metrics support
     IADLXSystemMetricsSupportPtr systemMetricsSupport;
     ADLX_RESULT res2 = perfMonitoringServices->GetSupportedSystemMetrics(&systemMetricsSupport);
@@ -384,7 +384,7 @@ void AdlxManager::ShowCurrentAllMetrics(IADLXPerformanceMonitoringServicesPtr pe
 }
 
 // Display the system time stamp (in ms)
-void AdlxManager::GetTimeStamp(IADLXSystemMetricsPtr systemMetrics)
+void AdlxHandler::GetTimeStamp(IADLXSystemMetricsPtr systemMetrics)
 {
     adlx_int64 timeStamp = 0;
     ADLX_RESULT res = systemMetrics->TimeStamp(&timeStamp);
@@ -393,7 +393,7 @@ void AdlxManager::GetTimeStamp(IADLXSystemMetricsPtr systemMetrics)
 }
 
 // Show CPU usage(in %)
-void AdlxManager::ShowCPUUsage(IADLXSystemMetricsSupportPtr systemMetricsSupport, IADLXSystemMetricsPtr systemMetrics)
+void AdlxHandler::ShowCPUUsage(IADLXSystemMetricsSupportPtr systemMetricsSupport, IADLXSystemMetricsPtr systemMetrics)
 {
     // Display CPU usage support status
     if (m_functionsSupportStatus["IADLXSystemMetricsSupport::CPUUsage"])
@@ -406,7 +406,7 @@ void AdlxManager::ShowCPUUsage(IADLXSystemMetricsSupportPtr systemMetricsSupport
 }
 
 // Display system RAM (in MB)
-void AdlxManager::ShowSystemRAM(IADLXSystemMetricsSupportPtr systemMetricsSupport, IADLXSystemMetricsPtr systemMetrics)
+void AdlxHandler::ShowSystemRAM(IADLXSystemMetricsSupportPtr systemMetricsSupport, IADLXSystemMetricsPtr systemMetrics)
 {
     // Display system RAM usage support status
     if (m_functionsSupportStatus["IADLXSystemMetricsSupport::SystemRAM"])
@@ -419,7 +419,7 @@ void AdlxManager::ShowSystemRAM(IADLXSystemMetricsSupportPtr systemMetricsSuppor
 }
 
 // Display SmartShift
-void AdlxManager::ShowSmartShift(IADLXSystemMetricsSupportPtr systemMetricsSupport, IADLXSystemMetricsPtr systemMetrics)
+void AdlxHandler::ShowSmartShift(IADLXSystemMetricsSupportPtr systemMetricsSupport, IADLXSystemMetricsPtr systemMetrics)
 {
     // Display SmartShift support status
     if (m_functionsSupportStatus["IADLXSystemMetricsSupport::SmartShift"])
@@ -432,7 +432,7 @@ void AdlxManager::ShowSmartShift(IADLXSystemMetricsSupportPtr systemMetricsSuppo
 }
 
 // Display the GPU metrics time stamp (in ms)
-void AdlxManager::GetTimeStamp(IADLXGPUMetricsPtr gpuMetrics)
+void AdlxHandler::GetTimeStamp(IADLXGPUMetricsPtr gpuMetrics)
 {
     adlx_int64 timeStamp = 0;
     ADLX_RESULT res = gpuMetrics->TimeStamp(&timeStamp);
@@ -441,7 +441,7 @@ void AdlxManager::GetTimeStamp(IADLXGPUMetricsPtr gpuMetrics)
 }
 
 // Display GPU usage (in %)
-void AdlxManager::ShowGPUUsage(IADLXGPUMetricsSupportPtr gpuMetricsSupport, IADLXGPUMetricsPtr gpuMetrics)
+void AdlxHandler::ShowGPUUsage(IADLXGPUMetricsSupportPtr gpuMetricsSupport, IADLXGPUMetricsPtr gpuMetrics)
 {
     // Display GPU usage support status
     if (m_functionsSupportStatus["IADLXGPUMetricsSupport::GPUUsage"])
@@ -460,7 +460,7 @@ void AdlxManager::ShowGPUUsage(IADLXGPUMetricsSupportPtr gpuMetricsSupport, IADL
 }
 
 // Display GPU clock speed (in MHz)
-void AdlxManager::ShowGPUClockSpeed(IADLXGPUMetricsSupportPtr gpuMetricsSupport, IADLXGPUMetricsPtr gpuMetrics)
+void AdlxHandler::ShowGPUClockSpeed(IADLXGPUMetricsSupportPtr gpuMetricsSupport, IADLXGPUMetricsPtr gpuMetrics)
 {
     // Display GPU clock speed support status
     if (m_functionsSupportStatus["IADLXGPUMetricsSupport::GPUClockSpeed"])
@@ -485,7 +485,7 @@ void AdlxManager::ShowGPUClockSpeed(IADLXGPUMetricsSupportPtr gpuMetricsSupport,
 }
 
 // Show GPU VRAM clock speed(MHz)
-void AdlxManager::ShowGPUVRAMClockSpeed(IADLXGPUMetricsSupportPtr gpuMetricsSupport, IADLXGPUMetricsPtr gpuMetrics)
+void AdlxHandler::ShowGPUVRAMClockSpeed(IADLXGPUMetricsSupportPtr gpuMetricsSupport, IADLXGPUMetricsPtr gpuMetrics)
 {
     // Get if the GPU VRAM clock speed is supported
     if (m_functionsSupportStatus["IADLXGPUMetricsSupport::GPUVRAMClockSpeed"])
@@ -510,7 +510,7 @@ void AdlxManager::ShowGPUVRAMClockSpeed(IADLXGPUMetricsSupportPtr gpuMetricsSupp
 }
 
 // Show GPU temperature(�C)
-void AdlxManager::ShowGPUTemperature(IADLXGPUMetricsSupportPtr gpuMetricsSupport, IADLXGPUMetricsPtr gpuMetrics)
+void AdlxHandler::ShowGPUTemperature(IADLXGPUMetricsSupportPtr gpuMetricsSupport, IADLXGPUMetricsPtr gpuMetrics)
 {
     // Get if the GPU tempetature is supported
     if (m_functionsSupportStatus["IADLXGPUMetricsSupport::GPUTemperature"])
@@ -529,7 +529,7 @@ void AdlxManager::ShowGPUTemperature(IADLXGPUMetricsSupportPtr gpuMetricsSupport
 }
 
 // Show GPU hotspot temperature(�C)
-void AdlxManager::ShowGPUHotspotTemperature(IADLXGPUMetricsSupportPtr gpuMetricsSupport, IADLXGPUMetricsPtr gpuMetrics)
+void AdlxHandler::ShowGPUHotspotTemperature(IADLXGPUMetricsSupportPtr gpuMetricsSupport, IADLXGPUMetricsPtr gpuMetrics)
 {
     // Get if the GPU hotspot temperature is supported
     if (m_functionsSupportStatus["IADLXGPUMetricsSupport::GPUHotspotTemperature"])
@@ -548,7 +548,7 @@ void AdlxManager::ShowGPUHotspotTemperature(IADLXGPUMetricsSupportPtr gpuMetrics
 }
 
 // Show GPU power(W)
-void AdlxManager::ShowGPUPower(IADLXGPUMetricsSupportPtr gpuMetricsSupport, IADLXGPUMetricsPtr gpuMetrics)
+void AdlxHandler::ShowGPUPower(IADLXGPUMetricsSupportPtr gpuMetricsSupport, IADLXGPUMetricsPtr gpuMetrics)
 {
     // Get if the GPU power is supported
     if (m_functionsSupportStatus["IADLXGPUMetricsSupport::GPUPower"])
@@ -567,7 +567,7 @@ void AdlxManager::ShowGPUPower(IADLXGPUMetricsSupportPtr gpuMetricsSupport, IADL
 }
 
 // Show GPU fan speed(RPM)
-void AdlxManager::ShowGPUFanSpeed(IADLXGPUMetricsSupportPtr gpuMetricsSupport, IADLXGPUMetricsPtr gpuMetrics)
+void AdlxHandler::ShowGPUFanSpeed(IADLXGPUMetricsSupportPtr gpuMetricsSupport, IADLXGPUMetricsPtr gpuMetrics)
 {
     // Get if the GPU fan speed is supported
     if (m_functionsSupportStatus["IADLXGPUMetricsSupport::GPUFanSpeed"])
@@ -597,7 +597,7 @@ void AdlxManager::ShowGPUFanSpeed(IADLXGPUMetricsSupportPtr gpuMetricsSupport, I
 }
 
 // Show GPU VRAM(MB)
-void AdlxManager::ShowGPUVRAM(IADLXGPUMetricsSupportPtr gpuMetricsSupport, IADLXGPUMetricsPtr gpuMetrics)
+void AdlxHandler::ShowGPUVRAM(IADLXGPUMetricsSupportPtr gpuMetricsSupport, IADLXGPUMetricsPtr gpuMetrics)
 {
     // Get if the GPU VRAM is supported
     if (m_functionsSupportStatus["IADLXGPUMetricsSupport::GPUVRAM"])
@@ -617,7 +617,7 @@ void AdlxManager::ShowGPUVRAM(IADLXGPUMetricsSupportPtr gpuMetricsSupport, IADLX
 }
 
 // Show GPU Voltage(mV)
-void AdlxManager::ShowGPUVoltage(IADLXGPUMetricsSupportPtr gpuMetricsSupport, IADLXGPUMetricsPtr gpuMetrics)
+void AdlxHandler::ShowGPUVoltage(IADLXGPUMetricsSupportPtr gpuMetricsSupport, IADLXGPUMetricsPtr gpuMetrics)
 {
     // Get if the GPU voltage is supported
     if (m_functionsSupportStatus["IADLXGPUMetricsSupport::GPUVoltage"])
@@ -636,7 +636,7 @@ void AdlxManager::ShowGPUVoltage(IADLXGPUMetricsSupportPtr gpuMetricsSupport, IA
 }
 
 // Show GPU Total Board Power(W)
-void AdlxManager::ShowGPUTotalBoardPower(IADLXGPUMetricsSupportPtr gpuMetricsSupport, IADLXGPUMetricsPtr gpuMetrics)
+void AdlxHandler::ShowGPUTotalBoardPower(IADLXGPUMetricsSupportPtr gpuMetricsSupport, IADLXGPUMetricsPtr gpuMetrics)
 {
     // Get if the GPU voltage is supported
     if (m_functionsSupportStatus["IADLXGPUMetricsSupport::GPUTotalBoardPower"])
@@ -655,7 +655,7 @@ void AdlxManager::ShowGPUTotalBoardPower(IADLXGPUMetricsSupportPtr gpuMetricsSup
 }
 
 // Display GPU intake temperature(in °C)
-void AdlxManager::ShowGPUIntakeTemperature (IADLXGPUMetricsSupportPtr gpuMetricsSupport, IADLXGPUMetricsPtr gpuMetrics)
+void AdlxHandler::ShowGPUIntakeTemperature (IADLXGPUMetricsSupportPtr gpuMetricsSupport, IADLXGPUMetricsPtr gpuMetrics)
 {
     // Display the GPU temperature support status
     if (m_functionsSupportStatus["IADLXGPUMetricsSupport::GPUIntakeTemperature"])

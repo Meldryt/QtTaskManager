@@ -2,8 +2,6 @@
 
 #include "../Worker.h"
 
-#include "../Globals.h"
-
 #include <QElapsedTimer>
 
 class CpuInfo;

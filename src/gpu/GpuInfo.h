@@ -44,7 +44,7 @@ private:
     void readDynamicInfo();
 
     bool m_gpuDetected{false};
-    GpuManufacturer m_gpuManufacturer{AMD};
+    GpuManufacturer m_gpuManufacturer{UNKNOWN};
 
     GpuInfoNVidia* m_gpuInfoNVidia{ nullptr };
     GpuInfoAmd* m_gpuInfoAmd{ nullptr };

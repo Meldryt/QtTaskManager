@@ -1,17 +1,19 @@
 #include "GpuInfo.h"
-#include "GpuInfoNVidia.h"
-#include "GpuInfoAmd.h"
 
+#include "amd/GpuInfoAmd.h"
+#include "nvidia/GpuInfoNVidia.h"
 #include "GlGlobals.h"
 
 #include <QDebug>
 
 GpuInfo::GpuInfo()
 {
+    qDebug() << __FUNCTION__;
 }
 
 GpuInfo::~GpuInfo()
 {
+    qDebug() << __FUNCTION__;
 }
 
 void GpuInfo::init()
@@ -56,19 +58,17 @@ void GpuInfo::detectGpu()
     {
         m_gpuManufacturer = GpuManufacturer::AMD;
         m_gpuDetected = true;
-        qDebug() << "GpuInfo::detectGpu(): " << "AMD Gpu detected!";
+        qDebug() << __FUNCTION__ << " : " << "AMD Gpu detected!";
     }
     else if (isNVidia)
     {
         m_gpuManufacturer = GpuManufacturer::NVIDIA;
         m_gpuDetected = true;
-        qDebug() << "GpuInfo::detectGpu(): " << "NVIDIA Gpu detected!";
+        qDebug() << __FUNCTION__ << " : " <<  "NVIDIA Gpu detected!";
     }
     else
     {
-        m_gpuManufacturer = GpuManufacturer::UNKNOWN;
-        m_gpuDetected = false;
-        qDebug() << "GpuInfo::detectGpu(): " << "No Gpu detected!";
+        qDebug() << __FUNCTION__ << " : " <<  "No Gpu detected!";
     }
 }
 
@@ -76,11 +76,21 @@ void GpuInfo::readStaticInfo()
 {
     if (m_gpuManufacturer == GpuManufacturer::AMD)
     {
+        if(!m_gpuInfoAmd)
+        {
+            return;
+        }
+
         m_gpuInfoAmd->readStaticInfo();
         m_staticInfo = m_gpuInfoAmd->staticInfo();
     }
     else if (m_gpuManufacturer == GpuManufacturer::NVIDIA)
-    {
+    {        
+        if(!m_gpuInfoNVidia)
+        {
+            return;
+        }
+
         m_gpuInfoNVidia->readStaticInfo();
         m_staticInfo = m_gpuInfoNVidia->staticInfo();
     }
@@ -90,11 +100,21 @@ void GpuInfo::readDynamicInfo()
 {
     if (m_gpuManufacturer == GpuManufacturer::AMD)
     {
+        if(!m_gpuInfoAmd)
+        {
+            return;
+        }
+
         m_gpuInfoAmd->readDynamicInfo();
         m_dynamicInfo = m_gpuInfoAmd->dynamicInfo();
     }
     else if (m_gpuManufacturer == GpuManufacturer::NVIDIA)
     {
+        if(!m_gpuInfoNVidia)
+        {
+            return;
+        }
+
         m_gpuInfoNVidia->readDynamicInfo();
         m_dynamicInfo = m_gpuInfoNVidia->dynamicInfo();
     }

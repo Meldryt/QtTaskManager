@@ -137,7 +137,7 @@ void TabHardware::slotCpuStaticInfo(const QMap<uint8_t,QVariant>& staticInfo)
     m_cpuTableInfos[4] = staticInfo[Globals::SysInfoAttr::Key_Cpu_L2CacheSize].toString();
     m_cpuTableInfos[5] = staticInfo[Globals::SysInfoAttr::Key_Cpu_L3CacheSize].toString();
     m_cpuTableInfos[6] = staticInfo[Globals::SysInfoAttr::Key_Cpu_BaseFrequency].toString();
-    m_cpuTableInfos[7] = staticInfo[Globals::SysInfoAttr::Key_Cpu_MaxFrequency].toString();
+    m_cpuTableInfos[7] = staticInfo[Globals::SysInfoAttr::Key_Cpu_MaxTurboFrequency].toString();
 }
 
 void TabHardware::slotGpuStaticInfo(const QMap<uint8_t,QVariant>& staticInfo)

@@ -1,5 +1,7 @@
 #include "MemoryWorker.h"
+
 #include "MemoryInfo.h"
+#include "../Globals.h"
 
 MemoryWorker::MemoryWorker(int timerInterval, QObject* parent)
     : Worker{ timerInterval, parent}

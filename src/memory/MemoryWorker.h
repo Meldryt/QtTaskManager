@@ -1,8 +1,6 @@
 #pragma once
 
-#include "Worker.h"
-
-#include "Globals.h"
+#include "../Worker.h"
 
 class MemoryInfo;
  
