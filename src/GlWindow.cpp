@@ -459,6 +459,8 @@ void GlWindow::paintGL()
     m_deltaTime = m_elapsedTimerDeltaTime->nsecsElapsed() * 0.000000001;
 
     ++m_frameCount;
+
+    glFinish();
 }
 
 void GlWindow::drawProgram(ProgramType type)

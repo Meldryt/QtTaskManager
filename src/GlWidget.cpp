@@ -455,6 +455,8 @@ void GlWidget::paintGL()
     }
 
     ++m_frameCount;
+
+    glFinish();
 }
 
 void GlWidget::drawProgram(ProgramType type)
