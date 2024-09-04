@@ -39,11 +39,13 @@ void ProcessInfo::update()
     //to an application-defined callback function. EnumWindows continues until the last top-level
     //window is enumerated or the callback function returns FALSE.
 #ifdef _WIN32
-EnumWindows(StaticEnumWindowsProc, reinterpret_cast<LPARAM>(this));
+    EnumWindows(StaticEnumWindowsProc, reinterpret_cast<LPARAM>(this));
+
+    updateRunningProcesses();
 #else
 #endif
 
-    updateRunningProcesses();
+
 }
 
 #ifdef _WIN32

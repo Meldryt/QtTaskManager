@@ -18,6 +18,16 @@ GpuInfo::~GpuInfo()
 
 void GpuInfo::init()
 {
+    for (uint8_t i = Globals::Key_Gpu_Static_Start + 1; i < Globals::Key_Gpu_Static_End; ++i)
+    {
+        m_staticInfo[i] = Globals::SysInfo_Uninitialized;
+    }
+
+    for (uint8_t i = Globals::Key_Gpu_Dynamic_Start + 1; i < Globals::Key_Gpu_Dynamic_End; ++i)
+    {
+        m_dynamicInfo[i] = Globals::SysInfo_Uninitialized;
+    }
+
     detectGpu();
 
     if (m_gpuManufacturer == GpuManufacturer::AMD)

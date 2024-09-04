@@ -31,8 +31,7 @@ set(PROJECT_SOURCES
     src/cpu/CpuInfo.cpp
     src/cpu/CpuWorker.cpp
     src/cpu/CpuWorker.h
-    src/cpu/amd/RyzenMasterSdkHandler.h
-    src/cpu/amd/RyzenMasterSdkHandler.cpp
+
     src/cpu/amd/CpuInfoAmd.h
     src/cpu/amd/CpuInfoAmd.cpp
     src/cpu/intel/CpuInfoIntel.h
@@ -44,21 +43,14 @@ set(PROJECT_SOURCES
 
     src/gpu/GlGlobals.h
     src/gpu/GpuInfo.h
-    src/gpu/GpuInfo.Cpp
+    src/gpu/GpuInfo.cpp
     src/gpu/GpuWorker.h
     src/gpu/GpuWorker.cpp
-    src/gpu/amd/AdlxHandler.h
-    src/gpu/amd/AdlxHandler.cpp
-    src/gpu/amd/AgsHandler.h
-    src/gpu/amd/AgsHandler.cpp
+
     src/gpu/amd/GpuInfoAmd.h
     src/gpu/amd/GpuInfoAmd.cpp
     src/gpu/nvidia/GpuInfoNVidia.h
     src/gpu/nvidia/GpuInfoNVidia.cpp
-    src/gpu/nvidia/NvapiHandler.h
-    src/gpu/nvidia/NvapiHandler.cpp
-    src/gpu/nvidia/NvmlHandler.h
-    src/gpu/nvidia/NvmlHandler.cpp
 
     src/memory/MemoryInfo.h
     src/memory/MemoryInfo.cpp
@@ -89,13 +81,8 @@ set(PROJECT_SOURCES
     src/tabs/TabApiSupport.cpp
     src/tabs/TabApiSupport.h
 
-    src/windows/WmiInfo.h
-    src/windows/WmiInfo.cpp
-    src/windows/WmiWorker.h
-    src/windows/WmiWorker.cpp
-
-    src/DevicesInfo.h
-    src/DevicesInfo.cpp
+    #src/DevicesInfo.h
+    #src/DevicesInfo.cpp
     src/SystemManager.cpp
     src/SystemManager.h
     src/main.cpp
@@ -108,11 +95,33 @@ set(PROJECT_SOURCES
     src/GlWindow.cpp
 	src/GlWindow.h
     src/MainWindow.ui
-
-    external/ADLX/SDK/ADLXHelper/Windows/Cpp/ADLXHelper.h
-    external/ADLX/SDK/ADLXHelper/Windows/Cpp/ADLXHelper.cpp
-    external/ADLX/SDK/platform/Windows/WinAPIs.cpp
 )
+
+if (WIN32)
+    set(PROJECT_SOURCES {PROJECT_SOURCES}
+        src/cpu/amd/RyzenMasterSdkHandler.h
+        src/cpu/amd/RyzenMasterSdkHandler.cpp
+
+        src/gpu/amd/AdlxHandler.h
+        src/gpu/amd/AdlxHandler.cpp
+        src/gpu/amd/AgsHandler.h
+        src/gpu/amd/AgsHandler.cpp
+
+        src/gpu/nvidia/NvapiHandler.h
+        src/gpu/nvidia/NvapiHandler.cpp
+        src/gpu/nvidia/NvmlHandler.h
+        src/gpu/nvidia/NvmlHandler.cpp
+
+        src/windows/WmiInfo.h
+        src/windows/WmiInfo.cpp
+        src/windows/WmiWorker.h
+        src/windows/WmiWorker.cpp
+
+        external/ADLX/SDK/ADLXHelper/Windows/Cpp/ADLXHelper.h
+        external/ADLX/SDK/ADLXHelper/Windows/Cpp/ADLXHelper.cpp
+        external/ADLX/SDK/platform/Windows/WinAPIs.cpp
+    )
+endif (WIN32)
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
     qt_add_executable(${PROJECT_NAME}
@@ -160,31 +169,45 @@ else()
     message (WARNING "If you want to read Ryzen Cpu Infos you must download Ryzen Master SDK & copy RyzenMasterMonitoringSDK to external!")
 endif()
 
-target_include_directories(${PROJECT_NAME} PRIVATE
-    external/AGS_SDK/ags_lib/inc
-    external/nvapi
-    external/nvml
-)
+if (WIN32)
+    target_include_directories(${PROJECT_NAME} PRIVATE
+        external/nvapi
+        external/nvml
+        external/AGS_SDK/ags_lib/inc
+        external/ADLX/SDK/Include
+    )
+elseif (UNIX)
+    external/pcm
+endif ()
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
     Qt${QT_VERSION_MAJOR}::Widgets
     Qt${QT_VERSION_MAJOR}::Charts
     Qt${QT_VERSION_MAJOR}::OpenGLWidgets
-    Opengl32
-    pdh
-    Setupapi
-    debug ${CMAKE_CURRENT_SOURCE_DIR}/external/AGS_SDK/ags_lib/lib/amd_ags_x64_2022_MDd.lib
-    optimized ${CMAKE_CURRENT_SOURCE_DIR}/external/AGS_SDK/ags_lib/lib/amd_ags_x64_2022_MD.lib
 )
+
+if (WIN32)
+    target_link_libraries(${PROJECT_NAME} PRIVATE
+        Opengl32
+        pdh
+        Setupapi
+        debug ${CMAKE_CURRENT_SOURCE_DIR}/external/AGS_SDK/ags_lib/lib/amd_ags_x64_2022_MDd.lib
+        optimized ${CMAKE_CURRENT_SOURCE_DIR}/external/AGS_SDK/ags_lib/lib/amd_ags_x64_2022_MD.lib
+    )
+endif (WIN32)
 
 set_target_properties(${PROJECT_NAME} PROPERTIES
     MACOSX_BUNDLE_GUI_IDENTIFIER my.example.com
     MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION}
     MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}
     MACOSX_BUNDLE TRUE
-    WIN32_EXECUTABLE TRUE
-    LINK_FLAGS_RELEASE "/SUBSYSTEM:CONSOLE"
 )
+
+if (WIN32)
+    set_target_properties(${PROJECT_NAME} PROPERTIES
+        WIN32_EXECUTABLE TRUE
+    )
+endif (WIN32)
 
 install(TARGETS ${PROJECT_NAME}
     BUNDLE DESTINATION .

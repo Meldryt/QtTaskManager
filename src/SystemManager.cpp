@@ -4,7 +4,10 @@
 #include "cpu/CpuWorker.h"
 #include "gpu/GpuWorker.h"
 #include "memory/MemoryWorker.h"
+
+#ifdef _WIN32
 #include "windows/WmiWorker.h"
+#endif
 
 #include <QElapsedTimer>
 #include <QDebug>
@@ -29,14 +32,16 @@ SystemManager::SystemManager(QWidget* parent) : QTabWidget(parent)
     m_cpuWorker = std::make_unique<CpuWorker>(1000);
     m_gpuWorker = std::make_unique<GpuWorker>(500);
     m_memoryWorker = std::make_unique<MemoryWorker>(500);
+#ifdef _WIN32
     m_wmiWorker = std::make_unique<WmiWorker>(1000);
-
+#endif
     m_worker.push_back(m_processWorker.get());
     m_worker.push_back(m_cpuWorker.get());
     m_worker.push_back(m_gpuWorker.get());
     m_worker.push_back(m_memoryWorker.get());
+#ifdef _WIN32
     m_worker.push_back(m_wmiWorker.get());
-
+#endif
     for (int i = 0; i < m_worker.size(); ++i)
     {
         QThread* thread = new QThread(this);
@@ -91,6 +96,7 @@ SystemManager::SystemManager(QWidget* parent) : QTabWidget(parent)
         m_dynamicInfoMemoryChanged = true;
     });
 
+#ifdef _WIN32
     connect(m_wmiWorker.get(), &WmiWorker::signalStaticInfo, this, [&](const QMap<uint8_t, QVariant>& staticInfo)
     {
         m_staticInfoWmi = staticInfo;
@@ -102,7 +108,7 @@ SystemManager::SystemManager(QWidget* parent) : QTabWidget(parent)
         m_dynamicInfoWmi = dynamicInfo;
         m_dynamicInfoWmiChanged = true;
     });
-
+#endif
     for (int i = 0; i < m_workerThreads.size(); ++i)
     {
         m_workerThreads[i]->start();
@@ -150,9 +156,16 @@ void SystemManager::update()
 
     if (m_dynamicInfoCpuChanged)
     {
-        m_dynamicInfoCpu[Globals::SysInfoAttr::Key_Cpu_ThreadFrequencies] = m_dynamicInfoWmi[Globals::SysInfoAttr::Key_Cpu_ThreadFrequencies];
-        m_dynamicInfoCpu[Globals::SysInfoAttr::Key_Cpu_ThreadUsages] = m_dynamicInfoWmi[Globals::SysInfoAttr::Key_Cpu_ThreadUsages];
-
+#ifdef _WIN32
+        if(m_dynamicInfoWmi[Globals::SysInfoAttr::Key_Cpu_ThreadFrequencies] != Globals::SysInfo_Uninitialized)
+        {
+            m_dynamicInfoCpu[Globals::SysInfoAttr::Key_Cpu_ThreadFrequencies] = m_dynamicInfoWmi[Globals::SysInfoAttr::Key_Cpu_ThreadFrequencies];
+        }
+        if(m_dynamicInfoWmi[Globals::SysInfoAttr::Key_Cpu_ThreadUsages] != Globals::SysInfo_Uninitialized)
+        {
+            m_dynamicInfoCpu[Globals::SysInfoAttr::Key_Cpu_ThreadUsages] = m_dynamicInfoWmi[Globals::SysInfoAttr::Key_Cpu_ThreadUsages];
+        }
+#endif
         m_tabPerformance->slotCpuDynamicInfo(m_dynamicInfoCpu);
         m_dynamicInfoCpuChanged = false;
     }
@@ -204,9 +217,11 @@ void SystemManager::update()
         m_dynamicInfoMemoryChanged = false;
     }
 
+#ifdef _WIN32
     if (m_staticInfoWmiChanged)
     {
         m_tabApiSupport->slotApiSupportStaticInfo(m_staticInfoWmi);
+
         m_staticInfoWmiChanged = false;
         processTabApiSupport = true;
     }
@@ -222,7 +237,7 @@ void SystemManager::update()
 
         m_dynamicInfoWmiChanged = false;
     }
-
+#endif
     if (processTabHardware)
     {
         m_tabHardware->process();

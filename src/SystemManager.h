@@ -16,7 +16,10 @@ class ProcessWorker;
 class CpuWorker;
 class GpuWorker;
 class MemoryWorker;
+
+#ifdef _WIN32
 class WmiWorker;
+#endif
 
 class SystemManager : public QTabWidget
 {
@@ -41,7 +44,10 @@ private:
     std::unique_ptr<CpuWorker> m_cpuWorker{nullptr};
     std::unique_ptr<GpuWorker> m_gpuWorker{nullptr};
     std::unique_ptr<MemoryWorker> m_memoryWorker{ nullptr };
+
+#ifdef _WIN32
     std::unique_ptr<WmiWorker> m_wmiWorker{ nullptr };
+#endif
 
     QTimer* m_timer{ nullptr };
 
@@ -56,9 +62,10 @@ private:
     bool m_staticInfoMemoryChanged{ false };
     bool m_dynamicInfoMemoryChanged{ false };
 
+#ifdef _WIN32
     bool m_staticInfoWmiChanged{ false };
     bool m_dynamicInfoWmiChanged{ false };
-
+#endif
     QMap<uint8_t,QVariant> m_staticInfoCpu;
     QMap<uint8_t,QVariant> m_dynamicInfoCpu;
 
@@ -70,7 +77,9 @@ private:
     QMap<uint8_t,QVariant> m_staticInfoMemory;
     QMap<uint8_t,QVariant> m_dynamicInfoMemory;
 
+#ifdef _WIN32
     QMap<uint8_t, QVariant> m_staticInfoWmi;
     QMap<uint8_t, QVariant> m_dynamicInfoWmi;
+#endif
 };
 

@@ -4,9 +4,10 @@
 #include <QVariant>
 #include <string>
 
+#ifdef _WIN32
 class NvapiHandler;
 class NvmlHandler;
-
+#endif
 class GpuInfoNVidia
 {
 public:
@@ -29,9 +30,10 @@ public:
 
 private:
 
+#ifdef _WIN32
     NvapiHandler* m_nvapiHandler{ nullptr };
     NvmlHandler* m_nvmlHandler{ nullptr };
-
+#endif
     QMap<uint8_t,QVariant> m_staticInfo;
     QMap<uint8_t,QVariant> m_dynamicInfo;
 

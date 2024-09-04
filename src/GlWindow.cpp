@@ -7,6 +7,10 @@
 
 #include <QDebug>
 
+#ifdef _MSC_VER
+#define strdup(p) _strdup(p)
+#endif
+
 static const char* m_vertexShaderSource =
 "#version 330 core\n"
 "layout (location = 0) in vec3 position;\n"
@@ -236,8 +240,8 @@ bool GlWindow::createProgram(const std::vector<float>& vertices, const std::vect
     char* fragmentShaderSource{ nullptr };
     std::string texturePath;
 
-    vertexShaderSource = _strdup(m_vertexShaderSource);
-    fragmentShaderSource = _strdup(m_fragmentShaderSource);
+    vertexShaderSource = strdup(m_vertexShaderSource);
+    fragmentShaderSource = strdup(m_fragmentShaderSource);
 
     programInfo.indicesCount = static_cast<uint32_t>(indices.size());
     programInfo.program = new QOpenGLShaderProgram(this);
@@ -459,6 +463,8 @@ void GlWindow::paintGL()
     m_deltaTime = m_elapsedTimerDeltaTime->nsecsElapsed() * 0.000000001;
 
     ++m_frameCount;
+
+    glFinish();
 }
 
 void GlWindow::drawProgram(ProgramType type)

@@ -64,6 +64,16 @@ const QMap<uint8_t, QVariant>& CpuInfoWindows::dynamicInfo() const
 
 void CpuInfoWindows::init()
 {
+    for (uint8_t i = Globals::Key_Cpu_Static_Start + 1; i < Globals::Key_Cpu_Static_End; ++i)
+    {
+        m_staticInfo[i] = Globals::SysInfo_Uninitialized;
+    }
+
+    for (uint8_t i = Globals::Key_Cpu_Dynamic_Start + 1; i < Globals::Key_Cpu_Dynamic_End; ++i)
+    {
+        m_dynamicInfo[i] = Globals::SysInfo_Uninitialized;
+    }
+
     readCpuIdBrand();
 }
 

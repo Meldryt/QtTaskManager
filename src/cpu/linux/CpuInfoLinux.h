@@ -47,8 +47,15 @@ public:
 
 private:
     void readCpuBrand();
+    void readCpuBaseFrequency();
+    void readCpuMaxFrequency();
+    void readCpuCoreCount();
+
+    void readCpuCoreFrequencies();
+    void readCpuTemperature();
 
     std::string m_cpuBrand{ "" };
+    std::string m_cpuSocket{""};
     uint8_t m_cpuProcessorCount{ 0 };
     uint8_t m_cpuThreadCount{ 0 };
     uint32_t m_cpuBaseFrequency{ 0 };

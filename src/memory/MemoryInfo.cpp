@@ -2,8 +2,10 @@
 
 #include "../Globals.h"
 
+#ifdef _WIN32
 #include <windows.h>
 #include <sysinfoapi.h>
+#endif
 
 MemoryInfo::MemoryInfo()
 {
@@ -27,6 +29,7 @@ void MemoryInfo::update()
 
 void MemoryInfo::readStaticInfo()
 {
+#ifdef _WIN32
     MEMORYSTATUSEX memInfo;
     memInfo.dwLength = sizeof(MEMORYSTATUSEX);
     GlobalMemoryStatusEx(&memInfo);
@@ -36,13 +39,14 @@ void MemoryInfo::readStaticInfo()
 
     DWORDLONG totalPhysMem = memInfo.ullTotalPhys;
     m_totalPhysicalMemory = (totalPhysMem / 1024) / 1024;
-
+#endif
     m_staticInfo[Globals::SysInfoAttr::Key_Memory_TotalVirtualMemory] = m_totalVirtualMemory;
     m_staticInfo[Globals::SysInfoAttr::Key_Memory_TotalPhysicalMemory] = m_totalPhysicalMemory;
 }
 
 void MemoryInfo::readDynamicInfo()
 {
+#ifdef _WIN32
     MEMORYSTATUSEX memInfo;
     memInfo.dwLength = sizeof(MEMORYSTATUSEX);
     GlobalMemoryStatusEx(&memInfo);
@@ -52,7 +56,7 @@ void MemoryInfo::readDynamicInfo()
 
     DWORDLONG physMemUsed = memInfo.ullTotalPhys - memInfo.ullAvailPhys;
     m_usedPhysicalMemory = (physMemUsed / 1024) / 1024;
-
+#endif
     m_dynamicInfo[Globals::SysInfoAttr::Key_Memory_UsedVirtualMemory] = m_usedVirtualMemory;
     m_dynamicInfo[Globals::SysInfoAttr::Key_Memory_UsedPhysicalMemory] = m_usedPhysicalMemory;
 }

@@ -1,15 +1,20 @@
 #include "GpuInfoNVidia.h"
 
+#ifdef _WIN32
 #include "NvapiHandler.h"
 #include "NvmlHandler.h"
+#endif
+
 #include "../../Globals.h"
 
 GpuInfoNVidia::GpuInfoNVidia()
 {
     qDebug() << __FUNCTION__;
 
+#ifdef _WIN32
     m_nvapiHandler = new NvapiHandler();
     m_nvmlHandler = new NvmlHandler();
+#endif
     m_gpuChipDesigner = "NVIDIA";
 }
 
@@ -20,9 +25,20 @@ GpuInfoNVidia::~GpuInfoNVidia()
 
 bool GpuInfoNVidia::init()
 {
+    for (uint8_t i = Globals::Key_Gpu_Static_Start + 1; i < Globals::Key_Gpu_Static_End; ++i)
+    {
+        m_staticInfo[i] = Globals::SysInfo_Uninitialized;
+    }
+
+    for (uint8_t i = Globals::Key_Gpu_Dynamic_Start + 1; i < Globals::Key_Gpu_Dynamic_End; ++i)
+    {
+        m_dynamicInfo[i] = Globals::SysInfo_Uninitialized;
+    }
+
+#ifdef _WIN32
     m_nvapiHandler->init();
     m_nvmlHandler->init();
-
+#endif
     return true;
 }
 
@@ -30,6 +46,7 @@ void GpuInfoNVidia::readStaticInfo()
 {
     qDebug() << __FUNCTION__;
 
+#ifdef _WIN32
     m_nvapiHandler->readStaticInfo();
     m_nvmlHandler->readStaticInfo();
 
@@ -48,12 +65,15 @@ void GpuInfoNVidia::readStaticInfo()
 
     m_staticInfo[Globals::SysInfoAttr::Key_Api_Functions_StatusSupport_Nvml] = QVariant::fromValue(m_nvmlHandler->functionsSupportStatus());
     m_staticInfo[Globals::SysInfoAttr::Key_Api_Functions_ErrorMessage_Nvml] = QVariant::fromValue(m_nvmlHandler->functionsStatusMessage());
+#endif
 }
 
 void GpuInfoNVidia::readDynamicInfo()
 {
     qDebug() << __FUNCTION__;
 
+
+#ifdef _WIN32
     m_nvapiHandler->readDynamicInfo();
     m_nvmlHandler->readDynamicInfo();
 
@@ -70,4 +90,5 @@ void GpuInfoNVidia::readDynamicInfo()
     m_dynamicInfo[Globals::SysInfoAttr::Key_Gpu_HotSpotTemperature] = m_nvapiHandler->gpuHotspotTemperature();
     m_dynamicInfo[Globals::SysInfoAttr::Key_Gpu_FanSpeed] = m_nvapiHandler->gpuFanSpeed();
     m_dynamicInfo[Globals::SysInfoAttr::Key_Gpu_FanSpeedUsage] = m_nvapiHandler->gpuFanSpeedUsage();
+#endif
 }
