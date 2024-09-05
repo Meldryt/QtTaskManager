@@ -24,6 +24,8 @@ find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets Charts Concurrent
 #  )
 #endif()
 
+add_subdirectory(external)
+
 set(PROJECT_SOURCES
     src/Globals.h
 
@@ -164,6 +166,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE
     external/AGS_SDK/ags_lib/inc
     external/nvapi
     external/nvml
+    external/pcm/src
 )
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
@@ -175,6 +178,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     Setupapi
     debug ${CMAKE_CURRENT_SOURCE_DIR}/external/AGS_SDK/ags_lib/lib/amd_ags_x64_2022_MDd.lib
     optimized ${CMAKE_CURRENT_SOURCE_DIR}/external/AGS_SDK/ags_lib/lib/amd_ags_x64_2022_MD.lib
+    pcm-lib
 )
 
 set_target_properties(${PROJECT_NAME} PROPERTIES

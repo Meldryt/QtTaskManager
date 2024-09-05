@@ -7,3 +7,6 @@
 [submodule "external/nvapi"]
 	path = external/nvapi
 	url = git@github.com:NVIDIA/nvapi.git
+[submodule "external/pcm"]
+	path = external/pcm
+	url = git@github.com:intel/pcm.git
