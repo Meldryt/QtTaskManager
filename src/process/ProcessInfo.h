@@ -43,7 +43,7 @@ public:
     ProcessInfo();
     ~ProcessInfo();
 
-    void setProcessorCount(uint8_t newProcessorCount);
+    void setCoreCount(uint16_t newProcessorCount);
     const std::map<uint32_t, Process> &getProcessMap() const;
 
     void update();
@@ -78,6 +78,6 @@ private:
 
     QElapsedTimer* m_elapsedTimer{nullptr};
 
-    uint8_t m_processorCount{0};
+    uint16_t m_cpuCoreCount{0};
 };
 

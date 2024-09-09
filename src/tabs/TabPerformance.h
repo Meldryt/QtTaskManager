@@ -97,7 +97,9 @@ private:
     QComboBox* m_cpuComboBoxActiveGraph{ nullptr };
     std::map<int, GraphInfo*> m_cpuGraphs;
     std::map<int, QString> m_cpuTableInfos;
-    
+    std::map<int, double> m_cpuDynamicMax;
+    std::map<int, double> m_gpuDynamicMax;
+
     const QStringList CpuGraphTitles
     {
         "CpuUsage",

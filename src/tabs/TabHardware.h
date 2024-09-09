@@ -33,15 +33,16 @@ private:
     const QStringList CpuParameterNames
     {
         "Cpu Brand",
+        "Socket",
+        "Core Count",
         "Thread Count",
-        "Processor Count",
+        "Base Frequency",
+        "Turbo Frequency",
         "L1Cache Size",
         "L2Cache Size",
         "L3Cache Size",
-        "Base Frequency",
-        "Turbo Frequency",
+        "Thermal Design Power",
     };
-    std::map<int, QString> m_cpuTableInfos;
 
     const QStringList GpuParameterNames
     {
@@ -56,6 +57,8 @@ private:
         "Graphics Driver Version",
         "Graphics Pnp Device Id",
     };
+
+    std::map<int, QString> m_cpuTableInfos;
     std::map<int, QString> m_gpuTableInfos;
 
     const QStringList MemoryParameterNames

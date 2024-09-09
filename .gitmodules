@@ -10,3 +10,9 @@
 [submodule "external/pcm"]
 	path = external/pcm
 	url = git@github.com:intel/pcm.git
+[submodule "external/drivers.gpu.control-library"]
+	path = external/drivers.gpu.control-library
+	url = https://github.com/intel/drivers.gpu.control-library.git
+[submodule "external/level-zero"]
+	path = external/level-zero
+	url = https://github.com/oneapi-src/level-zero.git

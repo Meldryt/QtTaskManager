@@ -13,6 +13,15 @@
 CpuInfoLinux::CpuInfoLinux()
 {
     qDebug() << __FUNCTION__;
+
+    for (uint8_t key = Globals::Key_Cpu_Static_Start + 1; key < Globals::Key_Cpu_Static_End; ++key)
+    {
+        m_staticInfo[key] = Globals::SysInfo_Uninitialized;
+    }
+    for (uint8_t key = Globals::Key_Cpu_Dynamic_Start + 1; key < Globals::Key_Cpu_Dynamic_End; ++key)
+    {
+        m_dynamicInfo[key] = Globals::SysInfo_Uninitialized;
+    }
 }
 
 CpuInfoLinux::~CpuInfoLinux()

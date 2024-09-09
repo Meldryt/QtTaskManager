@@ -8,8 +8,10 @@
 
 #include "../Globals.h"
 
-class GpuInfoNVidia;
+
 class GpuInfoAmd;
+class GpuInfoIntel;
+class GpuInfoNVidia;
 
 class GpuInfo
 {
@@ -17,8 +19,9 @@ public:
 
     enum GpuManufacturer
     {
-        NVIDIA = 0,
-        AMD,
+        AMD = 0,
+        INTEL,
+        NVIDIA ,
         UNKNOWN
     };
 
@@ -46,8 +49,9 @@ private:
     bool m_gpuDetected{false};
     GpuManufacturer m_gpuManufacturer{UNKNOWN};
 
-    GpuInfoNVidia* m_gpuInfoNVidia{ nullptr };
     GpuInfoAmd* m_gpuInfoAmd{ nullptr };
+    GpuInfoIntel* m_gpuInfoIntel{ nullptr };
+    GpuInfoNVidia* m_gpuInfoNVidia{ nullptr };
 
     QMap<uint8_t,QVariant> m_staticInfo;
     QMap<uint8_t,QVariant> m_dynamicInfo;

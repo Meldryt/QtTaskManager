@@ -130,28 +130,22 @@ void TabHardware::processDevices()
 
 void TabHardware::slotCpuStaticInfo(const QMap<uint8_t,QVariant>& staticInfo)
 {
-    m_cpuTableInfos[0] = staticInfo[Globals::SysInfoAttr::Key_Cpu_Brand].toString();
-    m_cpuTableInfos[1] = staticInfo[Globals::SysInfoAttr::Key_Cpu_ProcessorCount].toString();
-    m_cpuTableInfos[2] = staticInfo[Globals::SysInfoAttr::Key_Cpu_ThreadCount].toString();
-    m_cpuTableInfos[3] = staticInfo[Globals::SysInfoAttr::Key_Cpu_L1CacheSize].toString();
-    m_cpuTableInfos[4] = staticInfo[Globals::SysInfoAttr::Key_Cpu_L2CacheSize].toString();
-    m_cpuTableInfos[5] = staticInfo[Globals::SysInfoAttr::Key_Cpu_L3CacheSize].toString();
-    m_cpuTableInfos[6] = staticInfo[Globals::SysInfoAttr::Key_Cpu_BaseFrequency].toString();
-    m_cpuTableInfos[7] = staticInfo[Globals::SysInfoAttr::Key_Cpu_MaxTurboFrequency].toString();
+    uint8_t entryIdx = 0;
+    for (uint8_t key = Globals::Key_Cpu_Static_Start + 1; key < Globals::Key_Cpu_Static_End; ++key)
+    {
+        m_cpuTableInfos[entryIdx] = staticInfo[key].toString();
+        ++entryIdx;
+    }
 }
 
 void TabHardware::slotGpuStaticInfo(const QMap<uint8_t,QVariant>& staticInfo)
 {
-    m_gpuTableInfos[0] = staticInfo[Globals::SysInfoAttr::Key_Gpu_ChipDesigner].toString();
-    m_gpuTableInfos[1] = staticInfo[Globals::SysInfoAttr::Key_Gpu_CardManufacturer].toString();
-    m_gpuTableInfos[2] = staticInfo[Globals::SysInfoAttr::Key_Gpu_Model].toString();
-    m_gpuTableInfos[3] = staticInfo[Globals::SysInfoAttr::Key_Gpu_MemoryVendor].toString();
-    m_gpuTableInfos[4] = staticInfo[Globals::SysInfoAttr::Key_Gpu_MemorySize].toString();
-    m_gpuTableInfos[5] = staticInfo[Globals::SysInfoAttr::Key_Gpu_MemoryType].toString();
-    m_gpuTableInfos[6] = staticInfo[Globals::SysInfoAttr::Key_Gpu_MemoryBandwidth].toString();
-    m_gpuTableInfos[7] = staticInfo[Globals::SysInfoAttr::Key_Gpu_DriverInfo].toString();
-    m_gpuTableInfos[8] = staticInfo[Globals::SysInfoAttr::Key_Gpu_DriverVersion].toString();
-    m_gpuTableInfos[9] = staticInfo[Globals::SysInfoAttr::Key_Gpu_PnpString].toString();
+    uint8_t entryIdx = 0;
+    for (uint8_t key = Globals::Key_Gpu_Static_Start + 1; key < Globals::Key_Gpu_Static_End; ++key)
+    {
+        m_gpuTableInfos[entryIdx] = staticInfo[key].toString();
+        ++entryIdx;
+    }
 }
 
 void TabHardware::slotTotalPhysicalMemory(const uint32_t& val)

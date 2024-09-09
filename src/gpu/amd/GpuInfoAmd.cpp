@@ -12,6 +12,15 @@ GpuInfoAmd::GpuInfoAmd()
 
     m_adlxHandler = new AdlxHandler();
     m_agsHandler = new AgsHandler();
+
+    for (uint8_t key = Globals::Key_Gpu_Static_Start + 1; key < Globals::Key_Gpu_Static_End; ++key)
+    {
+        m_staticInfo[key] = Globals::SysInfo_Uninitialized;
+    }
+    //for (uint8_t key = Globals::Key_Gpu_Dynamic_Start + 1; key < Globals::Key_Gpu_Dynamic_End; ++key)
+    //{
+    //    m_dynamicInfo[key] = Globals::SysInfo_Uninitialized;
+    //}
 }
 
 GpuInfoAmd::~GpuInfoAmd()

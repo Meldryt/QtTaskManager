@@ -189,8 +189,8 @@ void TabPerformance::initCpuGraphs()
 
     m_cpuGraphs[index++] = new GraphInfo(QString("%"), 60, 100); //CpuUsage
     m_cpuGraphs[index++] = new GraphInfo(QString("MHz"), 60, 5000); //MaxFrequency
-    m_cpuGraphs[index++] = new GraphInfo(QString("W"), 60, 300); //CpuPower
-    m_cpuGraphs[index++] = new GraphInfo(QString("W"), 60, 300); //CpuSocPower
+    m_cpuGraphs[index++] = new GraphInfo(QString("W"), 60, 150); //CpuPower
+    m_cpuGraphs[index++] = new GraphInfo(QString("W"), 60, 150); //CpuSocPower
     m_cpuGraphs[index++] = new GraphInfo(QString("mV"), 60, 2000); //Voltage
     m_cpuGraphs[index++] = new GraphInfo(QString::fromLatin1("C"), 60, 150); //Temperature
     m_cpuGraphs[index++] = new GraphInfo(QString("RPM"), 60, 10000); //FanSpeed
@@ -201,6 +201,7 @@ void TabPerformance::initCpuGraphs()
 
     for (int i = 0; i < CpuGraphTitles.size(); ++i)
     {
+        m_cpuDynamicMax[i] = 0.0;
         m_cpuStackedWidget->addWidget(m_cpuGraphs[i]->chartView);
     }
 }
@@ -224,6 +225,7 @@ void TabPerformance::initGpuGraphs()
 
     for (int i = 0; i < GpuGraphTitles.size(); ++i)
     {
+        m_gpuDynamicMax[i] = 0.0;
         m_gpuStackedWidget->addWidget(m_gpuGraphs[i]->chartView);
     }
 }
@@ -457,14 +459,32 @@ void TabPerformance::slotCpuDynamicInfo(const QMap<uint8_t, QVariant>& dynamicIn
     {
         if (m_cpuGraphs[i]->values.size() == 1)
         {
+            if (m_cpuDynamicMax[i] < m_cpuGraphs[i]->values[0])
+            {
+                m_cpuDynamicMax[i] = m_cpuGraphs[i]->values[0];
+                m_cpuGraphs[i]->axisMax = std::ceil(m_cpuDynamicMax[i]);
+                m_cpuGraphs[i]->chart->axes(Qt::Vertical).back()->setMax(m_cpuGraphs[i]->axisMax);
+            }
             m_cpuTableInfos[i] = QString::number(m_cpuGraphs[i]->values[0], 'f', 2) + " " + m_cpuGraphs[i]->unit;
         }
         else
         {
             m_cpuTableInfos[i] = "";
+            const int oldAxisMax = m_cpuGraphs[i]->axisMax;
+
             for (int j = 0; j < m_cpuGraphs[i]->values.size(); ++j)
             {
+                if (m_cpuDynamicMax[i] < m_cpuGraphs[i]->values[j])
+                {
+                    m_cpuDynamicMax[i] = m_cpuGraphs[i]->values[j];
+                    m_cpuGraphs[i]->axisMax = std::ceil(m_cpuDynamicMax[i]);
+                }
                 m_cpuTableInfos[i] += QString::number(static_cast<int>(std::round(m_cpuGraphs[i]->values[j]))) + " | ";
+            }
+
+            if (m_cpuGraphs[i]->axisMax > oldAxisMax)
+            {
+                m_cpuGraphs[i]->chart->axes(Qt::Vertical).back()->setMax(m_cpuGraphs[i]->axisMax);
             }
         }  
     }
@@ -491,13 +511,32 @@ void TabPerformance::slotGpuDynamicInfo(const QMap<uint8_t, QVariant>& dynamicIn
     {
         if (m_gpuGraphs[i]->values.size() == 1)
         {
+            if (m_gpuDynamicMax[i] < m_gpuGraphs[i]->values[0])
+            {
+                m_gpuDynamicMax[i] = m_gpuGraphs[i]->values[0];
+                m_gpuGraphs[i]->axisMax = std::ceil(m_gpuDynamicMax[i]);
+                m_gpuGraphs[i]->chart->axes(Qt::Vertical).back()->setMax(m_gpuGraphs[i]->axisMax);
+            }
             m_gpuTableInfos[i] = QString::number(m_gpuGraphs[i]->values[0], 'f', 2) + " " + m_gpuGraphs[i]->unit;
         }
         else
         {
+            m_gpuTableInfos[i] = "";
+            const int oldAxisMax = m_gpuGraphs[i]->axisMax;
+
             for (int j = 0; j < m_gpuGraphs[i]->values.size(); ++j)
             {
+                if (m_gpuDynamicMax[i] < m_gpuGraphs[i]->values[j])
+                {
+                    m_gpuDynamicMax[i] = m_gpuGraphs[i]->values[j];
+                    m_gpuGraphs[i]->axisMax = std::ceil(m_gpuDynamicMax[i]);
+                }
                 m_gpuTableInfos[i] += QString::number(static_cast<int>(std::round(m_gpuGraphs[i]->values[j]))) + " | ";
+            }
+
+            if (m_gpuGraphs[i]->axisMax > oldAxisMax)
+            {
+                m_gpuGraphs[i]->chart->axes(Qt::Vertical).back()->setMax(m_gpuGraphs[i]->axisMax);
             }
         }
     }

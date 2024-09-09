@@ -6,6 +6,8 @@
 #include <QMap>
 #include <QVariant>
 
+class PcmHandler;
+
 class CpuInfoIntel
 {
 public:
@@ -23,5 +25,8 @@ private:
 
     QMap<uint8_t, QVariant> m_staticInfo;
     QMap<uint8_t, QVariant> m_dynamicInfo;
+
+    std::unique_ptr<PcmHandler> m_pcmHandler{ nullptr };
+
 };
 

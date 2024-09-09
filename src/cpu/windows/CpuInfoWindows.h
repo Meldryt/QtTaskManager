@@ -27,7 +27,8 @@ public:
 
     const std::string& cpuBrand() const { return m_cpuBrand; };
     
-    const uint8_t& cpuProcessorCount() const { return m_cpuProcessorCount; };
+    const uint16_t& cpuCoreCount() const { return m_cpuCoreCount; };
+    const uint16_t& cpuThreadCount() const { return m_cpuThreadCount; };
     const uint16_t& cpuBaseFrequency() const { return m_cpuBaseFrequency; };
     const uint32_t& cpuL1CacheSize() const { return m_cpuL1CacheSize; };
     const uint32_t& cpuL2CacheSize() const { return m_cpuL2CacheSize; };
@@ -60,8 +61,8 @@ private:
 #endif
 
     std::string m_cpuBrand{ "" };
-    uint8_t m_cpuProcessorCount{ 0 };
-    uint8_t m_cpuThreadCount{ 0 };
+    uint16_t m_cpuCoreCount{ 0 };
+    uint16_t m_cpuThreadCount{ 0 };
     uint32_t m_cpuBaseFrequency{ 0 };
     uint32_t m_cpuL1CacheSize{ 0 }; //size in KB
     uint32_t m_cpuL2CacheSize{ 0 }; //size in KB

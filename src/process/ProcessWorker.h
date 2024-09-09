@@ -18,7 +18,7 @@ public slots:
     virtual void stop() override;
     virtual void update() override;
 
-    void slotProcessorCount(uint8_t newProcessorCount);
+    void slotCoreCount(uint16_t newCoreCount);
 
 signals:
     void signalDynamicInfo(const std::map<uint32_t, ProcessInfo::Process>&);

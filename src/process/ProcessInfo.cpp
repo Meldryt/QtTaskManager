@@ -23,9 +23,9 @@ ProcessInfo::~ProcessInfo()
     qDebug() << __FUNCTION__;
 }
 
-void ProcessInfo::setProcessorCount(uint8_t newProcessorCount)
+void ProcessInfo::setCoreCount(uint16_t newCoreCount)
 {
-    m_processorCount = newProcessorCount;
+    m_cpuCoreCount = newCoreCount;
 }
 
 const std::map<uint32_t, ProcessInfo::Process> &ProcessInfo::getProcessMap() const
@@ -103,7 +103,7 @@ void ProcessInfo::updateProcessesUsage()
 
 void ProcessInfo::updateProcessUsage(const HANDLE& processHandle, Process& processInfo)
 {
-    if (m_processorCount == 0)
+    if (m_cpuCoreCount == 0)
     {
         return;
     }
@@ -122,7 +122,7 @@ void ProcessInfo::updateProcessUsage(const HANDLE& processHandle, Process& proce
     percent = (sys.QuadPart - processInfo.lastSysCpu.QuadPart) +
         (user.QuadPart - processInfo.lastUserCpu.QuadPart);
     percent /= (now.QuadPart - processInfo.lastCpu.QuadPart);
-    percent /= m_processorCount;
+    percent /= m_cpuCoreCount;
     processInfo.lastCpu = now;
     processInfo.lastUserCpu = user;
     processInfo.lastSysCpu = sys;

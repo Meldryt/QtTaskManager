@@ -6,6 +6,8 @@
 #include "memory/MemoryWorker.h"
 #include "windows/WmiWorker.h"
 
+#include "cpu/intel/PcmHandler.h"
+
 #include <QElapsedTimer>
 #include <QDebug>
 
@@ -138,11 +140,11 @@ void SystemManager::update()
 
         if (m_processWorker)
         {
-            QVariant variant = m_staticInfoCpu[Globals::Key_Cpu_ProcessorCount];
-            if (variant.canConvert<uint8_t>())
+            QVariant variant = m_staticInfoCpu[Globals::Key_Cpu_CoreCount];
+            if (variant.canConvert<uint16_t>())
             {
-                const uint8_t processorCount = variant.value<uint8_t>();
-                m_processWorker->slotProcessorCount(processorCount);
+                const uint16_t coreCount = variant.value<uint16_t>();
+                m_processWorker->slotCoreCount(coreCount);
             }
         }
         m_staticInfoCpuChanged = false;

@@ -39,6 +39,8 @@ set(PROJECT_SOURCES
     src/cpu/amd/CpuInfoAmd.cpp
     src/cpu/intel/CpuInfoIntel.h
     src/cpu/intel/CpuInfoIntel.cpp
+    src/cpu/intel/PcmHandler.h
+    src/cpu/intel/PcmHandler.cpp
     src/cpu/linux/CpuInfoLinux.h
     src/cpu/linux/CpuInfoLinux.cpp
     src/cpu/windows/CpuInfoWindows.h
@@ -55,6 +57,13 @@ set(PROJECT_SOURCES
     src/gpu/amd/AgsHandler.cpp
     src/gpu/amd/GpuInfoAmd.h
     src/gpu/amd/GpuInfoAmd.cpp
+    src/gpu/intel/GpuInfoIntel.h
+    src/gpu/intel/GpuInfoIntel.cpp
+    src/gpu/intel/IgclHandler.h
+    src/gpu/intel/IgclHandler.cpp
+    src/gpu/intel/GenericIGCLApp.h
+    src/gpu/intel/ZeroLevelHandler.h
+    src/gpu/intel/ZeroLevelHandler.cpp
     src/gpu/nvidia/GpuInfoNVidia.h
     src/gpu/nvidia/GpuInfoNVidia.cpp
     src/gpu/nvidia/NvapiHandler.h
@@ -114,6 +123,9 @@ set(PROJECT_SOURCES
     external/ADLX/SDK/ADLXHelper/Windows/Cpp/ADLXHelper.h
     external/ADLX/SDK/ADLXHelper/Windows/Cpp/ADLXHelper.cpp
     external/ADLX/SDK/platform/Windows/WinAPIs.cpp
+
+    #external/drivers.gpu.control-library/Source/GenericIGCLApp.h
+    external/drivers.gpu.control-library/Source/cApiWrapper.cpp
 )
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
@@ -167,6 +179,10 @@ target_include_directories(${PROJECT_NAME} PRIVATE
     external/nvapi
     external/nvml
     external/pcm/src
+    external/drivers.gpu.control-library/include/
+    #external/drivers.gpu.control-library/Samples/inc
+    #external/level-zero/include
+    #external/level-zero/samples/include
 )
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
@@ -179,6 +195,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     debug ${CMAKE_CURRENT_SOURCE_DIR}/external/AGS_SDK/ags_lib/lib/amd_ags_x64_2022_MDd.lib
     optimized ${CMAKE_CURRENT_SOURCE_DIR}/external/AGS_SDK/ags_lib/lib/amd_ags_x64_2022_MD.lib
     pcm-lib
+    #ze_loader
 )
 
 set_target_properties(${PROJECT_NAME} PROPERTIES

@@ -44,7 +44,7 @@ void ProcessWorker::update()
     }  
 }
 
-void ProcessWorker::slotProcessorCount(uint8_t newProcessorCount)
+void ProcessWorker::slotCoreCount(uint16_t newCoreCount)
 {
-    m_processInfo->setProcessorCount(newProcessorCount);
+    m_processInfo->setCoreCount(newCoreCount);
 }

@@ -179,7 +179,7 @@ void RyzenMasterSdkHandler::readStaticInfo()
         iRet = m_cpuDevice->GetCoreCount(coreCount);
         if (iRet == 0)
         {
-            m_cpuProcessorCount = coreCount;
+            m_cpuCoreCount = coreCount;
             m_functionsSupportStatus["ICPUEx::GetCoreCount"] = true;
             qDebug() << "CpuInfo::readStaticInfoRyzenMaster(): ICPUEx::GetCoreCount(): " << coreCount;
         }

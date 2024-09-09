@@ -48,7 +48,7 @@ void CpuWorker::update()
 
     elapsedTime = elapsedTimer.nsecsElapsed() / 1000000;
 
-    if (elapsedTime >= 10)
+    if (elapsedTime >= 5)
     {
         qDebug() << "CpuWorker::update(): " << elapsedTime << " ms";
     }
