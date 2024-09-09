@@ -36,7 +36,7 @@ void ProcessWorker::update()
 
     emit signalDynamicInfo(m_processInfo->getProcessMap());
 
-    elapsedTime = elapsedTimer.nsecsElapsed() * 0.000000001;
+    elapsedTime = elapsedTimer.nsecsElapsed() / 1000000;
 
     if(elapsedTime > 0)
     {

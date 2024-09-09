@@ -176,6 +176,20 @@ void SystemManager::update()
 
     if (m_processMapChanged)
     {
+        QVariant var = m_dynamicInfoWmi[Globals::SysInfoAttr::Key_Process_GpuUsages];
+        if (var.canConvert<QMap<uint32_t, QPair<uint8_t, uint64_t>>>())
+        {
+            QMap<uint32_t, QPair<uint8_t, uint64_t>> processGpuUsages = var.value<QMap<uint32_t, QPair<uint8_t, uint64_t>> >();
+            for (auto&& process : processGpuUsages.asKeyValueRange())
+            {
+                if (m_processMap.find(process.first) != m_processMap.end())
+                {
+                    m_processMap[process.first].usedGpuLoad = process.second.first;
+                    m_processMap[process.first].usedGpuMemory = process.second.second;
+                }
+            }
+        }
+        
         m_tabProcesses->slotProcesses(m_processMap);
         m_processMapChanged = false;
     }
@@ -238,10 +252,10 @@ void SystemManager::update()
     m_tabProcesses->process();
     m_tabPerformance->process();
 
-    elapsedTime = elapsedTimer.nsecsElapsed() * 0.000000001;
+    elapsedTime = elapsedTimer.nsecsElapsed() / 1000000;
 
     if(elapsedTime > 1)
     {
-        qDebug() << "SystemManager::update(): " << elapsedTime;        
+        qDebug() << __FUNCTION__ << elapsedTime;        
     }  
 }

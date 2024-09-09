@@ -1,6 +1,7 @@
 #include "WmiWorker.h"
 
 #include "WmiInfo.h"
+#include "DxHandler.h"
 
 #include <QElapsedTimer>
 #include <QDebug>
@@ -27,6 +28,10 @@ void WmiWorker::start()
     m_elapsedTimer->start();
 
     m_wmiInfo->init();
+
+    DxHandler* dxHandler = new DxHandler();
+    dxHandler->init();
+
     m_wmiInfo->readStaticInfo();
 
     emit signalStaticInfo(m_wmiInfo->staticInfo());

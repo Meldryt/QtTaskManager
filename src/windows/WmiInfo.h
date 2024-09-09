@@ -45,6 +45,7 @@ private:
     std::vector<std::string> query(const std::wstring& wmi_class, const std::wstring& field, const std::wstring& filter = L"", const ULONG count = 1);
     std::map<std::string, std::vector<std::string>> queryArray(const std::wstring& wmi_class, const std::vector<std::wstring>& fields, const std::wstring& filter = L"", const ULONG count = 1);
 
+    void readGpuUsage();
     void readCpuFrequency();
     void readCpuInfo();
     void readTemperature();
@@ -79,6 +80,9 @@ private:
     std::string m_gpuDriverInfo;
     std::string m_gpuDriverVersion;
     std::string m_gpuPnpString;
+
+    double m_gpuUsage{0.0};
+    QMap<uint32_t, QPair<uint8_t,uint64_t>> m_processGpuUsage;
 
     std::vector<std::string> m_networkNames;
     std::vector<uint32_t> m_networkBytesReceivedPerSec;

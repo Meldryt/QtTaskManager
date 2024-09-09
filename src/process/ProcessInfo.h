@@ -25,6 +25,9 @@ public:
         uint64_t usedVirtualMemory{0};
         double usedCpuLoad{0.0};
         double usedCpuLoadSum{0.0};
+        uint8_t usedGpuLoad{0}; // in percent
+        uint64_t usedGpuMemory{ 0 }; // in bytes
+        double usedGpuLoadSum{ 0.0 };
         uint8_t usedCpuLoadCounter{0};
 
 #ifdef _WIN32

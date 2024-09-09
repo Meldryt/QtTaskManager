@@ -100,6 +100,8 @@ set(PROJECT_SOURCES
     src/tabs/TabApiSupport.cpp
     src/tabs/TabApiSupport.h
 
+    src/windows/DxHandler.h
+    src/windows/DxHandler.cpp
     src/windows/WmiInfo.h
     src/windows/WmiInfo.cpp
     src/windows/WmiWorker.h
@@ -183,6 +185,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE
     #external/drivers.gpu.control-library/Samples/inc
     #external/level-zero/include
     #external/level-zero/samples/include
+    external/DirectX-Headers/include
 )
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
@@ -196,6 +199,8 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     optimized ${CMAKE_CURRENT_SOURCE_DIR}/external/AGS_SDK/ags_lib/lib/amd_ags_x64_2022_MD.lib
     pcm-lib
     #ze_loader
+    d3d12.lib
+    dxguid.lib
 )
 
 set_target_properties(${PROJECT_NAME} PROPERTIES

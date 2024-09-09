@@ -22,17 +22,36 @@ private:
     void sortFileNames();
     void sortMemoryUsage();
     void sortCpuUsage();
+    void sortGpuUsage();
+    void sortGpuMemoryUsed();
     void setSortMode(int headerIndex);
 
     enum class SortMode : uint8_t
     {
         SortProcessName = 0,
         SortFileName,
-        SortMemoryUsageHigh,
-        SortMemoryUsageLow,
+        SortPhysicalMemoryUsageHigh,
+        SortPhysicalMemoryUsageLow,
         SortCpuUsageHigh,
         SortCpuUsageLow,
+        SortGpuUsageHigh,
+        SortGpuUsageLow,
+        SortGpuMemoryUsedHigh,
+        SortGpuMemoryUsedLow,
         NoSort
+    };
+
+    enum class ColumnType : uint8_t
+    {
+        ProcessName = 0,
+        FileName,
+        FilePath,
+        MemoryUsage,
+        CpuUsage,
+        GpuUsage,
+        GpuMemoryUsed,
+        DiskUsage,
+        NetworkUsage
     };
 
     const QStringList TableHeaderNames
@@ -42,9 +61,10 @@ private:
         "FilePath",
         "Memory Usage",
         "Cpu Usage",
+        "Gpu Usage",
+        "Gpu Memory Used",
         "Disk Usage",
         "Network Usage",
-        "Gpu Usage",
     };
 
     QTableWidget* m_tableProcesses{nullptr};

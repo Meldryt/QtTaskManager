@@ -140,7 +140,7 @@ void TabPerformance::initGpuWidgets()
 void TabPerformance::initMemoryWidgets()
 {
     m_memoryLineSeries = new QLineSeries();
-    m_memoryLineSeries->setUseOpenGL(true);
+    m_memoryLineSeries->setUseOpenGL(false); //enable opengl leads to memory leak running GlWindow
 
     m_memoryChart = new QChart();
     m_memoryChart->legend()->hide();
@@ -163,7 +163,7 @@ void TabPerformance::initMemoryWidgets()
 void TabPerformance::initNetworkWidgets()
 {
     m_networkLineSeries = new QLineSeries();
-    m_networkLineSeries->setUseOpenGL(true);
+    m_networkLineSeries->setUseOpenGL(false);
 
     m_networkChart = new QChart();
     m_networkChart->legend()->hide();
@@ -432,7 +432,7 @@ void TabPerformance::updateCpuMultiGraphs(const QMap<uint8_t, QVariant>& dynamic
         for (int j = 0; j < m_cpuGraphs[graphIndex]->lineSeries.size(); ++j)
         {
             m_cpuGraphs[graphIndex]->lineSeries[j] = new QLineSeries();
-            m_cpuGraphs[graphIndex]->lineSeries[j]->setUseOpenGL(true);
+            m_cpuGraphs[graphIndex]->lineSeries[j]->setUseOpenGL(false);
             m_cpuGraphs[graphIndex]->chart->addSeries(m_cpuGraphs[graphIndex]->lineSeries[j]);
         }
         m_cpuGraphs[graphIndex]->chart->createDefaultAxes();

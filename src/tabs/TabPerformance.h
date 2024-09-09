@@ -72,7 +72,7 @@ private:
             if (!multiLines)
             {
                 this->lineSeries.push_back(new QLineSeries());
-                this->lineSeries.back()->setUseOpenGL(true);
+                this->lineSeries.back()->setUseOpenGL(false);
                 this->chart->addSeries(this->lineSeries.at(0));
                 this->chart->createDefaultAxes();
 

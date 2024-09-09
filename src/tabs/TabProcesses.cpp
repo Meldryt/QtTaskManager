@@ -72,15 +72,17 @@ void TabProcesses::updateTable()
             }
             newRow = true;
         }
-        if(newRow || m_tableProcesses->item(tableRow, 0)->text() != process.description.c_str())
+        if(newRow || m_tableProcesses->item(tableRow, static_cast<int>(ColumnType::ProcessName))->text() != process.description.c_str())
         {
-            m_tableProcesses->item(tableRow, 0)->setText(process.description.c_str());
-            m_tableProcesses->item(tableRow, 1)->setText(process.baseName.c_str());
-            m_tableProcesses->item(tableRow, 2)->setText(process.filePath.c_str());
+            m_tableProcesses->item(tableRow, static_cast<int>(ColumnType::ProcessName))->setText(process.description.c_str());
+            m_tableProcesses->item(tableRow, static_cast<int>(ColumnType::FileName))->setText(process.baseName.c_str());
+            m_tableProcesses->item(tableRow, static_cast<int>(ColumnType::FilePath))->setText(process.filePath.c_str());
         }
-        uint64_t usedPhysicalMemory = (process.usedPhysicalMemory)/(1024*1024);
-        m_tableProcesses->item(tableRow, 3)->setText(QString::number(usedPhysicalMemory) + " MB");
-        m_tableProcesses->item(tableRow, 4)->setText(QString::number(process.usedCpuLoad, 'f', 2) + " %");
+        m_tableProcesses->item(tableRow, static_cast<int>(ColumnType::MemoryUsage))->setText(QString::number(process.usedPhysicalMemory / (1024 * 1024), 'g', 6) + " MB");
+        m_tableProcesses->item(tableRow, static_cast<int>(ColumnType::CpuUsage))->setText(QString::number(process.usedCpuLoad, 'f', 2) + " %");
+        m_tableProcesses->item(tableRow, static_cast<int>(ColumnType::GpuUsage))->setText(QString::number(process.usedGpuLoad, 'g', 2) + " %");
+        m_tableProcesses->item(tableRow, static_cast<int>(ColumnType::GpuMemoryUsed))->setText(QString::number(process.usedGpuMemory / 1000, 'g', 9) + " KB");
+
         //uint64_t usedVirtualMemory = (process.usedVirtualMemory)/(1024*1024);
         //tableProcesses->setItem(tableRow, 4, new QTableWidgetItem(QString::number(usedVirtualMemory) + " MB"));
     }
@@ -138,6 +140,8 @@ void TabProcesses::slotProcesses(const std::map<uint32_t, ProcessInfo::Process>&
             it->usedPhysicalMemory = process->second.usedPhysicalMemory;
             it->usedVirtualMemory = process->second.usedVirtualMemory;
             it->usedCpuLoad = process->second.usedCpuLoad;
+            it->usedGpuLoad = process->second.usedGpuLoad;
+            it->usedGpuMemory = process->second.usedGpuMemory;
             it->timestamp = process->second.timestamp;
         }
 
@@ -171,13 +175,21 @@ void TabProcesses::sortTable()
     case SortMode::SortFileName:
         sortFileNames();
         break;
-    case SortMode::SortMemoryUsageHigh:
-    case SortMode::SortMemoryUsageLow:
+    case SortMode::SortPhysicalMemoryUsageHigh:
+    case SortMode::SortPhysicalMemoryUsageLow:
         sortMemoryUsage();
         break;
     case SortMode::SortCpuUsageHigh:
     case SortMode::SortCpuUsageLow:
         sortCpuUsage();
+        break;
+    case SortMode::SortGpuUsageHigh:
+    case SortMode::SortGpuUsageLow:
+        sortGpuUsage();
+        break;
+    case SortMode::SortGpuMemoryUsedHigh:
+    case SortMode::SortGpuMemoryUsedLow:
+        sortGpuMemoryUsed();
         break;
     default:
         break;
@@ -186,26 +198,26 @@ void TabProcesses::sortTable()
 
 void TabProcesses::setSortMode(int headerIndex)
 {
-    if(headerIndex == 0)
+    if(headerIndex == static_cast<int>(ColumnType::ProcessName))
     {
         m_sortMode = SortMode::SortProcessName;
     }
-    else if(headerIndex == 1)
+    else if(headerIndex == static_cast<int>(ColumnType::FileName))
     {
         m_sortMode = SortMode::SortFileName;
     }
-    else if(headerIndex == 3)
+    else if(headerIndex == static_cast<int>(ColumnType::MemoryUsage))
     {
-        if(m_sortMode == SortMode::SortMemoryUsageHigh)
+        if(m_sortMode == SortMode::SortPhysicalMemoryUsageHigh)
         {
-            m_sortMode = SortMode::SortMemoryUsageLow;
+            m_sortMode = SortMode::SortPhysicalMemoryUsageLow;
         }
         else
         {
-            m_sortMode = SortMode::SortMemoryUsageHigh;
+            m_sortMode = SortMode::SortPhysicalMemoryUsageHigh;
         }
     }
-    else if(headerIndex == 4)
+    else if(headerIndex == static_cast<int>(ColumnType::CpuUsage))
     {
         if(m_sortMode == SortMode::SortCpuUsageHigh)
         {
@@ -216,7 +228,28 @@ void TabProcesses::setSortMode(int headerIndex)
             m_sortMode = SortMode::SortCpuUsageHigh;
         }
     }
-
+    else if (headerIndex == static_cast<int>(ColumnType::GpuUsage))
+    {
+        if (m_sortMode == SortMode::SortGpuUsageHigh)
+        {
+            m_sortMode = SortMode::SortGpuUsageLow;
+        }
+        else
+        {
+            m_sortMode = SortMode::SortGpuUsageHigh;
+        }
+    }
+    else if (headerIndex == static_cast<int>(ColumnType::GpuMemoryUsed))
+    {
+        if (m_sortMode == SortMode::SortGpuMemoryUsedHigh)
+        {
+            m_sortMode = SortMode::SortGpuMemoryUsedLow;
+        }
+        else
+        {
+            m_sortMode = SortMode::SortGpuMemoryUsedHigh;
+        }
+    }
     sortTable();
 }
 
@@ -266,24 +299,44 @@ bool compareFileNames(const ProcessInfo::Process& first, const ProcessInfo::Proc
     return ( firstString.length() < secondString.length() );
 }
 
-bool compareMemoryHigher(const ProcessInfo::Process& first, const ProcessInfo::Process& second)
+bool compareMaxPhysicalMemory(const ProcessInfo::Process& first, const ProcessInfo::Process& second)
 {
     return first.usedPhysicalMemory > second.usedPhysicalMemory;
 }
 
-bool compareMemoryLower(const ProcessInfo::Process& first, const ProcessInfo::Process& second)
+bool compareMinPhysicalMemory(const ProcessInfo::Process& first, const ProcessInfo::Process& second)
 {
     return first.usedPhysicalMemory < second.usedPhysicalMemory;
 }
 
-bool compareCpuHigher(const ProcessInfo::Process& first, const ProcessInfo::Process& second)
+bool compareMaxCpuLoad(const ProcessInfo::Process& first, const ProcessInfo::Process& second)
 {
     return first.usedCpuLoad > second.usedCpuLoad;
 }
 
-bool compareCpuLower(const ProcessInfo::Process& first, const ProcessInfo::Process& second)
+bool compareMinCpuLoad(const ProcessInfo::Process& first, const ProcessInfo::Process& second)
 {
     return first.usedCpuLoad < second.usedCpuLoad;
+}
+
+bool compareMaxGpuLoad(const ProcessInfo::Process& first, const ProcessInfo::Process& second)
+{
+    return first.usedGpuLoad > second.usedGpuLoad;
+}
+
+bool compareMinGpuLoad(const ProcessInfo::Process& first, const ProcessInfo::Process& second)
+{
+    return first.usedGpuLoad < second.usedGpuLoad;
+}
+
+bool compareMaxGpuMemoryUsed(const ProcessInfo::Process& first, const ProcessInfo::Process& second)
+{
+    return first.usedGpuMemory > second.usedGpuMemory;
+}
+
+bool compareMinGpuMemoryUsed(const ProcessInfo::Process& first, const ProcessInfo::Process& second)
+{
+    return first.usedGpuMemory < second.usedGpuMemory;
 }
 
 void TabProcesses::sortNames()
@@ -298,13 +351,13 @@ void TabProcesses::sortFileNames()
 
 void TabProcesses::sortMemoryUsage()
 {
-    if(m_sortMode == SortMode::SortMemoryUsageHigh)
+    if(m_sortMode == SortMode::SortPhysicalMemoryUsageHigh)
     {
-        std::sort(m_processList.begin(),m_processList.end(),compareMemoryHigher);
+        std::sort(m_processList.begin(),m_processList.end(), compareMaxPhysicalMemory);
     }
-    else if(m_sortMode == SortMode::SortMemoryUsageLow)
+    else if(m_sortMode == SortMode::SortPhysicalMemoryUsageLow)
     {
-        std::sort(m_processList.begin(),m_processList.end(),compareMemoryLower);
+        std::sort(m_processList.begin(),m_processList.end(), compareMinPhysicalMemory);
     }
 }
 
@@ -312,10 +365,34 @@ void TabProcesses::sortCpuUsage()
 {
     if(m_sortMode == SortMode::SortCpuUsageHigh)
     {
-        std::sort(m_processList.begin(),m_processList.end(),compareCpuHigher);
+        std::sort(m_processList.begin(),m_processList.end(), compareMaxCpuLoad);
     }
     else if(m_sortMode == SortMode::SortCpuUsageLow)
     {
-        std::sort(m_processList.begin(),m_processList.end(),compareCpuLower);
+        std::sort(m_processList.begin(),m_processList.end(), compareMinCpuLoad);
+    }
+}
+
+void TabProcesses::sortGpuUsage()
+{
+    if (m_sortMode == SortMode::SortGpuUsageHigh)
+    {
+        std::sort(m_processList.begin(), m_processList.end(), compareMaxGpuLoad);
+    }
+    else if (m_sortMode == SortMode::SortGpuUsageLow)
+    {
+        std::sort(m_processList.begin(), m_processList.end(), compareMinGpuLoad);
+    }
+}
+
+void TabProcesses::sortGpuMemoryUsed()
+{
+    if (m_sortMode == SortMode::SortGpuMemoryUsedHigh)
+    {
+        std::sort(m_processList.begin(), m_processList.end(), compareMaxGpuMemoryUsed);
+    }
+    else if (m_sortMode == SortMode::SortGpuMemoryUsedLow)
+    {
+        std::sort(m_processList.begin(), m_processList.end(), compareMinGpuMemoryUsed);
     }
 }

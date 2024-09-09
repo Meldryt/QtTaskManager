@@ -112,6 +112,7 @@ void WmiInfo::update()
 {
     //if (m_readCpuParameters)
     {
+        readGpuUsage();
         readCpuFrequency();
         readTemperature();
         readFanSpeed();
@@ -129,8 +130,56 @@ void WmiInfo::update()
     m_dynamicInfo[Globals::SysInfoAttr::Key_Network_BytesSentPerSec] = QVariant::fromValue(m_networkBytesSentPerSec);
     m_dynamicInfo[Globals::SysInfoAttr::Key_Network_TotalBytesPerSec] = QVariant::fromValue(m_networkBytesTotalPerSec);
     m_dynamicInfo[Globals::SysInfoAttr::Key_Network_CurrentBandwidth] = QVariant::fromValue(m_networkCurrentBandwidth);
+
+    m_dynamicInfo[Globals::SysInfoAttr::Key_Process_GpuUsages] = QVariant::fromValue(m_processGpuUsage);
 }
 
+void WmiInfo::readGpuUsage()
+{
+    m_gpuUsage = 0.0f;
+
+    //auto gpuAdapterMemory = queryArray(L"Win32_PerfFormattedData_GPUPerformanceCounters_GPUAdapterMemory ", { L"Name",L"DedicatedUsage"});
+
+    auto gpuProcessMemory = queryArray(L"Win32_PerfFormattedData_GPUPerformanceCounters_GPUProcessMemory", { L"Name",L"DedicatedUsage"});
+    if (!gpuProcessMemory.empty() && !gpuProcessMemory["DedicatedUsage"].empty())
+    {
+        const std::string suffix = "pid_";
+        const std::string prefix = "_luid";
+
+        for (uint8_t i = 0; i < gpuProcessMemory["DedicatedUsage"].size(); ++i)
+        {
+            std::string pidStr = gpuProcessMemory["Name"][i];
+            const uint32_t startIdx = pidStr.find(suffix) + suffix.length();
+            const uint32_t count = pidStr.find(prefix) - startIdx;
+            pidStr = pidStr.substr(startIdx, count);
+            const uint32_t pid = std::stoi(pidStr);
+            const uint64_t dedicatedUsage = std::stoul(gpuProcessMemory["DedicatedUsage"][i]);
+            m_processGpuUsage[pid].second = dedicatedUsage;
+        }
+    }
+
+    auto gpuUsage = queryArray(L"Win32_PerfFormattedData_GPUPerformanceCounters_GPUEngine", { L"Name",L"UtilizationPercentage" }, L"(name LIKE '%engtype_3D' OR name LIKE '%engtype_Graphics%') AND UtilizationPercentage <> 0");
+    if (!gpuUsage.empty() &&  !gpuUsage["UtilizationPercentage"].empty())
+    {
+        const std::string suffix = "pid_";
+        const std::string prefix = "_luid";
+
+        for (uint8_t i = 0; i < gpuUsage["UtilizationPercentage"].size(); ++i)
+        {
+            std::string pidStr = gpuUsage["Name"][i];
+            const uint32_t startIdx = pidStr.find(suffix) + suffix.length();
+            const uint32_t count = pidStr.find(prefix) - startIdx;
+            pidStr = pidStr.substr(startIdx, count);
+            const uint32_t pid = std::stoi(pidStr);
+            const uint8_t utilizationPercentage = std::stoi(gpuUsage["UtilizationPercentage"][i]);
+            if (m_processGpuUsage.find(pid) != m_processGpuUsage.end())
+            {
+                m_gpuUsage += utilizationPercentage;
+                m_processGpuUsage[pid].first = utilizationPercentage;
+            }
+        }
+    }
+}
 /*
 * read CPU frequency.
 */
@@ -336,49 +385,17 @@ void WmiInfo::readGpuInfo()
     //PercentProcessorTime
     //PercentUserTime
 
-//#if defined(DEBUG) || defined(_DEBUG)
-//// Enable the D3D12 debug layer.
-//    {
-//        Microsoft::WRL::ComPtr<ID3D12Debug> debugController;
-//        CHECK_HR(D3D12GetDebugInterface(IID_PPV_ARGS(debugController.GetAddressOf())));
-//        debugController->EnableDebugLayer();
-//    }
-//#endif
-//
-//    // Create device
-//    // mD3dDevice is a ComPtr<ID3D12Device>
-//    // mDxgiFactory is a ComPtr<IDXGIFactory4>
-//    CHECK_HR(CreateDXGIFactory1(IID_PPV_ARGS(mDxgiFactory.GetAddressOf())));
-//    CHECK_HR(D3D12CreateDevice(nullptr, D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(mD3dDevice.GetAddressOf())));
-//
-//
-//    ComPtr<IDXGIFactory> dxgiFactory;
-//    if (FAILED(CreateDXGIFactory(IID_PPV_ARGS(&dxgiFactory)))) {
-//        std::wcerr << "Cannot create DXGI factory, exiting" << std::endl;
-//    }
-//
-//    UINT i = 0;
-//    IDXGIAdapter* adapter = nullptr;
-//    while (dxgiFactory->EnumAdapters(i, &adapter) != DXGI_ERROR_NOT_FOUND) {
-//        DXGI_ADAPTER_DESC desc;
-//        adapter->GetDesc(&desc);
-//        std::wcout << "DXGI Adapter:  " << desc.Description
-//            << " - LUID: " << desc.AdapterLuid << std::endl;
-//        adapter->Release();
-//        ++i;
-//    }
+    //auto gpuMemoryUsage = query(L"Win32_PerfFormattedData_PerfOS_Processor", L"PercentProcessorTime");
 
-    auto gpuMemoryUsage = query(L"Win32_PerfFormattedData_PerfOS_Processor", L"PercentProcessorTime");
+    //auto gpuUsage = queryArray(L"Win32_PerfFormattedData_GPUPerformanceCounters_GPUEngine", { L"Name",L"UtilizationPercentage" }, L"(name LIKE '%engtype_3D' OR name LIKE '%engtype_Graphics%') AND UtilizationPercentage <> 0");
+    //auto gpuUsageAll = queryArray(L"Win32_PerfFormattedData_GPUPerformanceCounters_GPUEngine", { L"Name",L"UtilizationPercentage" }, L"(name LIKE '%engtype_3D' OR name LIKE '%engtype_Graphics%')");
 
-    auto gpuUsage = queryArray(L"Win32_PerfFormattedData_GPUPerformanceCounters_GPUEngine", { L"Name",L"UtilizationPercentage" }, L"(name LIKE '%engtype_3D' OR name LIKE '%engtype_Graphics%') AND UtilizationPercentage <> 0");
-    auto gpuUsageAll = queryArray(L"Win32_PerfFormattedData_GPUPerformanceCounters_GPUEngine", { L"Name",L"UtilizationPercentage" }, L"(name LIKE '%engtype_3D' OR name LIKE '%engtype_Graphics%')");
+    //auto gpuUsageArray = queryArray(L"Win32_PerfFormattedData_GPUPerformanceCounters_GPUEngine", { L"Name",L"UtilizationPercentage" });
 
-    auto gpuUsageArray = queryArray(L"Win32_PerfFormattedData_GPUPerformanceCounters_GPUEngine", { L"Name",L"UtilizationPercentage" });
-
-    std::vector<std::wstring> gpuMemorySharedUsageFields = { L"Name",L"DedicatedUsage",L"SharedUsage" };
+    //std::vector<std::wstring> gpuMemorySharedUsageFields = { L"Name",L"DedicatedUsage",L"SharedUsage" };
 
     //auto gpuMemoryDedicatedUsage = queryArray(L"Win32_PerfFormattedData_GPUPerformanceCounters_GPUProcessMemory", L"DedicatedUsage");
-    auto gpuMemorySharedUsage = queryArray(L"Win32_PerfFormattedData_GPUPerformanceCounters_GPUProcessMemory", gpuMemorySharedUsageFields);
+    //auto gpuMemorySharedUsage = queryArray(L"Win32_PerfFormattedData_GPUPerformanceCounters_GPUProcessMemory", { L"Name",L"DedicatedUsage",L"SharedUsage" });
     //auto queryResult = query(L"Win32_VideoController", L"*");
 
     const std::vector<std::wstring> fields = { L"AdapterRAM",L"Availability",L"Caption",L"CreationClassName",L"CurrentRefreshRate",L"DeviceID",L"DriverDate",
@@ -405,7 +422,7 @@ void WmiInfo::readGpuInfo()
     }
 
     if (!fieldMap["AdapterRAM"].empty()) {
-        m_gpuMemorySize = std::stoi(fieldMap["AdapterRAM"][runningGpuIdx])/1000000;
+        m_gpuMemorySize = std::stoul(fieldMap["AdapterRAM"][runningGpuIdx])/1000000;
     }
 
     if (!fieldMap["Caption"].empty()) {

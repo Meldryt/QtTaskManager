@@ -102,6 +102,8 @@ public:
         Key_Api_Functions_ErrorMessage_Wmi,
         Key_Api_Functions_ErrorMessage_End,
 
+        Key_Process_GpuUsages,
+
         Key_End,
     };
 };

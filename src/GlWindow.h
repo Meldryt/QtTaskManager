@@ -13,7 +13,7 @@ class GlWindow : public QOpenGLWindow, protected QOpenGLFunctions
 {
     Q_OBJECT
 public:
-    GlWindow(QWidget *parent = nullptr);
+    GlWindow(QWindow *parent = nullptr);
     ~GlWindow();
 
 signals:
@@ -47,7 +47,6 @@ private:
         QOpenGLBuffer vbo;
         QOpenGLBuffer ibo;
         QOpenGLShaderProgram* program{ nullptr };
-        QOpenGLTexture* texture{ nullptr };
     };
 
     bool createProgram(const std::vector<float>& vertices, const std::vector<uint32_t>& indices, ProgramInfo& programInfo);
