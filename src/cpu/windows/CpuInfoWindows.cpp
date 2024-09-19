@@ -45,6 +45,15 @@ DWORD CountSetBits(ULONG_PTR bitMask)
 CpuInfoWindows::CpuInfoWindows()
 {
     qDebug() << __FUNCTION__;
+
+    for (uint8_t key = Globals::Key_Cpu_Static_Start + 1; key < Globals::Key_Cpu_Static_End; ++key)
+    {
+        m_staticInfo[key] = Globals::SysInfo_Uninitialized;
+    }
+    for (uint8_t key = Globals::Key_Cpu_Dynamic_Start + 1; key < Globals::Key_Cpu_Dynamic_End; ++key)
+    {
+        m_dynamicInfo[key] = Globals::SysInfo_Uninitialized;
+    }
 }
 
 CpuInfoWindows::~CpuInfoWindows()
@@ -86,10 +95,9 @@ void CpuInfoWindows::readStaticInfo()
 
     m_staticInfo[Globals::SysInfoAttr::Key_Cpu_Brand] = QString::fromStdString(m_cpuBrand);
     m_staticInfo[Globals::SysInfoAttr::Key_Cpu_Socket] = Globals::SysInfo_Uninitialized;
-    m_staticInfo[Globals::SysInfoAttr::Key_Cpu_ProcessorCount] = m_cpuProcessorCount;
+    m_staticInfo[Globals::SysInfoAttr::Key_Cpu_CoreCount] = m_cpuCoreCount;
     m_staticInfo[Globals::SysInfoAttr::Key_Cpu_ThreadCount] = m_cpuThreadCount;
     m_staticInfo[Globals::SysInfoAttr::Key_Cpu_BaseFrequency] = m_cpuBaseFrequency;
-    m_staticInfo[Globals::SysInfoAttr::Key_Cpu_MaxTurboFrequency] = Globals::SysInfo_Uninitialized;
     m_staticInfo[Globals::SysInfoAttr::Key_Cpu_L1CacheSize] = m_cpuL1CacheSize;
     m_staticInfo[Globals::SysInfoAttr::Key_Cpu_L2CacheSize] = m_cpuL2CacheSize;
     m_staticInfo[Globals::SysInfoAttr::Key_Cpu_L3CacheSize] = m_cpuL3CacheSize;
@@ -102,15 +110,7 @@ void CpuInfoWindows::readDynamicInfo()
 
     m_dynamicInfo[Globals::SysInfoAttr::Key_Cpu_TotalUsage] = m_cpuTotalUsage;
     m_dynamicInfo[Globals::SysInfoAttr::Key_Cpu_CoreUsages] = QVariant::fromValue(m_cpuCoreUsages);
-    m_dynamicInfo[Globals::SysInfoAttr::Key_Cpu_CoreFrequencies] = Globals::SysInfo_Uninitialized;
     m_dynamicInfo[Globals::SysInfoAttr::Key_Cpu_CurrentMaxFrequency] = m_cpuCurrentMaxFrequency;
-    m_dynamicInfo[Globals::SysInfoAttr::Key_Cpu_ThreadFrequencies] = Globals::SysInfo_Uninitialized;
-    m_dynamicInfo[Globals::SysInfoAttr::Key_Cpu_ThreadUsages] = Globals::SysInfo_Uninitialized;
-    m_dynamicInfo[Globals::SysInfoAttr::Key_Cpu_CoreVoltage] = Globals::SysInfo_Uninitialized;
-    m_dynamicInfo[Globals::SysInfoAttr::Key_Cpu_Power] = Globals::SysInfo_Uninitialized;
-    m_dynamicInfo[Globals::SysInfoAttr::Key_Cpu_SocPower] = Globals::SysInfo_Uninitialized;
-    m_dynamicInfo[Globals::SysInfoAttr::Key_Cpu_Temperature] = Globals::SysInfo_Uninitialized;
-    m_dynamicInfo[Globals::SysInfoAttr::Key_Cpu_Fanspeed] = Globals::SysInfo_Uninitialized;
 }
 
 void CpuInfoWindows::readCpuIdBrand()
@@ -227,7 +227,7 @@ void CpuInfoWindows::readLogicalProcessorInfo()
         }
     }
 
-    m_cpuProcessorCount = processorCoreCount;
+    m_cpuCoreCount = processorCoreCount;
     m_cpuThreadCount = logicalProcessorCount;
     m_cpuL1CacheSize = processorL1CacheSize/1024;
     m_cpuL2CacheSize = processorL2CacheSize/1024;
@@ -247,7 +247,7 @@ void CpuInfoWindows::initPdh()
     PdhAddEnglishCounter(m_pdhTotalCpuQuery, sw, 0, &m_pdhTotalCpuCounter);
     PdhCollectQueryData(m_pdhTotalCpuQuery);
 
-    for (uint8_t i = 0; i < m_cpuProcessorCount; ++i)
+    for (uint8_t i = 0; i < m_cpuCoreCount; ++i)
     {
         PDH_HQUERY singleCpuQuery;
         PDH_HCOUNTER singleCpuCounter;
@@ -264,7 +264,7 @@ void CpuInfoWindows::initPdh()
         m_pdhSingleCpuCounters.push_back(singleCpuCounter);
     }
 
-    m_cpuCoreUsages.resize(m_cpuProcessorCount);
+    m_cpuCoreUsages.resize(m_cpuCoreCount);
 
     if (PdhOpenQueryW(nullptr, 0, &m_pdhCpuQueryFreq) == ERROR_SUCCESS)
     {
@@ -319,7 +319,7 @@ void CpuInfoWindows::readPdhCoreUsage()
     PdhGetFormattedCounterValue(m_pdhTotalCpuCounter, PDH_FMT_DOUBLE, NULL, &counterVal);
     m_cpuTotalUsage = counterVal.doubleValue;
 
-    for(uint8_t i=0;i< m_cpuProcessorCount;++i)
+    for(uint8_t i=0;i< m_cpuCoreCount;++i)
     {
         PdhCollectQueryData(m_pdhSingleCpuQueries[i]);
         PdhGetFormattedCounterValue(m_pdhSingleCpuCounters[i], PDH_FMT_DOUBLE, NULL, &counterVal);

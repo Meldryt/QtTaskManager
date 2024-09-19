@@ -2,9 +2,11 @@
 
 #include "../Worker.h"
 
-#include "ProcessInfo.h"
+#include <QElapsedTimer>
 
 #include <map>
+
+#include "ProcessInfo.h"
 
 class ProcessWorker : public Worker
 {
@@ -18,12 +20,14 @@ public slots:
     virtual void stop() override;
     virtual void update() override;
 
-    void slotProcessorCount(uint8_t newProcessorCount);
+    void slotCoreCount(uint16_t newCoreCount);
 
 signals:
     void signalDynamicInfo(const std::map<uint32_t, ProcessInfo::Process>&);
 
 private:
     std::unique_ptr<ProcessInfo> m_processInfo{nullptr};
+
+    QElapsedTimer* m_elapsedTimer{ nullptr };
 };
 

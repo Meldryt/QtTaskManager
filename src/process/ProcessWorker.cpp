@@ -1,7 +1,6 @@
 #include "ProcessWorker.h"
 
 #include <QDebug>
-#include <QElapsedTimer>
 
 ProcessWorker::ProcessWorker(int timerInterval, QObject* parent)
     : Worker{ timerInterval, parent}
@@ -9,6 +8,8 @@ ProcessWorker::ProcessWorker(int timerInterval, QObject* parent)
     qDebug() << __FUNCTION__;
 
     m_processInfo = std::make_unique<ProcessInfo>();
+
+    m_elapsedTimer = new QElapsedTimer();
 }
 
 ProcessWorker::~ProcessWorker()
@@ -19,6 +20,10 @@ ProcessWorker::~ProcessWorker()
 void ProcessWorker::start()
 {   
     Worker::start();
+
+    m_processInfo->init();
+
+    //emit signalStaticInfo(m_processInfo->staticInfo());
 }
 
 void ProcessWorker::stop()
@@ -27,24 +32,23 @@ void ProcessWorker::stop()
 }
 
 void ProcessWorker::update()
-{ 
-    QElapsedTimer elapsedTimer;
+{
     qint64 elapsedTime;
-    elapsedTimer.start();
+    m_elapsedTimer->start();
 
     m_processInfo->update();
 
-    emit signalDynamicInfo(m_processInfo->getProcessMap());
+    emit signalDynamicInfo(m_processInfo->processMap());
 
-    elapsedTime = elapsedTimer.nsecsElapsed() * 0.000000001;
+    elapsedTime = m_elapsedTimer->nsecsElapsed() / 1000000;
 
-    if(elapsedTime > 0)
+    if (elapsedTime >= 5)
     {
-        qDebug() << "ProcessWorker::update(): " << elapsedTime;        
-    }  
+        qDebug() << __FUNCTION__ << elapsedTime << " ms";
+    }
 }
 
-void ProcessWorker::slotProcessorCount(uint8_t newProcessorCount)
+void ProcessWorker::slotCoreCount(uint16_t newCoreCount)
 {
-    m_processInfo->setProcessorCount(newProcessorCount);
+    m_processInfo->setCoreCount(newCoreCount);
 }

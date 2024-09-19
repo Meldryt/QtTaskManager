@@ -41,14 +41,11 @@ private:
     void checkSupportedFunctions();
 
     bool executeQuery(const std::wstring& query);
-    //bool executeQueryAsync(const std::wstring& query);
 
     std::vector<std::string> query(const std::wstring& wmi_class, const std::wstring& field, const std::wstring& filter = L"", const ULONG count = 1);
     std::map<std::string, std::vector<std::string>> queryArray(const std::wstring& wmi_class, const std::vector<std::wstring>& fields, const std::wstring& filter = L"", const ULONG count = 1);
-    //void queryAsync(const std::wstring& wmi_class, const std::wstring& field, const std::wstring& filter = L"", const ULONG count = 1);
 
-    //QuerySink* m_sink;
-
+    void readGpuUsage();
     void readCpuFrequency();
     void readCpuInfo();
     void readTemperature();
@@ -68,8 +65,8 @@ private:
     QMap<uint8_t, QVariant> m_dynamicInfo;
 
     std::string m_cpuBrand{ "" };
-    uint8_t m_cpuProcessorCount{ 0 };
-    uint8_t m_cpuThreadCount{ 0 };
+    uint16_t m_cpuCoreCount{ 0 };
+    uint16_t m_cpuThreadCount{ 0 };
     uint32_t m_cpuBaseFrequency{ 0 };
     uint32_t m_cpuMaxTurboFrequency{ 0 };
 
@@ -77,7 +74,15 @@ private:
     std::vector<double> m_cpuThreadFrequencies;
     std::vector<double> m_cpuThreadUsages;
 
+    std::string m_gpuModel;
+    uint16_t m_gpuMemorySize;
+    std::string m_gpuDriverDate;
+    std::string m_gpuDriverInfo;
+    std::string m_gpuDriverVersion;
     std::string m_gpuPnpString;
+
+    double m_gpuUsage{0.0};
+    QMap<uint32_t, QPair<uint8_t,uint64_t>> m_processGpuUsage;
 
     std::vector<std::string> m_networkNames;
     std::vector<uint32_t> m_networkBytesReceivedPerSec;

@@ -6,123 +6,10 @@
 #pragma comment(lib, "wbemuuid.lib")
 
 #include <qDebug>
+
+#include <D3d12.h>
+#include <D3d9.h>
 //#include <Wbemidl.h>
-
-//@todo: implement async calls
-// 
-// class QuerySink : public IWbemObjectSink
-// {
-//     LONG m_lRef;
-//     bool bDone;
-//     CRITICAL_SECTION threadLock; // for thread safety
-
-//     IEnumWbemClassObject* enumerator;
-
-// public:
-//     QuerySink(IEnumWbemClassObject* e) {
-//         enumerator = e;
-//         m_lRef = 0;
-//         bDone = false;
-//         InitializeCriticalSection(&threadLock);
-//     }
-
-//     ~QuerySink() {
-//         bDone = true;
-//         DeleteCriticalSection(&threadLock);
-//     }
-
-//     virtual ULONG STDMETHODCALLTYPE AddRef()
-//     {
-//         return InterlockedIncrement(&m_lRef);
-//     }
-
-//     virtual ULONG STDMETHODCALLTYPE Release()
-//     {
-//         LONG lRef = InterlockedDecrement(&m_lRef);
-//         if (lRef == 0) { delete this; }
-//         return lRef;
-//     }
-
-//     virtual HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid, void** ppv)
-//     {
-//         if (riid == IID_IUnknown || riid == IID_IWbemObjectSink) {
-//             *ppv = (IWbemObjectSink*)this;
-//             AddRef();
-//             return WBEM_S_NO_ERROR;
-//         }
-//         else return E_NOINTERFACE;
-//     }
-
-//     virtual HRESULT STDMETHODCALLTYPE Indicate(LONG lObjectCount, IWbemClassObject** apObjArray)
-//     {
-//         HRESULT hres = S_OK;
-//         std::cout << "Indicate called with " << lObjectCount << " results" << std::endl;
-
-//         for (int i = 0; i < lObjectCount; i++) {
-//             VARIANT vt_prop;
-//             _bstr_t field = L"PercentProcessorPerformance";
-//             hres = apObjArray[i]->Get(field,
-//                 0, &vt_prop, 0, 0);
-//             if (!FAILED(hres))
-//             {
-//                 if (vt_prop.vt == VT_BSTR)
-//                 {
-//                     //result.push_back(wstring_to_std_string(vt_prop.bstrVal));
-//                     //assert(bs != nullptr);
-//                     //std::wstring ws(vt_prop.bstrVal, SysStringLen(vt_prop.bstrVal));
-//                     char* text = _com_util::ConvertBSTRToString(vt_prop.bstrVal);
-//                     std::string str = text;
-//                     qDebug() << text;
-//                 }
-//                 else if (vt_prop.vt == VT_I4)
-//                 {
-//                     std::string str = std::to_string(vt_prop.uintVal);
-//                 }
-//                 else
-//                 {
-//                     std::string str = std::to_string(vt_prop.ullVal);
-//                 }
-//                 VariantClear(&vt_prop);
-//             }
-//  /*           if (FAILED(hres)) {
-//                 std::cout << "Failed to get the data from the query" << " Error code = 0x" << std::hex << hres << std::endl; return WBEM_E_FAILED;
-//             }*/
-
-//             printf("Name: %ls\n", V_BSTR(&vt_prop));
-//         }
-
-//         return WBEM_S_NO_ERROR;
-//     }
-
-//     virtual HRESULT STDMETHODCALLTYPE SetStatus(LONG lFlags, HRESULT hResult, BSTR strParam, IWbemClassObject __RPC_FAR* pObjParam)
-//     {
-//         if (lFlags == WBEM_STATUS_COMPLETE) {
-//             printf("Call complete.\n");
-
-//             EnterCriticalSection(&threadLock);
-//             bDone = true;
-//             LeaveCriticalSection(&threadLock);
-//         }
-//         else if (lFlags == WBEM_STATUS_PROGRESS) {
-//             printf("Call in progress.\n");
-//         }
-
-//         return WBEM_S_NO_ERROR;
-//     }
-
-//     bool IsDone()
-//     {
-//         bool done = true;
-
-//         EnterCriticalSection(&threadLock);
-//         done = bDone;
-//         LeaveCriticalSection(&threadLock);
-
-//         return done;
-//     }    // end of QuerySink.cpp
-// };
-
-//QuerySink* m_sink;
 
 WmiInfo::WmiInfo()
 {
@@ -131,7 +18,6 @@ WmiInfo::WmiInfo()
 #ifdef HAS_RYZEN_MASTER_SDK
     m_readCpuParameters = false;
 #endif
-    //m_sink = new QuerySink(enumerator);
 }
 
 WmiInfo::~WmiInfo()
@@ -211,7 +97,7 @@ void WmiInfo::readStaticInfo()
     readGpuInfo();
 
     m_staticInfo[Globals::SysInfoAttr::Key_Cpu_Brand] = QString::fromStdString(m_cpuBrand);
-    m_staticInfo[Globals::SysInfoAttr::Key_Cpu_ProcessorCount] = m_cpuProcessorCount;
+    m_staticInfo[Globals::SysInfoAttr::Key_Cpu_CoreCount] = m_cpuCoreCount;
     m_staticInfo[Globals::SysInfoAttr::Key_Cpu_ThreadCount] = m_cpuThreadCount;
     m_staticInfo[Globals::SysInfoAttr::Key_Cpu_BaseFrequency] = m_cpuBaseFrequency;
     m_staticInfo[Globals::SysInfoAttr::Key_Cpu_MaxTurboFrequency] = m_cpuMaxTurboFrequency;
@@ -226,6 +112,7 @@ void WmiInfo::update()
 {
     //if (m_readCpuParameters)
     {
+        readGpuUsage();
         readCpuFrequency();
         readTemperature();
         readFanSpeed();
@@ -243,8 +130,56 @@ void WmiInfo::update()
     m_dynamicInfo[Globals::SysInfoAttr::Key_Network_BytesSentPerSec] = QVariant::fromValue(m_networkBytesSentPerSec);
     m_dynamicInfo[Globals::SysInfoAttr::Key_Network_TotalBytesPerSec] = QVariant::fromValue(m_networkBytesTotalPerSec);
     m_dynamicInfo[Globals::SysInfoAttr::Key_Network_CurrentBandwidth] = QVariant::fromValue(m_networkCurrentBandwidth);
+
+    m_dynamicInfo[Globals::SysInfoAttr::Key_Process_GpuUsages] = QVariant::fromValue(m_processGpuUsage);
 }
 
+void WmiInfo::readGpuUsage()
+{
+    m_gpuUsage = 0.0f;
+
+    //auto gpuAdapterMemory = queryArray(L"Win32_PerfFormattedData_GPUPerformanceCounters_GPUAdapterMemory ", { L"Name",L"DedicatedUsage"});
+
+    auto gpuProcessMemory = queryArray(L"Win32_PerfFormattedData_GPUPerformanceCounters_GPUProcessMemory", { L"Name",L"DedicatedUsage"});
+    if (!gpuProcessMemory.empty() && !gpuProcessMemory["DedicatedUsage"].empty())
+    {
+        const std::string suffix = "pid_";
+        const std::string prefix = "_luid";
+
+        for (uint8_t i = 0; i < gpuProcessMemory["DedicatedUsage"].size(); ++i)
+        {
+            std::string pidStr = gpuProcessMemory["Name"][i];
+            const uint32_t startIdx = pidStr.find(suffix) + suffix.length();
+            const uint32_t count = pidStr.find(prefix) - startIdx;
+            pidStr = pidStr.substr(startIdx, count);
+            const uint32_t pid = std::stoi(pidStr);
+            const uint64_t dedicatedUsage = std::stoul(gpuProcessMemory["DedicatedUsage"][i]);
+            m_processGpuUsage[pid].second = dedicatedUsage;
+        }
+    }
+
+    auto gpuUsage = queryArray(L"Win32_PerfFormattedData_GPUPerformanceCounters_GPUEngine", { L"Name",L"UtilizationPercentage" }, L"(name LIKE '%engtype_3D' OR name LIKE '%engtype_Graphics%') AND UtilizationPercentage <> 0");
+    if (!gpuUsage.empty() &&  !gpuUsage["UtilizationPercentage"].empty())
+    {
+        const std::string suffix = "pid_";
+        const std::string prefix = "_luid";
+
+        for (uint8_t i = 0; i < gpuUsage["UtilizationPercentage"].size(); ++i)
+        {
+            std::string pidStr = gpuUsage["Name"][i];
+            const uint32_t startIdx = pidStr.find(suffix) + suffix.length();
+            const uint32_t count = pidStr.find(prefix) - startIdx;
+            pidStr = pidStr.substr(startIdx, count);
+            const uint32_t pid = std::stoi(pidStr);
+            const uint8_t utilizationPercentage = std::stoi(gpuUsage["UtilizationPercentage"][i]);
+            if (m_processGpuUsage.find(pid) != m_processGpuUsage.end())
+            {
+                m_gpuUsage += utilizationPercentage;
+                m_processGpuUsage[pid].first = utilizationPercentage;
+            }
+        }
+    }
+}
 /*
 * read CPU frequency.
 */
@@ -316,7 +251,7 @@ void WmiInfo::readCpuInfo()
     }
 
     if (!fieldMap["NumberOfCores"].empty()) {
-        m_cpuProcessorCount = std::stoi(fieldMap["NumberOfCores"][0]);
+        m_cpuCoreCount = std::stoi(fieldMap["NumberOfCores"][0]);
     }
 
     if (!fieldMap["NumberOfLogicalProcessors"].empty()) {
@@ -388,11 +323,122 @@ void WmiInfo::readGpuInfo()
         return;
     }
 
-    const std::vector<std::wstring> fields = { L"PNPDeviceID",L"DriverVersion",L"DriverDate",L"PowerManagementSupported",L"MaxRefreshRate" };
+    //Win32_PerfFormattedData_GPUPerformanceCounters_GPUAdapterMemory
+    //    Caption,
+    //    Description,
+    //    Name,
+    //    Frequency_Object,
+    //    Frequency_PerfTime,
+    //    Frequency_Sys100NS,
+    //    Timestamp_Object,
+    //    Timestamp_PerfTime,
+    //    Timestamp_Sys100NS,
+    //    DedicatedUsage,
+    //    SharedUsage,
+    //    TotalCommitted
+    //}
+
+    //Win32_PerfFormattedData_GPUPerformanceCounters_GPUEngine
+    //    Caption,
+    //    Description,
+    //    Name,
+    //    Frequency_Object,
+    //    Frequency_PerfTime,
+    //    Frequency_Sys100NS,
+    //    Timestamp_Object,
+    //    Timestamp_PerfTime,
+    //    Timestamp_Sys100NS,
+    //    RunningTime,
+    //    UtilizationPercentage
+    //}
+
+    //Win32_PerfFormattedData_GPUPerformanceCounters_GPUProcessMemory
+    //Caption,
+    //Description,
+    //Name,
+    //Frequency_Object,
+    //Frequency_PerfTime,
+    //Frequency_Sys100NS,
+    //Timestamp_Object,
+    //Timestamp_PerfTime,
+    //Timestamp_Sys100NS,
+    //DedicatedUsage,
+    //LocalUsage,
+    //NonLocalUsage,
+    //SharedUsage,
+    //TotalCommitted
+
+    //Win32_PerfFormattedData_PerfOS_Processor
+    //C1TransitionsPersec
+    //C2TransitionsPersec
+    //C3TransitionsPersec
+    //DPCRate
+    //DPCsQueuedPersec
+    //InterruptsPersec
+    //PercentC1Time
+    //PercentC2Time
+    //PercentC3Time
+    //PercentDPCTime
+    //PercentIdleTime
+    //PercentInterruptTime
+    //PercentPrivilegedTime
+    //PercentProcessorTime
+    //PercentUserTime
+
+    //auto gpuMemoryUsage = query(L"Win32_PerfFormattedData_PerfOS_Processor", L"PercentProcessorTime");
+
+    //auto gpuUsage = queryArray(L"Win32_PerfFormattedData_GPUPerformanceCounters_GPUEngine", { L"Name",L"UtilizationPercentage" }, L"(name LIKE '%engtype_3D' OR name LIKE '%engtype_Graphics%') AND UtilizationPercentage <> 0");
+    //auto gpuUsageAll = queryArray(L"Win32_PerfFormattedData_GPUPerformanceCounters_GPUEngine", { L"Name",L"UtilizationPercentage" }, L"(name LIKE '%engtype_3D' OR name LIKE '%engtype_Graphics%')");
+
+    //auto gpuUsageArray = queryArray(L"Win32_PerfFormattedData_GPUPerformanceCounters_GPUEngine", { L"Name",L"UtilizationPercentage" });
+
+    //std::vector<std::wstring> gpuMemorySharedUsageFields = { L"Name",L"DedicatedUsage",L"SharedUsage" };
+
+    //auto gpuMemoryDedicatedUsage = queryArray(L"Win32_PerfFormattedData_GPUPerformanceCounters_GPUProcessMemory", L"DedicatedUsage");
+    //auto gpuMemorySharedUsage = queryArray(L"Win32_PerfFormattedData_GPUPerformanceCounters_GPUProcessMemory", { L"Name",L"DedicatedUsage",L"SharedUsage" });
+    //auto queryResult = query(L"Win32_VideoController", L"*");
+
+    const std::vector<std::wstring> fields = { L"AdapterRAM",L"Availability",L"Caption",L"CreationClassName",L"CurrentRefreshRate",L"DeviceID",L"DriverDate",
+        L"DriverVersion",L"MaxRefreshRate",L"MinRefreshRate",L"PNPDeviceID",L"PowerManagementSupported",L"Status",L"StatusInfo",L"SystemCreationClassName",L"SystemName",L"VideoMemoryType"};
     std::map<std::string, std::vector<std::string>> fieldMap = queryArray(L"Win32_VideoController", fields);
 
+    uint8_t runningGpuIdx = -1;
+
+    if (!fieldMap["Availability"].empty()) {
+        for (uint8_t i = 0; i < fieldMap["Availability"].size(); ++i)
+        {
+            //3==running/fullpower, 8==offline...
+            if (fieldMap["Availability"].at(i) == "3")
+            {
+                runningGpuIdx = i;
+                break;
+            }
+        }
+    }
+
+    if (runningGpuIdx == -1)
+    {
+        return;
+    }
+
+    if (!fieldMap["AdapterRAM"].empty()) {
+        m_gpuMemorySize = std::stoul(fieldMap["AdapterRAM"][runningGpuIdx])/1000000;
+    }
+
+    if (!fieldMap["Caption"].empty()) {
+        m_gpuModel = fieldMap["Caption"][runningGpuIdx];
+    }
+
+    if (!fieldMap["DriverDate"].empty()) {
+        m_gpuDriverDate = fieldMap["DriverDate"][runningGpuIdx];
+    }
+
+    if (!fieldMap["DriverVersion"].empty()) {
+        m_gpuDriverVersion = fieldMap["DriverVersion"][runningGpuIdx];
+    }
+
     if (!fieldMap["PNPDeviceID"].empty()) {
-        m_gpuPnpString = fieldMap["PNPDeviceID"][0];
+        m_gpuPnpString = fieldMap["PNPDeviceID"][runningGpuIdx];
     }
 }
 
@@ -467,43 +513,6 @@ bool WmiInfo::executeQuery(const std::wstring& query) {
         WBEM_FLAG_FORWARD_ONLY | WBEM_FLAG_RETURN_IMMEDIATELY, nullptr, &m_enumerator));
 }
 
-//bool WmiInfo::executeQueryAsync(const std::wstring& query) {
-//    if (service == nullptr || m_sink == nullptr) return false;
-//    return SUCCEEDED(service->ExecQueryAsync(bstr_t(L"WQL"), bstr_t(std::wstring(query.begin(), query.end()).c_str()),
-//        WBEM_FLAG_FORWARD_ONLY | WBEM_FLAG_RETURN_IMMEDIATELY, nullptr, sink));
-//}
-
-//inline std::string wstring_to_std_string(const std::wstring& ws) {
-//    std::string str_locale = setlocale(LC_ALL, "");
-//    const wchar_t* wch_src = ws.c_str();
-//
-//#ifdef _MSC_VER
-//    size_t n_dest_size;
-//    wcstombs_s(&n_dest_size, nullptr, 0, wch_src, 0);
-//    n_dest_size++;  // Increase by one for null terminator
-//
-//    char* ch_dest = new char[n_dest_size];
-//    memset(ch_dest, 0, n_dest_size);
-//
-//    size_t n_convert_size;
-//    wcstombs_s(&n_convert_size, ch_dest, n_dest_size, wch_src,
-//        n_dest_size - 1);  // subtract one to ignore null terminator
-//
-//    std::string result_text = ch_dest;
-//    delete[] ch_dest;
-//#else
-//    size_t n_dest_size = wcstombs(NULL, wch_src, 0) + 1;
-//    char* ch_dest = new char[n_dest_size];
-//    memset(ch_dest, 0, n_dest_size);
-//    wcstombs(ch_dest, wch_src, n_dest_size);
-//    std::string result_text = ch_dest;
-//    delete[] ch_dest;
-//#endif
-//
-//    setlocale(LC_ALL, str_locale.c_str());
-//    return result_text;
-//}
-
 std::vector<std::string> WmiInfo::query(const std::wstring& wmi_class, const std::wstring& field, const std::wstring& filter, const ULONG count) 
 {
     std::wstring filter_string;
@@ -551,9 +560,18 @@ std::vector<std::string> WmiInfo::query(const std::wstring& wmi_class, const std
                     std::string str = std::to_string(vt_prop.ullVal);
                     result.push_back(str);
                 }
+                else if (vt_prop.vt == VT_BOOL)
+                {
+                    std::string str = std::to_string(vt_prop.boolVal);
+                    result.push_back(str);
+                }
+                else if (vt_prop.vt == VT_NULL)
+                {
+                    qWarning() << __FUNCTION__ << wmi_class << "::" << field << " : " << " Unhandled Type VT_NULL";
+                }
                 else
                 {
-                    qWarning() << "CpuInfo::query: Unhandled Type " << vt_prop.vt;
+                    qWarning() << __FUNCTION__ << wmi_class << "::" << field << " : " << " Unhandled Type " << vt_prop.vt;
                 }
             }
             VariantClear(&vt_prop);
@@ -591,10 +609,23 @@ std::vector<std::string> WmiInfo::query(const std::wstring& wmi_class, const std
                         std::string str = std::to_string(vt_prop.uintVal);
                         result.push_back(str);
                     }
-                    else
+                    else if (vt_prop.vt == VT_UI8)
                     {
                         std::string str = std::to_string(vt_prop.ullVal);
                         result.push_back(str);
+                    }
+                    else if (vt_prop.vt == VT_BOOL)
+                    {
+                        std::string str = std::to_string(vt_prop.boolVal);
+                        result.push_back(str);
+                    }
+                    else if (vt_prop.vt == VT_NULL)
+                    {
+                        qWarning() << __FUNCTION__ << wmi_class << "::" << field << " : " << " Unhandled Type VT_NULL";
+                    }
+                    else
+                    {
+                        qWarning() << __FUNCTION__ << wmi_class << "::" << field << " : " << " Unhandled Type " << vt_prop.vt;
                     }
                 }
                 VariantClear(&vt_prop);
@@ -665,10 +696,19 @@ std::map<std::string, std::vector<std::string>> WmiInfo::queryArray(const std::w
                     {
                         text = std::to_string(vt_prop.ullVal);
                     }
+                    else if (vt_prop.vt == VT_BOOL)
+                    {
+                        text = std::to_string(vt_prop.boolVal);
+                    }
+                    else if (vt_prop.vt == VT_NULL)
+                    {
+                        qWarning() << __FUNCTION__ << wmi_class << "::" << field << " : " << " Unhandled Type VT_NULL";
+                    }
                     else
                     {
-                        qWarning() << "CpuInfo::query: Unhandled Type " << vt_prop.vt;
+                        qWarning() << __FUNCTION__ << wmi_class << "::" << field << " : " << " Unhandled Type " << vt_prop.vt;
                     }
+
                     fieldMap[std::string(field.begin(), field.end())].push_back(text);
                 }
                 VariantClear(&vt_prop);
@@ -713,10 +753,19 @@ std::map<std::string, std::vector<std::string>> WmiInfo::queryArray(const std::w
                         {
                             text = std::to_string(vt_prop.ullVal);
                         }
+                        else if (vt_prop.vt == VT_BOOL)
+                        {
+                            text = std::to_string(vt_prop.boolVal);
+                        }
+                        else if (vt_prop.vt == VT_NULL)
+                        {
+                            qWarning() << __FUNCTION__ << wmi_class << "::" << field << " : " << " Unhandled Type VT_NULL";
+                        }
                         else
                         {
-                            qWarning() << "CpuInfo::query: Unhandled Type " << vt_prop.vt;
+                            qWarning() << __FUNCTION__ << wmi_class << "::" << field << " : " << " Unhandled Type " << vt_prop.vt;
                         }
+
                         fieldMap[std::string(field.begin(), field.end())].push_back(text);
                     }
                     VariantClear(&vt_prop);
@@ -729,16 +778,3 @@ std::map<std::string, std::vector<std::string>> WmiInfo::queryArray(const std::w
 
     return fieldMap;
 }
-
-//void WmiInfo::queryAsync(const std::wstring& wmi_class, const std::wstring& field, const std::wstring& filter, const ULONG count) 
-//{
-//    std::wstring filter_string;
-//    if (!filter.empty()) {
-//        filter_string.append(L" WHERE " + filter);
-//    }
-//    std::wstring query_string(L"SELECT " + field + L" FROM " + wmi_class + filter_string);
-//    bool success = executeQueryAsync(query_string);
-//    if (!success) {
-//        return;
-//    }
-//}

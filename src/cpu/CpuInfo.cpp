@@ -13,6 +13,15 @@
 CpuInfo::CpuInfo()
 {
     qDebug() << __FUNCTION__;
+
+    for (uint8_t key = Globals::Key_Cpu_Static_Start + 1; key < Globals::Key_Cpu_Static_End; ++key)
+    {
+        m_staticInfo[key] = Globals::SysInfo_Uninitialized;
+    }
+    for (uint8_t key = Globals::Key_Cpu_Dynamic_Start + 1; key < Globals::Key_Cpu_Dynamic_End; ++key)
+    {
+        m_dynamicInfo[key] = Globals::SysInfo_Uninitialized;
+    }
 }
 
 CpuInfo::~CpuInfo()
@@ -22,15 +31,6 @@ CpuInfo::~CpuInfo()
 
 void CpuInfo::init()
 {
-    for (uint8_t i = Globals::Key_Cpu_Static_Start + 1; i < Globals::Key_Cpu_Static_End; ++i)
-    {
-        m_staticInfo[i] = Globals::SysInfo_Uninitialized;
-    }
-
-    for (uint8_t i = Globals::Key_Cpu_Dynamic_Start + 1; i < Globals::Key_Cpu_Dynamic_End; ++i)
-    {
-        m_dynamicInfo[i] = Globals::SysInfo_Uninitialized;
-    }
 
 #ifdef _WIN32
     m_cpuInfoWindows = new CpuInfoWindows();
@@ -106,6 +106,8 @@ void CpuInfo::detectCpu()
 void CpuInfo::readStaticInfo()
 {
     QMap<uint8_t, QVariant> staticInfoOs;
+    QMap<uint8_t, QVariant> staticInfoCpu;
+
 #ifdef _WIN32
     if(m_cpuInfoWindows)
     {
@@ -128,7 +130,7 @@ void CpuInfo::readStaticInfo()
         }
 
         m_cpuInfoAmd->readStaticInfo();
-        m_staticInfo = m_cpuInfoAmd->staticInfo();
+        staticInfoCpu = m_cpuInfoAmd->staticInfo();
     }
     else if (m_cpuManufacturer == CpuManufacturer::INTEL)
     {        
@@ -138,16 +140,18 @@ void CpuInfo::readStaticInfo()
         }
 
         m_cpuInfoIntel->readStaticInfo();
-        m_staticInfo = m_cpuInfoIntel->staticInfo();
+        staticInfoCpu = m_cpuInfoIntel->staticInfo();
     }
 
-    for (uint8_t i = Globals::Key_Cpu_Static_Start + 1; i < Globals::Key_Cpu_Static_End; ++i)
+    for (uint8_t key = Globals::Key_Cpu_Static_Start + 1; key < Globals::Key_Cpu_Static_End; ++key)
     {
-        if (m_staticInfo[i].isValid() && m_staticInfo[i].canConvert<int8_t>() &&
-            m_staticInfo[i].value<int8_t>() == Globals::SysInfo_Uninitialized &&
-            staticInfoOs[i] != m_staticInfo[i])
+        if (staticInfoOs.contains(key) && staticInfoOs[key] != Globals::SysInfo_Uninitialized)
         {
-            m_staticInfo[i] = staticInfoOs[i];
+            m_staticInfo[key] = staticInfoOs[key];
+        }
+        else if (staticInfoCpu.contains(key) && staticInfoCpu[key] != Globals::SysInfo_Uninitialized)
+        {
+            m_staticInfo[key] = staticInfoCpu[key];
         }
     }
 }
@@ -155,6 +159,8 @@ void CpuInfo::readStaticInfo()
 void CpuInfo::readDynamicInfo()
 {
     QMap<uint8_t, QVariant> dynamicInfoOs;
+    QMap<uint8_t, QVariant> dynamicInfoCpu;
+
 #ifdef _WIN32
     if(m_cpuInfoWindows)
     {
@@ -177,7 +183,7 @@ void CpuInfo::readDynamicInfo()
         }
 
         m_cpuInfoAmd->readDynamicInfo();
-        m_dynamicInfo = m_cpuInfoAmd->dynamicInfo();
+        dynamicInfoCpu = m_cpuInfoAmd->dynamicInfo();
     }
     else if (m_cpuManufacturer == CpuManufacturer::INTEL)
     {
@@ -187,16 +193,18 @@ void CpuInfo::readDynamicInfo()
         }
 
         m_cpuInfoIntel->readDynamicInfo();
-        m_dynamicInfo = m_cpuInfoIntel->dynamicInfo();
+        dynamicInfoCpu = m_cpuInfoIntel->dynamicInfo();
     }
 
-    for (uint8_t i = Globals::Key_Cpu_Dynamic_Start + 1; i < Globals::Key_Cpu_Dynamic_End; ++i)
+    for (uint8_t key = Globals::Key_Cpu_Dynamic_Start + 1; key < Globals::Key_Cpu_Dynamic_End; ++key)
     {
-        if (m_dynamicInfo[i].isValid() && m_dynamicInfo[i].canConvert<int8_t>() &&
-            m_dynamicInfo[i].value<int8_t>() == Globals::SysInfo_Uninitialized &&
-            dynamicInfoOs[i] != m_dynamicInfo[i])
+        if (dynamicInfoOs.contains(key) && dynamicInfoOs[key] != Globals::SysInfo_Uninitialized)
         {
-            m_dynamicInfo[i] = dynamicInfoOs[i];
+            m_dynamicInfo[key] = dynamicInfoOs[key];
+        }
+        else if (dynamicInfoCpu.contains(key) && dynamicInfoCpu[key] != Globals::SysInfo_Uninitialized)
+        {
+            m_dynamicInfo[key] = dynamicInfoCpu[key];
         }
     }
 }

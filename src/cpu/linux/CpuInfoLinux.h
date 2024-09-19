@@ -28,7 +28,7 @@ public:
     // const std::string& cpuBiosVersion() const { return m_cpuBiosVersion; };
     // const std::string& cpuBiosDate() const { return m_cpuBiosDate; };
     
-    const uint8_t& cpuProcessorCount() const { return m_cpuProcessorCount; };
+    const uint16_t& cpuCoreCount() const { return m_cpuCoreCount; };
     const uint16_t& cpuBaseFrequency() const { return m_cpuBaseFrequency; };
     const uint16_t& cpuMaxTurboFrequency() const { return m_cpuMaxTurboFrequency; };
     const uint32_t& cpuL1CacheSize() const { return m_cpuL1CacheSize; };
@@ -46,6 +46,7 @@ public:
     const QMap<uint8_t, QVariant>& dynamicInfo() const;
 
 private:
+    void readCpuVendor();
     void readCpuBrand();
     void readCpuBaseFrequency();
     void readCpuMaxFrequency();
@@ -54,12 +55,13 @@ private:
     void readCpuCoreFrequencies();
     void readCpuTemperature();
 
+    std::string m_cpuVendor{ "" };
     std::string m_cpuBrand{ "" };
     std::string m_cpuSocket{""};
-    uint8_t m_cpuProcessorCount{ 0 };
-    uint8_t m_cpuThreadCount{ 0 };
-    uint32_t m_cpuBaseFrequency{ 0 };
-    uint32_t m_cpuMaxTurboFrequency{ 0 };
+    uint16_t m_cpuCoreCount{ 0 };
+    uint16_t m_cpuThreadCount{ 0 };
+    uint16_t m_cpuBaseFrequency{ 0 };
+    uint16_t m_cpuMaxTurboFrequency{ 0 };
     uint32_t m_cpuL1CacheSize{ 0 }; //size in KB
     uint32_t m_cpuL2CacheSize{ 0 }; //size in KB
     uint32_t m_cpuL3CacheSize{ 0 }; //size in KB

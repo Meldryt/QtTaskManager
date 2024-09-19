@@ -198,7 +198,7 @@ namespace cube
     };
 }
 
-GlWindow::GlWindow(QWidget *parent) : QOpenGLWindow()
+GlWindow::GlWindow(QWindow *parent) : QOpenGLWindow(NoPartialUpdate, parent)
 {
     qDebug() << __FUNCTION__;
 
@@ -224,7 +224,6 @@ GlWindow::~GlWindow()
     for (;itMap != m_programs.end(); ++itMap)
     {
         delete itMap->second.program;
-        delete itMap->second.texture;
         itMap->second.vbo.destroy();
         itMap->second.ibo.destroy();
         itMap->second.vao.destroy();
@@ -456,7 +455,7 @@ void GlWindow::paintGL()
         //uint32_t newInstances = m_newInstancesPerTick;// (m_instancesMatrix.size() * m_instancesMatrix.size()) - m_instancesMatrix.size();
         //createMatrices(newInstances);
 
-        qDebug() << "GlWindow FPS: " << m_fps << " deltatime: " << m_deltaTime << " count: " << m_instancesMatrix.size() << " m_newInstancesPerTick: " << m_newInstancesPerTick;
+        //qDebug() << "GlWindow FPS: " << m_fps << " deltatime: " << m_deltaTime << " count: " << m_instancesMatrix.size() << " m_newInstancesPerTick: " << m_newInstancesPerTick;
         //m_newInstancesPerTick += 100;
     }
 
@@ -472,17 +471,12 @@ void GlWindow::drawProgram(ProgramType type)
     if (m_programs.find(type) != m_programs.end())
     {
         m_programs[type].program->bind();
-        if (m_programs[type].texture)
-        {
-            m_programs[type].texture->bind();
-        }
-
         m_programs[type].vao.bind();
 
         m_programs[type].program->setUniformValue("cameraMatrix", m_cameraMatrix);
 
-        m_instanceBuffer.bind();
-        m_instanceBuffer.allocate(m_instancesMatrix.data(), m_instancesMatrix.size() * sizeof(m_instancesMatrix[0]));
+        //m_instanceBuffer.bind();
+        //m_instanceBuffer.allocate(m_instancesMatrix.data(), m_instancesMatrix.size() * sizeof(m_instancesMatrix[0]));
         //m_instanceBuffer.write(0, m_instancesMatrix.data(), m_instancesMatrix.size() * sizeof(m_instancesMatrix[0]));
 
         QOpenGLExtraFunctions* gl = context()->extraFunctions();
@@ -490,7 +484,7 @@ void GlWindow::drawProgram(ProgramType type)
         //glDrawElements(GL_TRIANGLES, m_programs[type].indicesCount, GL_UNSIGNED_INT, nullptr);
 
         m_programs[type].vao.release();
-        m_programs[type].program->release();
+        //m_programs[type].program->release();
     }
 }
 

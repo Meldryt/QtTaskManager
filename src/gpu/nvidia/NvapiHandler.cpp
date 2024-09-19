@@ -324,6 +324,14 @@ void NvapiHandler::readStaticInfo()
         return;
     }
 
+    if (_NvAPI_GetErrorMessage)
+    {
+        status = (*_NvAPI_GetErrorMessage)(NVAPI_OK, string);
+        if (status == NVAPI_OK) {
+            m_functionsSupportStatus["NvAPI_GetErrorMessage"] = true;
+        }
+    }
+
     if (_NvAPI_EnumPhysicalGPUs)
     {
         int gpuCount = 0;
@@ -377,7 +385,8 @@ void NvapiHandler::readStaticInfo()
             m_gpuMemorySize = memory_info.dedicatedVideoMemory / 1024 / 1024;
         }  
     }
-    else if (_NvAPI_GPU_GetMemoryInfoEx)
+    
+    if (_NvAPI_GPU_GetMemoryInfoEx)
     {
         NV_GPU_MEMORY_INFO_EX memory_info;
         memory_info.version = NV_GPU_MEMORY_INFO_EX_VER;
@@ -460,6 +469,8 @@ void NvapiHandler::readStaticInfo()
             m_gpuDriverVersion = m_gpuDriverVersion.substr(0, 3) + "." + m_gpuDriverVersion.substr(3);
         }
     }
+
+    checkSupportedDynamicFunctions();
 
     //NvU32 DriverVersion;
     //NvAPI_ShortString BuildBranchString;

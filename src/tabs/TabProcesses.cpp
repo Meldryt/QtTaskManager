@@ -44,7 +44,7 @@ void TabProcesses::process()
 
     updateTable();
     updateTotalInfo();
-    sortTable();
+    sortProcessList();
 
     setUpdatesEnabled(true);
 }
@@ -59,10 +59,10 @@ void TabProcesses::updateTable()
 
     for(uint32_t index = 0; index < m_processList.size(); ++index)
     {
-        ProcessInfo::Process process = m_processList.at(index);
+        const ProcessInfo::Process& process = m_processList.at(index);
 
         bool newRow{false};
-        uint8_t tableRow = index + 1;
+        uint32_t tableRow = index + 1;
         if(m_tableProcesses->rowCount()-1 < tableRow)
         {
             m_tableProcesses->insertRow(tableRow);
@@ -72,15 +72,23 @@ void TabProcesses::updateTable()
             }
             newRow = true;
         }
-        if(newRow || m_tableProcesses->item(tableRow, 0)->text() != process.description.c_str())
+        if(newRow || m_tableProcesses->item(tableRow, static_cast<int>(ColumnType::ProcessName))->text() != process.processName.c_str())
         {
-            m_tableProcesses->item(tableRow, 0)->setText(process.description.c_str());
-            m_tableProcesses->item(tableRow, 1)->setText(process.baseName.c_str());
-            m_tableProcesses->item(tableRow, 2)->setText(process.filePath.c_str());
+            m_tableProcesses->item(tableRow, static_cast<int>(ColumnType::ProcessName))->setText(process.processName.c_str());
+            m_tableProcesses->item(tableRow, static_cast<int>(ColumnType::Description))->setText(process.description.c_str());
+            m_tableProcesses->item(tableRow, static_cast<int>(ColumnType::FilePath))->setText(process.filePath.c_str());
         }
-        uint64_t usedPhysicalMemory = (process.usedPhysicalMemory)/(1024*1024);
-        m_tableProcesses->item(tableRow, 3)->setText(QString::number(usedPhysicalMemory) + " MB");
-        m_tableProcesses->item(tableRow, 4)->setText(QString::number(process.usedCpuLoad, 'f', 2) + " %");
+        m_tableProcesses->item(tableRow, static_cast<int>(ColumnType::ID))->setText(QString::number(process.processID));
+        m_tableProcesses->item(tableRow, static_cast<int>(ColumnType::RamUsagePercent))->setText(QString::number(process.ramUsagePercent, 'g', 2));
+        m_tableProcesses->item(tableRow, static_cast<int>(ColumnType::CpuUsagePercent))->setText(QString::number(process.cpuUsagePercent, 'g', 2));
+        m_tableProcesses->item(tableRow, static_cast<int>(ColumnType::GpuUsagePercent))->setText(QString::number(process.gpuUsagePercent, 'g', 2));
+        m_tableProcesses->item(tableRow, static_cast<int>(ColumnType::VideoRamUsagePercent))->setText(QString::number(process.videoRamUsagePercent, 'g', 2));
+
+        m_tableProcesses->item(tableRow, static_cast<int>(ColumnType::RamUsageSize))->setText(QString::number(process.ramUsageSize / 1000, 'g', 9));
+        m_tableProcesses->item(tableRow, static_cast<int>(ColumnType::VirtualRamUsageSize))->setText(QString::number(process.virtualRamUsageSize / 1000, 'g', 9));
+        m_tableProcesses->item(tableRow, static_cast<int>(ColumnType::VideoRamUsageSize))->setText(QString::number(process.videoRamUsageSize / 1000, 'g', 9));
+        m_tableProcesses->item(tableRow, static_cast<int>(ColumnType::DiskUsage))->setText(QString::number(process.videoRamUsageSize / 1000, 'g', 9));
+
         //uint64_t usedVirtualMemory = (process.usedVirtualMemory)/(1024*1024);
         //tableProcesses->setItem(tableRow, 4, new QTableWidgetItem(QString::number(usedVirtualMemory) + " MB"));
     }
@@ -119,7 +127,6 @@ void TabProcesses::slotProcesses(const std::map<uint32_t, ProcessInfo::Process>&
     bool changed{false};
     uint8_t index = 0;
     auto process = std::begin(processMap);
-    int64_t currTime = process->second.timestamp;
 
     while (process != std::end(processMap))
     {
@@ -131,14 +138,22 @@ void TabProcesses::slotProcesses(const std::map<uint32_t, ProcessInfo::Process>&
         if(it == m_processList.end())
         {
             m_processList.push_back(process->second);
+            m_processList.back().visited = true;
             changed = true;
         }
         else
         {
-            it->usedPhysicalMemory = process->second.usedPhysicalMemory;
-            it->usedVirtualMemory = process->second.usedVirtualMemory;
-            it->usedCpuLoad = process->second.usedCpuLoad;
+            it->ramUsagePercent = process->second.ramUsagePercent;
+            it->cpuUsagePercent = process->second.cpuUsagePercent;
+            it->gpuUsagePercent = process->second.gpuUsagePercent;
+            it->videoRamUsagePercent = process->second.videoRamUsagePercent;
+            it->ramUsageSize = process->second.ramUsageSize;
+            it->virtualRamUsageSize = process->second.virtualRamUsageSize;
+            it->videoRamUsageSize = process->second.videoRamUsageSize;
+            it->cpuAverageUsagePercent = process->second.cpuAverageUsagePercent;
+            it->gpuAverageUsagePercent = process->second.cpuAverageUsagePercent;
             it->timestamp = process->second.timestamp;
+            it->visited = true;
         }
 
         ++process;
@@ -147,13 +162,14 @@ void TabProcesses::slotProcesses(const std::map<uint32_t, ProcessInfo::Process>&
 
     for(auto it = std::begin(m_processList); it != std::end(m_processList); )
     {
-        if(it->timestamp+1 < currTime)
+        if(!it->visited)
         {
             it = m_processList.erase(it);
             changed = true;
         }
         else
         {
+            it->visited = false;
             ++it;
         }
     }
@@ -161,23 +177,42 @@ void TabProcesses::slotProcesses(const std::map<uint32_t, ProcessInfo::Process>&
     changed = true;
 }
 
-void TabProcesses::sortTable()
+void TabProcesses::sortProcessList()
 {
     switch(m_sortMode)
     {
-    case SortMode::SortProcessName:
-        sortNames();
+    case SortMode::SortByProcessName:
+        sortByNames();
         break;
-    case SortMode::SortFileName:
-        sortFileNames();
+    case SortMode::SortByID:
+        sortByIDs();
         break;
-    case SortMode::SortMemoryUsageHigh:
-    case SortMode::SortMemoryUsageLow:
-        sortMemoryUsage();
+    case SortMode::SortByDescription:
+        sortByDescriptions();
         break;
-    case SortMode::SortCpuUsageHigh:
-    case SortMode::SortCpuUsageLow:
-        sortCpuUsage();
+    case SortMode::SortByFilePath:
+        sortByFilePath();
+        break;
+    case SortMode::SortByRamUsagePercent:
+        sortByRamUsagePercent();
+        break;
+    case SortMode::SortByCpuUsagePercent:
+        sortByCpuUsagePercent();
+        break;
+    case SortMode::SortByGpuUsagePercent:
+        sortByGpuUsagePercent();
+        break;
+    case SortMode::SortByVideoRamUsagePercent:
+        sortByVideoRamUsagePercent();
+        break;
+    case SortMode::SortByRamUsageSize:
+        sortByRamUsageSize();
+        break;
+    case SortMode::SortByVirtualRamUsageSize:
+        sortByVirtualRamUsageSize();
+        break;
+    case SortMode::SortByVideoRamUsageSize:
+        sortByVideoRamUsageSize();
         break;
     default:
         break;
@@ -186,52 +221,31 @@ void TabProcesses::sortTable()
 
 void TabProcesses::setSortMode(int headerIndex)
 {
-    if(headerIndex == 0)
+    const SortMode prevSortMode = m_sortMode;
+    m_sortMode = static_cast<SortMode>(headerIndex);
+
+    if(prevSortMode == m_sortMode)
     {
-        m_sortMode = SortMode::SortProcessName;
+        m_sortAscending = !m_sortAscending;
     }
-    else if(headerIndex == 1)
+    else
     {
-        m_sortMode = SortMode::SortFileName;
-    }
-    else if(headerIndex == 3)
-    {
-        if(m_sortMode == SortMode::SortMemoryUsageHigh)
-        {
-            m_sortMode = SortMode::SortMemoryUsageLow;
-        }
-        else
-        {
-            m_sortMode = SortMode::SortMemoryUsageHigh;
-        }
-    }
-    else if(headerIndex == 4)
-    {
-        if(m_sortMode == SortMode::SortCpuUsageHigh)
-        {
-            m_sortMode = SortMode::SortCpuUsageLow;
-        }
-        else
-        {
-            m_sortMode = SortMode::SortCpuUsageHigh;
-        }
+        m_sortAscending = DefaultAscendingSortMode.at(m_sortMode);
     }
 
-    sortTable();
+    sortProcessList();
 }
 
-bool compareNames(const ProcessInfo::Process& first, const ProcessInfo::Process& second)
+bool isStringHigher(const std::string first, const std::string second)
 {
     uint8_t i = 0;
-    std::string firstString = first.description;
-    std::string secondString = second.description;
-    while(i < firstString.length() && i < second.description.length())
+    while(i < first.length() && i < second.length())
     {
-        if(std::tolower(firstString.at(i))<std::tolower(secondString.at(i)))
+        if(std::tolower(first.at(i))<std::tolower(second.at(i)))
         {
             return true;
         }
-        else if(std::tolower(firstString.at(i))>std::tolower(secondString.at(i)))
+        else if(std::tolower(first.at(i))>std::tolower(second.at(i)))
         {
             return false;
         }
@@ -240,21 +254,19 @@ bool compareNames(const ProcessInfo::Process& first, const ProcessInfo::Process&
             ++i;
         }
     }
-    return ( firstString.length() < secondString.length() );
+    return ( first.length() < second.length() );
 }
 
-bool compareFileNames(const ProcessInfo::Process& first, const ProcessInfo::Process& second)
+bool isStringLower(const std::string first, const std::string second)
 {
     uint8_t i = 0;
-    std::string firstString = first.baseName;
-    std::string secondString = second.baseName;
-    while(i < firstString.length() && i < second.baseName.length())
+    while(i < first.length() && i < second.length())
     {
-        if(std::tolower(firstString.at(i))<std::tolower(secondString.at(i)))
+        if(std::tolower(first.at(i))>std::tolower(second.at(i)))
         {
             return true;
         }
-        else if(std::tolower(firstString.at(i))>std::tolower(secondString.at(i)))
+        else if(std::tolower(first.at(i))<std::tolower(second.at(i)))
         {
             return false;
         }
@@ -263,59 +275,137 @@ bool compareFileNames(const ProcessInfo::Process& first, const ProcessInfo::Proc
             ++i;
         }
     }
-    return ( firstString.length() < secondString.length() );
+    return ( first.length() < second.length() );
 }
 
-bool compareMemoryHigher(const ProcessInfo::Process& first, const ProcessInfo::Process& second)
+void TabProcesses::sortByNames()
 {
-    return first.usedPhysicalMemory > second.usedPhysicalMemory;
-}
-
-bool compareMemoryLower(const ProcessInfo::Process& first, const ProcessInfo::Process& second)
-{
-    return first.usedPhysicalMemory < second.usedPhysicalMemory;
-}
-
-bool compareCpuHigher(const ProcessInfo::Process& first, const ProcessInfo::Process& second)
-{
-    return first.usedCpuLoad > second.usedCpuLoad;
-}
-
-bool compareCpuLower(const ProcessInfo::Process& first, const ProcessInfo::Process& second)
-{
-    return first.usedCpuLoad < second.usedCpuLoad;
-}
-
-void TabProcesses::sortNames()
-{
-    std::sort(m_processList.begin(),m_processList.end(),compareNames);
-}
-
-void TabProcesses::sortFileNames()
-{
-    std::sort(m_processList.begin(),m_processList.end(),compareFileNames);
-}
-
-void TabProcesses::sortMemoryUsage()
-{
-    if(m_sortMode == SortMode::SortMemoryUsageHigh)
+    if(m_sortAscending)
     {
-        std::sort(m_processList.begin(),m_processList.end(),compareMemoryHigher);
+        std::sort(m_processList.begin(),m_processList.end(), [](const ProcessInfo::Process& a, const ProcessInfo::Process& b){return isStringHigher(a.processName, b.processName);});
     }
-    else if(m_sortMode == SortMode::SortMemoryUsageLow)
+    else
     {
-        std::sort(m_processList.begin(),m_processList.end(),compareMemoryLower);
+        std::sort(m_processList.begin(),m_processList.end(), [](const ProcessInfo::Process& a, const ProcessInfo::Process& b){return isStringLower(a.processName, b.processName);});
     }
 }
 
-void TabProcesses::sortCpuUsage()
+void TabProcesses::sortByIDs()
 {
-    if(m_sortMode == SortMode::SortCpuUsageHigh)
+    if(m_sortAscending)
     {
-        std::sort(m_processList.begin(),m_processList.end(),compareCpuHigher);
+        std::sort(m_processList.begin(),m_processList.end(), [](const ProcessInfo::Process& a, const ProcessInfo::Process& b){return a.processID < b.processID;});
     }
-    else if(m_sortMode == SortMode::SortCpuUsageLow)
+    else
     {
-        std::sort(m_processList.begin(),m_processList.end(),compareCpuLower);
+        std::sort(m_processList.begin(),m_processList.end(), [](const ProcessInfo::Process& a, const ProcessInfo::Process& b){return a.processID > b.processID;});
+    }
+}
+
+void TabProcesses::sortByDescriptions()
+{
+    if(m_sortAscending)
+    {
+        std::sort(m_processList.begin(),m_processList.end(), [](const ProcessInfo::Process& a, const ProcessInfo::Process& b){return isStringHigher(a.description, b.description);});
+    }
+    else
+    {
+        std::sort(m_processList.begin(),m_processList.end(), [](const ProcessInfo::Process& a, const ProcessInfo::Process& b){return isStringLower(a.description, b.description);});
+    }
+}
+
+void TabProcesses::sortByFilePath()
+{
+    if(m_sortAscending)
+    {
+        std::sort(m_processList.begin(),m_processList.end(), [](const ProcessInfo::Process& a, const ProcessInfo::Process& b){return isStringHigher(a.filePath, b.filePath);});
+    }
+    else
+    {
+        std::sort(m_processList.begin(),m_processList.end(), [](const ProcessInfo::Process& a, const ProcessInfo::Process& b){return isStringLower(a.filePath, b.filePath);});
+    }
+}
+
+void TabProcesses::sortByRamUsagePercent()
+{
+    if(m_sortAscending)
+    {
+        std::sort(m_processList.begin(),m_processList.end(), [](const ProcessInfo::Process& a, const ProcessInfo::Process& b){return a.ramUsagePercent < b.ramUsagePercent;});
+    }
+    else
+    {
+        std::sort(m_processList.begin(),m_processList.end(), [](const ProcessInfo::Process& a, const ProcessInfo::Process& b){return a.ramUsagePercent > b.ramUsagePercent;});
+    }
+}
+
+void TabProcesses::sortByCpuUsagePercent()
+{
+    if(m_sortAscending)
+    {
+        std::sort(m_processList.begin(),m_processList.end(), [](const ProcessInfo::Process& a, const ProcessInfo::Process& b){return a.cpuUsagePercent < b.cpuUsagePercent;});
+    }
+    else
+    {
+        std::sort(m_processList.begin(),m_processList.end(), [](const ProcessInfo::Process& a, const ProcessInfo::Process& b){return a.cpuUsagePercent > b.cpuUsagePercent;});
+    }
+}
+
+void TabProcesses::sortByGpuUsagePercent()
+{
+    if(m_sortAscending)
+    {
+        std::sort(m_processList.begin(),m_processList.end(), [](const ProcessInfo::Process& a, const ProcessInfo::Process& b){return a.gpuUsagePercent < b.gpuUsagePercent;});
+    }
+    else
+    {
+        std::sort(m_processList.begin(),m_processList.end(), [](const ProcessInfo::Process& a, const ProcessInfo::Process& b){return a.gpuUsagePercent > b.gpuUsagePercent;});
+    }
+}
+
+void TabProcesses::sortByVideoRamUsagePercent()
+{
+    if(m_sortAscending)
+    {
+        std::sort(m_processList.begin(),m_processList.end(), [](const ProcessInfo::Process& a, const ProcessInfo::Process& b){return a.videoRamUsagePercent < b.videoRamUsagePercent;});
+    }
+    else
+    {
+        std::sort(m_processList.begin(),m_processList.end(), [](const ProcessInfo::Process& a, const ProcessInfo::Process& b){return a.videoRamUsagePercent > b.videoRamUsagePercent;});
+    }
+}
+
+void TabProcesses::sortByRamUsageSize()
+{
+    if(m_sortAscending)
+    {
+        std::sort(m_processList.begin(),m_processList.end(), [](const ProcessInfo::Process& a, const ProcessInfo::Process& b){return a.ramUsageSize < b.ramUsageSize;});
+    }
+    else
+    {
+        std::sort(m_processList.begin(),m_processList.end(), [](const ProcessInfo::Process& a, const ProcessInfo::Process& b){return a.ramUsageSize > b.ramUsageSize;});
+    }
+}
+
+void TabProcesses::sortByVirtualRamUsageSize()
+{
+    if(m_sortAscending)
+    {
+        std::sort(m_processList.begin(),m_processList.end(), [](const ProcessInfo::Process& a, const ProcessInfo::Process& b){return a.virtualRamUsageSize < b.virtualRamUsageSize;});
+    }
+    else
+    {
+        std::sort(m_processList.begin(),m_processList.end(), [](const ProcessInfo::Process& a, const ProcessInfo::Process& b){return a.virtualRamUsageSize > b.virtualRamUsageSize;});
+    }
+}
+
+void TabProcesses::sortByVideoRamUsageSize()
+{
+    if(m_sortAscending)
+    {
+        std::sort(m_processList.begin(),m_processList.end(), [](const ProcessInfo::Process& a, const ProcessInfo::Process& b){return a.videoRamUsageSize < b.videoRamUsageSize;});
+    }
+    else
+    {
+        std::sort(m_processList.begin(),m_processList.end(), [](const ProcessInfo::Process& a, const ProcessInfo::Process& b){return a.videoRamUsageSize > b.videoRamUsageSize;});
     }
 }

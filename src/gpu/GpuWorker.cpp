@@ -44,7 +44,7 @@ void GpuWorker::update()
 
     elapsedTime = elapsedTimer.nsecsElapsed() / 1000000;
 
-    if (elapsedTime >= 10)
+    if (elapsedTime >= 5)
     {
         qDebug() << "GpuWorker::update(): " << elapsedTime << " ms";
     }

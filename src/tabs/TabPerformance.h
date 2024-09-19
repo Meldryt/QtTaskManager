@@ -72,7 +72,7 @@ private:
             if (!multiLines)
             {
                 this->lineSeries.push_back(new QLineSeries());
-                this->lineSeries.back()->setUseOpenGL(true);
+                this->lineSeries.back()->setUseOpenGL(false);
                 this->chart->addSeries(this->lineSeries.at(0));
                 this->chart->createDefaultAxes();
 
@@ -97,7 +97,9 @@ private:
     QComboBox* m_cpuComboBoxActiveGraph{ nullptr };
     std::map<int, GraphInfo*> m_cpuGraphs;
     std::map<int, QString> m_cpuTableInfos;
-    
+    std::map<int, double> m_cpuDynamicMax;
+    std::map<int, double> m_gpuDynamicMax;
+
     const QStringList CpuGraphTitles
     {
         "CpuUsage",
@@ -158,8 +160,7 @@ private:
     QChart* m_networkChart{ nullptr };
     QLineSeries* m_networkLineSeries{ nullptr };
 
-    uint32_t m_networkTotalSpeed{ 0 };
-    uint32_t m_networkUsedSpeed{ 0 };
+    uint32_t m_networkBytesReceivedPerSec{ 0 };
     uint32_t m_networkCurrentMaxSpeed{ 0 };
 
 public slots:
@@ -167,8 +168,7 @@ public slots:
     void slotGpuDynamicInfo(const QMap<uint8_t, QVariant>& dynamicInfo);
     void slotTotalMemory(const uint32_t& val);
     void slotUsedMemory(const uint32_t& val);
-    void slotTotalNetworkSpeed(const uint32_t& val);
-    void slotUsedNetworkSpeed(const uint32_t& val);
+    void slotBytesReceivedPerSec(const std::vector<uint32_t>& val);
 
 private slots:
     void showSelectionWidget();

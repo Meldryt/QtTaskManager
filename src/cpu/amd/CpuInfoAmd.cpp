@@ -15,6 +15,15 @@ CpuInfoAmd::CpuInfoAmd()
 #ifdef _WIN32
     m_ryzenMasterSdkHandler = new RyzenMasterSdkHandler();
 #endif
+
+    for (uint8_t key = Globals::Key_Cpu_Static_Start + 1; key < Globals::Key_Cpu_Static_End; ++key)
+    {
+        m_staticInfo[key] = Globals::SysInfo_Uninitialized;
+    }
+    for (uint8_t key = Globals::Key_Cpu_Dynamic_Start + 1; key < Globals::Key_Cpu_Dynamic_End; ++key)
+    {
+        m_dynamicInfo[key] = Globals::SysInfo_Uninitialized;
+    }
 }
 
 CpuInfoAmd::~CpuInfoAmd()
@@ -68,10 +77,9 @@ void CpuInfoAmd::readStaticInfo()
 
     m_staticInfo[Globals::SysInfoAttr::Key_Cpu_Brand] = QString::fromStdString(m_ryzenMasterSdkHandler->cpuBrand());
     m_staticInfo[Globals::SysInfoAttr::Key_Cpu_Socket] = QString::fromStdString(m_ryzenMasterSdkHandler->cpuSocket());
-    m_staticInfo[Globals::SysInfoAttr::Key_Cpu_ProcessorCount] = m_ryzenMasterSdkHandler->cpuProcessorCount();
+    m_staticInfo[Globals::SysInfoAttr::Key_Cpu_CoreCount] = m_ryzenMasterSdkHandler->cpuCoreCount();
     m_staticInfo[Globals::SysInfoAttr::Key_Cpu_ThreadCount] = Globals::SysInfo_Uninitialized;
     m_staticInfo[Globals::SysInfoAttr::Key_Cpu_BaseFrequency] = m_ryzenMasterSdkHandler->cpuBaseFrequency();
-    m_staticInfo[Globals::SysInfoAttr::Key_Cpu_MaxTurboFrequency] = Globals::SysInfo_Uninitialized;
     m_staticInfo[Globals::SysInfoAttr::Key_Cpu_L1CacheSize] = m_ryzenMasterSdkHandler->cpuL1CacheSize();
     m_staticInfo[Globals::SysInfoAttr::Key_Cpu_L2CacheSize] = m_ryzenMasterSdkHandler->cpuL2CacheSize();
     m_staticInfo[Globals::SysInfoAttr::Key_Cpu_L3CacheSize] = m_ryzenMasterSdkHandler->cpuL3CacheSize();
@@ -90,12 +98,8 @@ void CpuInfoAmd::readDynamicInfo()
 
     m_ryzenMasterSdkHandler->readDynamicInfo();
 
-    m_dynamicInfo[Globals::SysInfoAttr::Key_Cpu_TotalUsage] = Globals::SysInfo_Uninitialized;
-    m_dynamicInfo[Globals::SysInfoAttr::Key_Cpu_CoreUsages] = Globals::SysInfo_Uninitialized;
     m_dynamicInfo[Globals::SysInfoAttr::Key_Cpu_CoreFrequencies] = QVariant::fromValue(m_ryzenMasterSdkHandler->cpuCoreFrequencies());
     m_dynamicInfo[Globals::SysInfoAttr::Key_Cpu_CurrentMaxFrequency] = m_ryzenMasterSdkHandler->cpuCurrentMaxFrequency();
-    m_dynamicInfo[Globals::SysInfoAttr::Key_Cpu_ThreadFrequencies] = Globals::SysInfo_Uninitialized;
-    m_dynamicInfo[Globals::SysInfoAttr::Key_Cpu_ThreadUsages] = Globals::SysInfo_Uninitialized;
     m_dynamicInfo[Globals::SysInfoAttr::Key_Cpu_CoreVoltage] = m_ryzenMasterSdkHandler->cpuCoreVoltage();
     m_dynamicInfo[Globals::SysInfoAttr::Key_Cpu_Power] = m_ryzenMasterSdkHandler->cpuPower();
     m_dynamicInfo[Globals::SysInfoAttr::Key_Cpu_SocPower] = m_ryzenMasterSdkHandler->cpuSocPower();

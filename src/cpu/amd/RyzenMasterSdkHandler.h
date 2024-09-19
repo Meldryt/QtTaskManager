@@ -28,7 +28,7 @@ public:
     const std::string& cpuBiosVersion() const { return m_cpuBiosVersion; };
     const std::string& cpuBiosDate() const { return m_cpuBiosDate; };
 
-    const uint8_t& cpuProcessorCount() const { return m_cpuProcessorCount; };
+    const uint16_t& cpuCoreCount() const { return m_cpuCoreCount; };
     const uint16_t& cpuBaseFrequency() const { return m_cpuBaseFrequency; };
     const uint16_t& cpuMaxTurboFrequency() const { return m_cpuMaxTurboFrequency; };
     const uint32_t& cpuL1CacheSize() const { return m_cpuL1CacheSize; };
@@ -61,7 +61,7 @@ private:
     std::string m_cpuBiosVersion{""};
     std::string m_cpuBiosDate{""};
 
-    uint8_t m_cpuProcessorCount{ 0 };
+    uint16_t m_cpuCoreCount{ 0 };
     uint16_t m_cpuBaseFrequency{ 0 }; //in MHz
     uint16_t m_cpuMaxTurboFrequency{ 0 }; //in MHz
     uint32_t m_cpuL1CacheSize{ 0 }; //in KB

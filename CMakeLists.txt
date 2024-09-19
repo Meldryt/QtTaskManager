@@ -24,8 +24,15 @@ find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets Charts Concurrent
 #  )
 #endif()
 
+add_subdirectory(external)
+
 set(PROJECT_SOURCES
     src/Globals.h
+
+    src/Utils.h
+
+    src/main/BaseInfo.h
+    src/main/BaseInfo.cpp
 
     src/cpu/CpuInfo.h
     src/cpu/CpuInfo.cpp
@@ -36,10 +43,6 @@ set(PROJECT_SOURCES
     src/cpu/amd/CpuInfoAmd.cpp
     src/cpu/intel/CpuInfoIntel.h
     src/cpu/intel/CpuInfoIntel.cpp
-    src/cpu/linux/CpuInfoLinux.h
-    src/cpu/linux/CpuInfoLinux.cpp
-    src/cpu/windows/CpuInfoWindows.h
-    src/cpu/windows/CpuInfoWindows.cpp
 
     src/gpu/GlGlobals.h
     src/gpu/GpuInfo.h
@@ -49,26 +52,27 @@ set(PROJECT_SOURCES
 
     src/gpu/amd/GpuInfoAmd.h
     src/gpu/amd/GpuInfoAmd.cpp
+    src/gpu/intel/GpuInfoIntel.h
+    src/gpu/intel/GpuInfoIntel.cpp
+    src/gpu/intel/ZeroLevelHandler.h
+    src/gpu/intel/ZeroLevelHandler.cpp
     src/gpu/nvidia/GpuInfoNVidia.h
     src/gpu/nvidia/GpuInfoNVidia.cpp
 
     src/memory/MemoryInfo.h
     src/memory/MemoryInfo.cpp
-    src/memory/MemoryWorker.cpp
     src/memory/MemoryWorker.h
-    src/memory/linux/MemoryInfoLinux.h
-    src/memory/linux/MemoryInfoLinux.cpp
-    src/memory/windows/MemoryInfoWindows.h
-    src/memory/windows/MemoryInfoWindows.cpp
+    src/memory/MemoryWorker.cpp
+
+    src/network/NetworkInfo.h
+    src/network/NetworkInfo.cpp
+    src/network/NetworkWorker.h
+    src/network/NetworkWorker.cpp
 
     src/process/ProcessInfo.h
     src/process/ProcessInfo.cpp
     src/process/ProcessWorker.cpp
     src/process/ProcessWorker.h
-    src/process/linux/ProcessInfoLinux.h
-    src/process/linux/ProcessInfoLinux.cpp
-    src/process/windows/ProcessInfoWindows.h
-    src/process/windows/ProcessInfoWindows.cpp
 
     src/tabs/TabHardware.cpp
     src/tabs/TabHardware.h
@@ -80,9 +84,17 @@ set(PROJECT_SOURCES
     src/tabs/TabBenchmark.h
     src/tabs/TabApiSupport.cpp
     src/tabs/TabApiSupport.h
+    src/tabs/TabSystemInfo.cpp
+    src/tabs/TabSystemInfo.h
+    
+    src/system/SystemInfo.h
+    src/system/SystemInfo.cpp
+    src/system/SystemWorker.h
+    src/system/SystemWorker.cpp
 
     #src/DevicesInfo.h
     #src/DevicesInfo.cpp
+
     src/SystemManager.cpp
     src/SystemManager.h
     src/main.cpp
@@ -98,20 +110,36 @@ set(PROJECT_SOURCES
 )
 
 if (WIN32)
-    set(PROJECT_SOURCES {PROJECT_SOURCES}
+    set(PROJECT_SOURCES ${PROJECT_SOURCES}
+
         src/cpu/amd/RyzenMasterSdkHandler.h
         src/cpu/amd/RyzenMasterSdkHandler.cpp
+        src/cpu/intel/PcmHandler.h
+        src/cpu/intel/PcmHandler.cpp
+        src/cpu/windows/CpuInfoWindows.h
+        src/cpu/windows/CpuInfoWindows.cpp
 
         src/gpu/amd/AdlxHandler.h
         src/gpu/amd/AdlxHandler.cpp
         src/gpu/amd/AgsHandler.h
         src/gpu/amd/AgsHandler.cpp
 
+        src/gpu/intel/IgclHandler.h
+        src/gpu/intel/IgclHandler.cpp
+        src/gpu/intel/GenericIGCLApp.h
+        src/gpu/intel/ZeroLevelHandler.h
+        src/gpu/intel/ZeroLevelHandler.cpp
+
         src/gpu/nvidia/NvapiHandler.h
         src/gpu/nvidia/NvapiHandler.cpp
         src/gpu/nvidia/NvmlHandler.h
         src/gpu/nvidia/NvmlHandler.cpp
 
+        src/process/windows/ProcessInfoWindows.h
+        src/process/windows/ProcessInfoWindows.cpp
+
+        src/windows/DxHandler.h
+        src/windows/DxHandler.cpp
         src/windows/WmiInfo.h
         src/windows/WmiInfo.cpp
         src/windows/WmiWorker.h
@@ -120,6 +148,20 @@ if (WIN32)
         external/ADLX/SDK/ADLXHelper/Windows/Cpp/ADLXHelper.h
         external/ADLX/SDK/ADLXHelper/Windows/Cpp/ADLXHelper.cpp
         external/ADLX/SDK/platform/Windows/WinAPIs.cpp
+
+        #external/drivers.gpu.control-library/Source/GenericIGCLApp.h
+        external/drivers.gpu.control-library/Source/cApiWrapper.cpp
+    )
+else ()
+    set(PROJECT_SOURCES ${PROJECT_SOURCES}
+        src/cpu/linux/CpuInfoLinux.h
+        src/cpu/linux/CpuInfoLinux.cpp
+
+        src/gpu/linux/GpuInfoLinux.h
+        src/gpu/linux/GpuInfoLinux.cpp
+
+        src/system/SystemInfoLinux.h
+        src/system/SystemInfoLinux.cpp
     )
 endif (WIN32)
 
@@ -169,15 +211,27 @@ else()
     message (WARNING "If you want to read Ryzen Cpu Infos you must download Ryzen Master SDK & copy RyzenMasterMonitoringSDK to external!")
 endif()
 
+
+    target_include_directories(${PROJECT_NAME} PRIVATE
+        external/pcm/src
+    )
 if (WIN32)
     target_include_directories(${PROJECT_NAME} PRIVATE
-        external/nvapi
-        external/nvml
         external/AGS_SDK/ags_lib/inc
         external/ADLX/SDK/Include
+        external/nvapi
+        external/nvml
+        external/drivers.gpu.control-library/include/
+        external/drivers.gpu.control-library/Samples/inc
+        #external/level-zero/include
+        #external/level-zero/samples/include
+        external/DirectX-Headers/include
     )
-elseif (UNIX)
-    external/pcm
+else()
+    target_include_directories(${PROJECT_NAME} PRIVATE
+        external/level-zero/include
+        external/level-zero/samples/include
+    )
 endif ()
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
@@ -193,6 +247,14 @@ if (WIN32)
         Setupapi
         debug ${CMAKE_CURRENT_SOURCE_DIR}/external/AGS_SDK/ags_lib/lib/amd_ags_x64_2022_MDd.lib
         optimized ${CMAKE_CURRENT_SOURCE_DIR}/external/AGS_SDK/ags_lib/lib/amd_ags_x64_2022_MD.lib
+        pcm-lib
+        #ze_loader
+        d3d12.lib
+        dxguid.lib
+    )
+else()
+    target_link_libraries(${PROJECT_NAME} PRIVATE
+        ze_loader
     )
 endif (WIN32)
 

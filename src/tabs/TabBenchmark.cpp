@@ -1,6 +1,7 @@
 #include "TabBenchmark.h"
 
 #include <QGridLayout>
+#include <QApplication>
 
 TabBenchmark::TabBenchmark(QWidget *parent) : QWidget(parent)
 {
@@ -26,6 +27,15 @@ void TabBenchmark::slotOpenBenchmarkWindow()
     //widgetRect.moveTopLeft(this->mapToGlobal(widgetRect.topRight()));
     //m_glWidget->move(widgetRect.x() + 20, widgetRect.y());
     //m_glWidget->show();
+    //MainWindow* mainWindow{ nullptr };
+    //for(QWidget* widget : QApplication::topLevelWidgets())
+    //{
+    //    mainWindow = qobject_cast<MainWindow*>(widget);
+    //    if (mainWindow)
+    //    {
+    //        break;
+    //    }
+    //}
 
     m_glWindow = new GlWindow();
     m_glWindow->show();

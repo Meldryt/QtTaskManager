@@ -14,6 +14,15 @@
 CpuInfoLinux::CpuInfoLinux()
 {
     qDebug() << __FUNCTION__;
+
+    for (uint8_t key = Globals::Key_Cpu_Static_Start + 1; key < Globals::Key_Cpu_Static_End; ++key)
+    {
+        m_staticInfo[key] = Globals::SysInfo_Uninitialized;
+    }
+    for (uint8_t key = Globals::Key_Cpu_Dynamic_Start + 1; key < Globals::Key_Cpu_Dynamic_End; ++key)
+    {
+        m_dynamicInfo[key] = Globals::SysInfo_Uninitialized;
+    }
 }
 
 CpuInfoLinux::~CpuInfoLinux()
@@ -33,21 +42,12 @@ const QMap<uint8_t, QVariant>& CpuInfoLinux::dynamicInfo() const
 
 void CpuInfoLinux::init()
 {
-    for (uint8_t i = Globals::Key_Cpu_Static_Start + 1; i < Globals::Key_Cpu_Static_End; ++i)
-    {
-        m_staticInfo[i] = Globals::SysInfo_Uninitialized;
-    }
-
-    for (uint8_t i = Globals::Key_Cpu_Dynamic_Start + 1; i < Globals::Key_Cpu_Dynamic_End; ++i)
-    {
-        m_dynamicInfo[i] = Globals::SysInfo_Uninitialized;
-    }
-
-    readCpuBrand();
+    readCpuVendor();
 }
 
 void CpuInfoLinux::readStaticInfo()
 {
+    readCpuBrand();
     readCpuCoreCount();
     readCpuBaseFrequency();
     readCpuMaxFrequency();
@@ -56,21 +56,21 @@ void CpuInfoLinux::readStaticInfo()
     m_cpuThreadCount = sysconf( _SC_NPROCESSORS_ONLN );
     m_cpuThreadFrequencies.resize(m_cpuThreadCount);
     m_cpuThreadUsages.resize(m_cpuThreadCount);
-    m_cpuL1CacheSize = m_cpuProcessorCount * (sysconf( _SC_LEVEL1_DCACHE_SIZE ) + sysconf( _SC_LEVEL1_ICACHE_SIZE )) / 1024;
-    m_cpuL2CacheSize = m_cpuProcessorCount * sysconf( _SC_LEVEL2_CACHE_SIZE ) / 1024;
+    m_cpuL1CacheSize = m_cpuCoreCount * (sysconf( _SC_LEVEL1_DCACHE_SIZE ) + sysconf( _SC_LEVEL1_ICACHE_SIZE )) / 1024;
+    m_cpuL2CacheSize = m_cpuCoreCount * sysconf( _SC_LEVEL2_CACHE_SIZE ) / 1024;
     m_cpuL3CacheSize = sysconf( _SC_LEVEL3_CACHE_SIZE ) / 1024;
 
 #endif
 
-    m_staticInfo[Globals::SysInfoAttr::Key_Cpu_Brand] = QString::fromStdString(m_cpuBrand);
-    m_staticInfo[Globals::SysInfoAttr::Key_Cpu_Socket] = QString::fromStdString(m_cpuSocket);
-    m_staticInfo[Globals::SysInfoAttr::Key_Cpu_ProcessorCount] = m_cpuProcessorCount;
-    m_staticInfo[Globals::SysInfoAttr::Key_Cpu_ThreadCount] = m_cpuThreadCount;
-    m_staticInfo[Globals::SysInfoAttr::Key_Cpu_BaseFrequency] = m_cpuBaseFrequency;
-    m_staticInfo[Globals::SysInfoAttr::Key_Cpu_MaxTurboFrequency] = m_cpuMaxTurboFrequency;
-    m_staticInfo[Globals::SysInfoAttr::Key_Cpu_L1CacheSize] = m_cpuL1CacheSize;
-    m_staticInfo[Globals::SysInfoAttr::Key_Cpu_L2CacheSize] = m_cpuL2CacheSize;
-    m_staticInfo[Globals::SysInfoAttr::Key_Cpu_L3CacheSize] = m_cpuL3CacheSize;
+    m_staticInfo[Globals::SysInfoAttr::Key_Cpu_Static_Brand] = QString::fromStdString(m_cpuBrand);
+    m_staticInfo[Globals::SysInfoAttr::Key_Cpu_Static_Socket] = QString::fromStdString(m_cpuSocket);
+    m_staticInfo[Globals::SysInfoAttr::Key_Cpu_Static_CoreCount] = m_cpuCoreCount;
+    m_staticInfo[Globals::SysInfoAttr::Key_Cpu_Static_ThreadCount] = m_cpuThreadCount;
+    m_staticInfo[Globals::SysInfoAttr::Key_Cpu_Static_BaseFrequency] = m_cpuBaseFrequency;
+    m_staticInfo[Globals::SysInfoAttr::Key_Cpu_Static_MaxTurboFrequency] = m_cpuMaxTurboFrequency;
+    m_staticInfo[Globals::SysInfoAttr::Key_Cpu_Static_L1CacheSize] = m_cpuL1CacheSize;
+    m_staticInfo[Globals::SysInfoAttr::Key_Cpu_Static_L2CacheSize] = m_cpuL2CacheSize;
+    m_staticInfo[Globals::SysInfoAttr::Key_Cpu_Static_L3CacheSize] = m_cpuL3CacheSize;
     //m_staticInfo[Globals::SysInfoAttr::.-Key_Api_Functions_StatusSupport_Wmi] = QVariant::fromValue(m_functionsSupportStatus);
 }
 
@@ -79,20 +79,20 @@ void CpuInfoLinux::readDynamicInfo()
     readCpuCoreFrequencies();
     readCpuTemperature();
 
-    m_dynamicInfo[Globals::SysInfoAttr::Key_Cpu_TotalUsage] = m_cpuTotalUsage;
-    m_dynamicInfo[Globals::SysInfoAttr::Key_Cpu_CoreUsages] = QVariant::fromValue(m_cpuCoreUsages);
-    m_dynamicInfo[Globals::SysInfoAttr::Key_Cpu_CoreFrequencies] = QVariant::fromValue(m_cpuCoreFrequencies);
-    m_dynamicInfo[Globals::SysInfoAttr::Key_Cpu_CurrentMaxFrequency] = m_cpuCurrentMaxFrequency;
-    m_dynamicInfo[Globals::SysInfoAttr::Key_Cpu_ThreadFrequencies] = QVariant::fromValue(m_cpuThreadFrequencies);
-    m_dynamicInfo[Globals::SysInfoAttr::Key_Cpu_ThreadUsages] = QVariant::fromValue(m_cpuThreadUsages);
-    m_dynamicInfo[Globals::SysInfoAttr::Key_Cpu_CoreVoltage] = m_cpuCoreVoltage;
-    m_dynamicInfo[Globals::SysInfoAttr::Key_Cpu_Power] = m_cpuPower;
-    m_dynamicInfo[Globals::SysInfoAttr::Key_Cpu_SocPower] = m_cpuSocPower;
-    m_dynamicInfo[Globals::SysInfoAttr::Key_Cpu_Temperature] = m_cpuTemperature;
-    m_dynamicInfo[Globals::SysInfoAttr::Key_Cpu_Fanspeed] = Globals::SysInfo_Uninitialized;
+    m_dynamicInfo[Globals::SysInfoAttr::Key_Cpu_Dynamic_TotalUsage] = m_cpuTotalUsage;
+    m_dynamicInfo[Globals::SysInfoAttr::Key_Cpu_Dynamic_CoreUsages] = QVariant::fromValue(m_cpuCoreUsages);
+    m_dynamicInfo[Globals::SysInfoAttr::Key_Cpu_Dynamic_CoreFrequencies] = QVariant::fromValue(m_cpuCoreFrequencies);
+    m_dynamicInfo[Globals::SysInfoAttr::Key_Cpu_Dynamic_CurrentMaxFrequency] = m_cpuCurrentMaxFrequency;
+    m_dynamicInfo[Globals::SysInfoAttr::Key_Cpu_Dynamic_ThreadFrequencies] = QVariant::fromValue(m_cpuThreadFrequencies);
+    m_dynamicInfo[Globals::SysInfoAttr::Key_Cpu_Dynamic_ThreadUsages] = QVariant::fromValue(m_cpuThreadUsages);
+    m_dynamicInfo[Globals::SysInfoAttr::Key_Cpu_Dynamic_CoreVoltage] = m_cpuCoreVoltage;
+    m_dynamicInfo[Globals::SysInfoAttr::Key_Cpu_Dynamic_Power] = m_cpuPower;
+    m_dynamicInfo[Globals::SysInfoAttr::Key_Cpu_Dynamic_SocPower] = m_cpuSocPower;
+    m_dynamicInfo[Globals::SysInfoAttr::Key_Cpu_Dynamic_Temperature] = m_cpuTemperature;
+    m_dynamicInfo[Globals::SysInfoAttr::Key_Cpu_Dynamic_Fanspeed] = Globals::SysInfo_Uninitialized;
 }
 
-void CpuInfoLinux::readCpuBrand()
+void CpuInfoLinux::readCpuVendor()
 {
 #ifdef __linux__
     FILE *cpuinfo = fopen("/proc/cpuinfo", "rb");
@@ -117,6 +117,30 @@ void CpuInfoLinux::readCpuBrand()
     free(arg);
     fclose(cpuinfo);
 
+#endif
+}
+
+void CpuInfoLinux::readCpuBrand()
+{
+#ifdef __linux__
+    FILE *cpuinfo = fopen("/proc/cpuinfo", "rb");
+    char *arg = 0;
+    size_t size = 0;
+    while(getdelim(&arg, &size, '\n', cpuinfo) != -1)
+    {
+        const std::string line = std::string(arg);
+        if(line.find("model name") != std::string::npos)
+        {
+            const uint32_t offset = std::string(": ").length();
+            const uint32_t first = line.find(": ");
+            const uint32_t last = line.find("\n");
+            const std::string subString = line.substr(first+offset,last-(offset+first));
+            m_cpuBrand = subString;
+            break;
+        }
+    }
+    free(arg);
+    fclose(cpuinfo);
 #endif
 }
 
@@ -165,9 +189,9 @@ void CpuInfoLinux::readCpuCoreCount()
             const uint32_t first = line.find(": ");
             const uint32_t last = line.find("\n");
             const std::string subString = line.substr(first+offset,last-(offset+first));
-            m_cpuProcessorCount = std::stoi(subString);
-            m_cpuCoreFrequencies.resize(m_cpuProcessorCount);
-            m_cpuCoreUsages.resize(m_cpuProcessorCount);
+            m_cpuCoreCount = std::stoi(subString);
+            m_cpuCoreFrequencies.resize(m_cpuCoreCount);
+            m_cpuCoreUsages.resize(m_cpuCoreCount);
             break;
         }
     }
