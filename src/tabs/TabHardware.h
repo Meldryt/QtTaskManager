@@ -49,6 +49,8 @@ private:
         "Graphics Chip Designer",
         "Graphics Card Manufacturer",
         "Graphics Card Model",
+        "Graphics Base Clock",
+        "Graphics Boost Clock",
         "Graphics Memory Vendor",
         "Graphics Memory Size",
         "Graphics Memory Type",

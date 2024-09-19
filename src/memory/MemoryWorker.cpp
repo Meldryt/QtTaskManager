@@ -22,7 +22,7 @@ void MemoryWorker::start()
 
     m_memoryInfo->init();
 
-    emit signalStaticInfo(m_memoryInfo->getStaticInfo());
+    emit signalStaticInfo(m_memoryInfo->staticInfo());
 }
 
 void MemoryWorker::stop()
@@ -34,5 +34,5 @@ void MemoryWorker::update()
 { 
     m_memoryInfo->update();
 
-    emit signalDynamicInfo(m_memoryInfo->getDynamicInfo());
+    emit signalDynamicInfo(m_memoryInfo->dynamicInfo());
 }

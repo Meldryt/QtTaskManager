@@ -1,37 +1,20 @@
 #pragma once
 
-#include <QObject>
-#include <QMap>
-#include <QVariant>
+#include "../main/BaseInfo.h"
 
-#include <cstdint>
-
-class MemoryInfo
+class MemoryInfo : public BaseInfo
 {
 public:
 
     MemoryInfo();
     ~MemoryInfo();
 
-    void init();
-    void update();
-
-    const QMap<uint8_t, QVariant>& getStaticInfo() const
-    {
-        return m_staticInfo;
-    }
-
-    const QMap<uint8_t, QVariant>& getDynamicInfo() const
-    {
-        return m_dynamicInfo;
-    }
+    virtual void init() override;
+    virtual void update() override;
 
 private:
-    void readStaticInfo();
-    void readDynamicInfo();
-
-    QMap<uint8_t, QVariant> m_staticInfo;
-    QMap<uint8_t, QVariant> m_dynamicInfo;
+    void readTotalMemory();
+    void readUsedMemory();
 
     uint32_t m_totalVirtualMemory{0};
     uint32_t m_totalPhysicalMemory{0};

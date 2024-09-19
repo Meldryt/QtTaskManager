@@ -5,6 +5,9 @@
 #include <QMap>
 #include <QString>
 
+#include "ze_api.h"
+#include "zes_api.h"
+
 class ZeroLevelHandler
 {
 public:
@@ -45,12 +48,20 @@ public:
 private:
     void checkSupportedDynamicFunctions();
 
-    void readGpuUsage();
+    void readLoaderVersions();
+    void readDeviceProperties();
+    void readDevicePciProperties();
+    void readDriverVersion();
+    void readDriverInfo();
+    void readDeviceFirmware();
+
+    void readProcesses();
+    void readGpuEngine();
     void readGpuFrequencies();
     void readGpuMemory();
     void readGpuTemperature();
     void readGpuFanSpeed();
-    void readGpuCooler();
+    void readGpuPower();
 
     bool m_initialized{ false };
 
@@ -74,4 +85,18 @@ private:
 
     QMap<QString, bool> m_functionsSupportStatus;
     QMap<QString, QString> m_functionsStatusMessage;
+
+    ze_device_handle_t m_zeDevice{nullptr};
+
+    uint32_t m_deviceID{0};
+    uint32_t m_subDeviceID{UINT32_MAX};
+
+    uint32_t m_zesEngineGroupsCount{0};
+    uint32_t m_zesFrequencyDomainCount{0};
+    uint32_t m_zesMemoryModulesCount{0};
+    uint32_t m_zesTemperatureSensorCount{0};
+    uint32_t m_zesFanCount{0};
+    uint32_t m_zesPowerDomainCount{0};
+
+    std::vector<_zes_engine_stats_t> m_engineGroupStats;
 };

@@ -1,9 +1,9 @@
 [submodule "external/ADLX"]
 	path = external/ADLX
-	url = git@github.com:GPUOpen-LibrariesAndSDKs/ADLX.git
+	url = https://github.com/GPUOpen-LibrariesAndSDKs/ADLX.git
 [submodule "external/AGS_SDK"]
 	path = external/AGS_SDK
-	url = git@github.com:GPUOpen-LibrariesAndSDKs/AGS_SDK.git
+	url = https://github.com/GPUOpen-LibrariesAndSDKs/AGS_SDK.git
 [submodule "external/nvapi"]
 	path = external/nvapi
 	url = git@github.com:NVIDIA/nvapi.git

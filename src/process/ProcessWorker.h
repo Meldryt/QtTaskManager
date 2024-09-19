@@ -2,9 +2,11 @@
 
 #include "../Worker.h"
 
-#include "ProcessInfo.h"
+#include <QElapsedTimer>
 
 #include <map>
+
+#include "ProcessInfo.h"
 
 class ProcessWorker : public Worker
 {
@@ -25,5 +27,7 @@ signals:
 
 private:
     std::unique_ptr<ProcessInfo> m_processInfo{nullptr};
+
+    QElapsedTimer* m_elapsedTimer{ nullptr };
 };
 

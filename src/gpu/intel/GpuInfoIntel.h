@@ -3,8 +3,9 @@
 #include <QMap>
 #include <QVariant>
 #include <string>
-
+#ifdef _WIN32
 class IgclHandler;
+#endif
 class ZeroLevelHandler;
 
 class GpuInfoIntel
@@ -28,8 +29,9 @@ public:
     void readDynamicInfo();
 
 private:
-
+#ifdef _WIN32
     IgclHandler* m_igclHandler{ nullptr };
+#endif
     ZeroLevelHandler* m_zeroLevelHandler{ nullptr };
 
     QMap<uint8_t,QVariant> m_staticInfo;

@@ -5,6 +5,11 @@
 #include "nvidia/GpuInfoNVidia.h"
 #include "GlGlobals.h"
 
+#ifdef _WIN32
+#else
+#include "linux/GpuInfoLinux.h"
+#endif
+
 #include <QDebug>
 
 GpuInfo::GpuInfo()
@@ -19,6 +24,14 @@ GpuInfo::GpuInfo()
     {
         m_dynamicInfo[key] = Globals::SysInfo_Uninitialized;
     }
+<<<<<<< HEAD
+
+#ifdef _WIN32
+#else
+    m_gpuInfoLinux = new GpuInfoLinux();
+#endif
+=======
+>>>>>>> master
 }
 
 GpuInfo::~GpuInfo()
@@ -28,6 +41,16 @@ GpuInfo::~GpuInfo()
 
 void GpuInfo::init()
 {
+    for (uint8_t i = Globals::Key_Gpu_Static_Start + 1; i < Globals::Key_Gpu_Static_End; ++i)
+    {
+        m_staticInfo[i] = Globals::SysInfo_Uninitialized;
+    }
+
+    for (uint8_t i = Globals::Key_Gpu_Dynamic_Start + 1; i < Globals::Key_Gpu_Dynamic_End; ++i)
+    {
+        m_dynamicInfo[i] = Globals::SysInfo_Uninitialized;
+    }
+
     detectGpu();
 
     if (m_gpuManufacturer == GpuManufacturer::AMD)
@@ -49,6 +72,11 @@ void GpuInfo::init()
     {
         m_gpuManufacturer = GpuManufacturer::UNKNOWN;
     }
+
+#ifdef _WIN32
+#else
+    m_gpuInfoLinux->init();
+#endif
 
     if(m_gpuDetected)
     {
@@ -126,6 +154,17 @@ void GpuInfo::readStaticInfo()
         m_gpuInfoNVidia->readStaticInfo();
         m_staticInfo = m_gpuInfoNVidia->staticInfo();
     }
+
+#ifdef _WIN32
+#else
+    if(!m_gpuInfoLinux)
+    {
+        return;
+    }
+
+    m_gpuInfoLinux->readStaticInfo();
+    m_staticInfo = m_gpuInfoLinux->staticInfo();
+#endif
 }
 
 void GpuInfo::readDynamicInfo()
@@ -160,4 +199,15 @@ void GpuInfo::readDynamicInfo()
         m_gpuInfoNVidia->readDynamicInfo();
         m_dynamicInfo = m_gpuInfoNVidia->dynamicInfo();
     }
+
+#ifdef _WIN32
+#else
+    if(!m_gpuInfoLinux)
+    {
+        return;
+    }
+
+    m_gpuInfoLinux->readDynamicInfo();
+    m_dynamicInfo = m_gpuInfoLinux->dynamicInfo();
+#endif
 }

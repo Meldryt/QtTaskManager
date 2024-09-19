@@ -1,21 +1,17 @@
 #include "IgclHandler.h"
 
+#ifdef _WIN32
 #include <crtdbg.h>
+#include <windows.h>
+#include <conio.h>
+#endif
 #include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
-#include <windows.h>
-#include <conio.h>
 #include <vector>
-
-#include <iostream>
 #include <string>
-
-#include <windows.h>
-#include <stdio.h>
 #include "igcl_api.h"
 #include "GenericIGCLApp.h"
-
 #include <QDebug>
 
 /***************************************************************

@@ -17,7 +17,9 @@
 
 //#ifdef PCM_EXPORTS
 // pcm-lib.h includes cpucounters.h
+#ifdef _WIN32
 #include "windows\pcm-lib.h"
+#endif
 //#else
 //#include "cpucounters.h"
 //#endif
@@ -190,4 +192,8 @@ void PcmHandler::readDynamicInfo()
     m_pcmInstance = PCM::getInstance();
 
     updateKPIs();
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> master

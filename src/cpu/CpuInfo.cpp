@@ -31,6 +31,7 @@ CpuInfo::~CpuInfo()
 
 void CpuInfo::init()
 {
+
 #ifdef _WIN32
     m_cpuInfoWindows = new CpuInfoWindows();
     m_cpuInfoWindows->init();

@@ -45,7 +45,7 @@ private:
     std::string m_cpuBrand{ "" };
     uint16_t m_cpuCoreCount{ 0 };
     uint16_t m_cpuThreadCount{ 0 };
-    uint32_t m_cpuBaseFrequency{ 0 };
+    uint16_t m_cpuBaseFrequency{ 0 };
     uint32_t m_cpuL1CacheSize{ 0 }; //size in KB
     uint32_t m_cpuL2CacheSize{ 0 }; //size in KB
     uint32_t m_cpuL3CacheSize{ 0 }; //size in KB

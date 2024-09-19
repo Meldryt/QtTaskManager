@@ -4,15 +4,11 @@
 #include <QVariant>
 #include <string>
 
-#ifdef _WIN32
-class NvapiHandler;
-class NvmlHandler;
-#endif
-class GpuInfoNVidia
+class GpuInfoLinux
 {
 public:
-    GpuInfoNVidia();
-    ~GpuInfoNVidia();
+    GpuInfoLinux();
+    ~GpuInfoLinux();
 
     const QMap<uint8_t,QVariant>& staticInfo() const
     {
@@ -29,17 +25,16 @@ public:
     void readDynamicInfo();
 
 private:
+    void readGpuModel();
 
-#ifdef _WIN32
-    NvapiHandler* m_nvapiHandler{ nullptr };
-    NvmlHandler* m_nvmlHandler{ nullptr };
-#endif
     QMap<uint8_t,QVariant> m_staticInfo;
     QMap<uint8_t,QVariant> m_dynamicInfo;
 
     std::string m_gpuChipDesigner;
     std::string m_gpuCardManufacturer;
     std::string m_gpuModel;
+    uint32_t m_gpuBaseClock{ 0 };
+    uint32_t m_gpuBoostClock{ 0 };
     uint16_t m_gpuMemorySize;
     std::string m_gpuMemoryType;
     std::string m_gpuMemoryVendor;
@@ -59,4 +54,6 @@ private:
     double m_gpuHotspotTemperature{ 0 }; // Current center of the die temperature value in C
     uint16_t m_gpuFanSpeed{ 0 }; // Current fan RPM value
     uint8_t m_gpuFanSpeedUsage{ 0 }; // Current ratio of fan RPM and max RPM
+
+    std::map<std::string, std::string> m_gpuInfoPathMap;
 };

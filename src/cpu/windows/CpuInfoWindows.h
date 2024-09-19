@@ -25,6 +25,7 @@ public:
     void readStaticInfo();
     void readDynamicInfo();
 
+    const std::string& cpuVendor() const { return m_cpuVendor; };
     const std::string& cpuBrand() const { return m_cpuBrand; };
     
     const uint16_t& cpuCoreCount() const { return m_cpuCoreCount; };
@@ -60,6 +61,7 @@ private:
     PDH_HCOUNTER m_pdhCpuPerformanceCounter;
 #endif
 
+    std::string m_cpuVendor{ "" };
     std::string m_cpuBrand{ "" };
     uint16_t m_cpuCoreCount{ 0 };
     uint16_t m_cpuThreadCount{ 0 };
