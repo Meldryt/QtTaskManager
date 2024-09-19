@@ -214,6 +214,14 @@ void TabProcesses::sortProcessList()
     case SortMode::SortByVideoRamUsageSize:
         sortByVideoRamUsageSize();
         break;
+    case SortMode::SortGpuUsageHigh:
+    case SortMode::SortGpuUsageLow:
+        sortGpuUsage();
+        break;
+    case SortMode::SortGpuMemoryUsedHigh:
+    case SortMode::SortGpuMemoryUsedLow:
+        sortGpuMemoryUsed();
+        break;
     default:
         break;
     }

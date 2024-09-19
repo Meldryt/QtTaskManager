@@ -13,6 +13,8 @@
 
 #include "cpu/intel/PcmHandler.h"
 
+#include "cpu/intel/PcmHandler.h"
+
 #include <QElapsedTimer>
 #include <QDebug>
 

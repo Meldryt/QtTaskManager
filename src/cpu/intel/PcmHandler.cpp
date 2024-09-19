@@ -192,4 +192,8 @@ void PcmHandler::readDynamicInfo()
     m_pcmInstance = PCM::getInstance();
 
     updateKPIs();
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> master
