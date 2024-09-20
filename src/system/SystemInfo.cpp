@@ -48,12 +48,12 @@ void SystemInfo::update()
 void SystemInfo::readStaticInfo()
 {
 #ifdef _WIN32
-    if(m_cpuInfoWindows)
+    if(m_systemInfoWindows)
     {
         m_systemInfoWindows->readStaticInfo();
-        m_staticInfo[Globals::SysInfoAttr::Key_SysInfo_OS_Name] = m_systemInfoWindows->osName();
-        m_staticInfo[Globals::SysInfoAttr::Key_SysInfo_OS_CodeName] = m_systemInfoWindows->osCodeName();
-        m_staticInfo[Globals::SysInfoAttr::Key_SysInfo_OS_Version] = m_systemInfoWindows->osVersion();
+        m_staticInfo[Globals::SysInfoAttr::Key_SysInfo_OS_Name] = m_systemInfoWindows->osName().c_str();
+        m_staticInfo[Globals::SysInfoAttr::Key_SysInfo_OS_CodeName] = m_systemInfoWindows->osCodeName().c_str();
+        m_staticInfo[Globals::SysInfoAttr::Key_SysInfo_OS_Version] = m_systemInfoWindows->osVersion().c_str();
     }
 #elif __linux__
     if(m_systemInfoLinux)

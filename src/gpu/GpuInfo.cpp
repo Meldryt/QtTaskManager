@@ -24,14 +24,11 @@ GpuInfo::GpuInfo()
     {
         m_dynamicInfo[key] = Globals::SysInfo_Uninitialized;
     }
-<<<<<<< HEAD
 
 #ifdef _WIN32
 #else
     m_gpuInfoLinux = new GpuInfoLinux();
 #endif
-=======
->>>>>>> master
 }
 
 GpuInfo::~GpuInfo()

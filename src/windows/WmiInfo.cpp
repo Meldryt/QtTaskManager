@@ -96,15 +96,15 @@ void WmiInfo::readStaticInfo()
     readCpuInfo();
     readGpuInfo();
 
-    m_staticInfo[Globals::SysInfoAttr::Key_Cpu_Brand] = QString::fromStdString(m_cpuBrand);
-    m_staticInfo[Globals::SysInfoAttr::Key_Cpu_CoreCount] = m_cpuCoreCount;
-    m_staticInfo[Globals::SysInfoAttr::Key_Cpu_ThreadCount] = m_cpuThreadCount;
-    m_staticInfo[Globals::SysInfoAttr::Key_Cpu_BaseFrequency] = m_cpuBaseFrequency;
-    m_staticInfo[Globals::SysInfoAttr::Key_Cpu_MaxTurboFrequency] = m_cpuMaxTurboFrequency;
+    m_staticInfo[Globals::SysInfoAttr::Key_Cpu_Static_Brand] = QString::fromStdString(m_cpuBrand);
+    m_staticInfo[Globals::SysInfoAttr::Key_Cpu_Static_CoreCount] = m_cpuCoreCount;
+    m_staticInfo[Globals::SysInfoAttr::Key_Cpu_Static_ThreadCount] = m_cpuThreadCount;
+    m_staticInfo[Globals::SysInfoAttr::Key_Cpu_Static_BaseFrequency] = m_cpuBaseFrequency;
+    m_staticInfo[Globals::SysInfoAttr::Key_Cpu_Static_MaxTurboFrequency] = m_cpuMaxTurboFrequency;
     //m_staticInfo[Globals::SysInfoAttr::Key_Cpu_L1CacheSize] = m_cpuL1CacheSize;
     //m_staticInfo[Globals::SysInfoAttr::Key_Cpu_L2CacheSize] = m_cpuL2CacheSize;
     //m_staticInfo[Globals::SysInfoAttr::Key_Cpu_L3CacheSize] = m_cpuL3CacheSize;
-    m_staticInfo[Globals::SysInfoAttr::Key_Gpu_PnpString] = QString::fromStdString(m_gpuPnpString);
+    m_staticInfo[Globals::SysInfoAttr::Key_Gpu_Static_PnpString] = QString::fromStdString(m_gpuPnpString);
     m_staticInfo[Globals::SysInfoAttr::Key_Api_Functions_StatusSupport_Wmi] = QVariant::fromValue(m_functionsSupportStatus);
 }
 
@@ -121,15 +121,15 @@ void WmiInfo::update()
     readNetworkSpeed();
     //readPowerSupply();
 
-    m_dynamicInfo[Globals::SysInfoAttr::Key_Cpu_CurrentMaxFrequency] = m_cpuCurrentMaxFrequency;
-    m_dynamicInfo[Globals::SysInfoAttr::Key_Cpu_ThreadFrequencies] = QVariant::fromValue(m_cpuThreadFrequencies);
-    m_dynamicInfo[Globals::SysInfoAttr::Key_Cpu_ThreadUsages] = QVariant::fromValue(m_cpuThreadUsages);
+    m_dynamicInfo[Globals::SysInfoAttr::Key_Cpu_Dynamic_CurrentMaxFrequency] = m_cpuCurrentMaxFrequency;
+    m_dynamicInfo[Globals::SysInfoAttr::Key_Cpu_Dynamic_ThreadFrequencies] = QVariant::fromValue(m_cpuThreadFrequencies);
+    m_dynamicInfo[Globals::SysInfoAttr::Key_Cpu_Dynamic_ThreadUsages] = QVariant::fromValue(m_cpuThreadUsages);
 
-    m_dynamicInfo[Globals::SysInfoAttr::Key_Network_Names] = QVariant::fromValue(m_networkNames);
-    m_dynamicInfo[Globals::SysInfoAttr::Key_Network_BytesReceivedPerSec] = m_networkBytesReceivedPerSec[0];
-    m_dynamicInfo[Globals::SysInfoAttr::Key_Network_BytesSentPerSec] = QVariant::fromValue(m_networkBytesSentPerSec);
-    m_dynamicInfo[Globals::SysInfoAttr::Key_Network_TotalBytesPerSec] = QVariant::fromValue(m_networkBytesTotalPerSec);
-    m_dynamicInfo[Globals::SysInfoAttr::Key_Network_CurrentBandwidth] = QVariant::fromValue(m_networkCurrentBandwidth);
+    m_dynamicInfo[Globals::SysInfoAttr::Key_Network_Dynamic_Names] = QVariant::fromValue(m_networkNames);
+    m_dynamicInfo[Globals::SysInfoAttr::Key_Network_Dynamic_BytesReceivedPerSec] = m_networkBytesReceivedPerSec[0];
+    m_dynamicInfo[Globals::SysInfoAttr::Key_Network_Dynamic_BytesSentPerSec] = QVariant::fromValue(m_networkBytesSentPerSec);
+    m_dynamicInfo[Globals::SysInfoAttr::Key_Network_Dynamic_TotalBytesPerSec] = QVariant::fromValue(m_networkBytesTotalPerSec);
+    m_dynamicInfo[Globals::SysInfoAttr::Key_Network_Dynamic_CurrentBandwidth] = QVariant::fromValue(m_networkCurrentBandwidth);
 
     m_dynamicInfo[Globals::SysInfoAttr::Key_Process_GpuUsages] = QVariant::fromValue(m_processGpuUsage);
 }

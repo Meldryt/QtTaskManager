@@ -138,6 +138,9 @@ if (WIN32)
         src/process/windows/ProcessInfoWindows.h
         src/process/windows/ProcessInfoWindows.cpp
 
+        src/system/SystemInfoWindows.h
+        src/system/SystemInfoWindows.cpp
+
         src/windows/DxHandler.h
         src/windows/DxHandler.cpp
         src/windows/WmiInfo.h
@@ -223,7 +226,7 @@ if (WIN32)
         external/nvml
         external/drivers.gpu.control-library/include/
         external/drivers.gpu.control-library/Samples/inc
-        #external/level-zero/include
+        external/level-zero/include
         #external/level-zero/samples/include
         external/DirectX-Headers/include
     )
@@ -248,7 +251,7 @@ if (WIN32)
         debug ${CMAKE_CURRENT_SOURCE_DIR}/external/AGS_SDK/ags_lib/lib/amd_ags_x64_2022_MDd.lib
         optimized ${CMAKE_CURRENT_SOURCE_DIR}/external/AGS_SDK/ags_lib/lib/amd_ags_x64_2022_MD.lib
         pcm-lib
-        #ze_loader
+        ze_loader
         d3d12.lib
         dxguid.lib
     )

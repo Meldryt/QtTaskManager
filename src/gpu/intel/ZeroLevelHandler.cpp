@@ -4,8 +4,14 @@
 
 #include <stdlib.h>
 #include <memory>
+
+#ifdef _WIN32
+#include <Windows.h>
+#elif __linux__
 #include <unistd.h>
 #include <sys/types.h>
+#endif
+
 #include <bitset>
 #include <fstream>
 
@@ -264,7 +270,12 @@ ZeroLevelHandler::~ZeroLevelHandler()
 
 bool ZeroLevelHandler::init()
 { 
+#ifdef _WIN32
+    SetEnvironmentVariable(L"ZES_ENABLE_SYSMAN", L"1");
+#elif
     setenv("ZES_ENABLE_SYSMAN", "1", 1);
+#endif
+
     ze_result_t status = zeInit(ZE_INIT_FLAG_GPU_ONLY);
     if(status == ZE_RESULT_SUCCESS)
     {
@@ -381,15 +392,15 @@ void ZeroLevelHandler::readDevicePciProperties()
              << pci_props.address.function;
 
     qDebug() << "PCI Generation," << ((pci_props.maxSpeed.gen == -1) ?
-                                          "unknown" : std::to_string(pci_props.maxSpeed.gen));
+                                          "unknown" : std::to_string(pci_props.maxSpeed.gen).c_str());
 
     qDebug() << "PCI Max Brandwidth(GB/s)," <<
         ((pci_props.maxSpeed.maxBandwidth == -1) ? "unknown" :
-             std::to_string(pci_props.maxSpeed.maxBandwidth / BYTES_IN_GB));
+             std::to_string(pci_props.maxSpeed.maxBandwidth / BYTES_IN_GB).c_str());
 
     qDebug() << "PCI Width," <<
         ((pci_props.maxSpeed.width == -1) ?
-             "unknown" : std::to_string(pci_props.maxSpeed.width));
+             "unknown" : std::to_string(pci_props.maxSpeed.width).c_str());
 
     m_functionsSupportStatus["zesDevicePciGetProperties"] = true;
 }
@@ -418,11 +429,9 @@ void ZeroLevelHandler::readDriverVersion()
         uint32_t major = driver_props.driverVersion >> 24;
         uint32_t minor = (driver_props.driverVersion >> 16) & 0xFF;
         uint32_t rev = driver_props.driverVersion & 0xFFFF;
+        std::string version = std::to_string(major) + "." + std::to_string(minor) + "." + std::to_string(rev);
 
-        qDebug() << "Level Zero GPU Driver Version," << " Driver " << i <<
-            std::to_string(major) + "." +
-            std::to_string(minor) + "." +
-            std::to_string(rev);
+        qDebug() << "Level Zero GPU Driver Version," << " Driver " << i << " " << version.c_str();
     }
 
     m_functionsSupportStatus["zeDriverGetProperties"] = true;
@@ -580,10 +589,10 @@ void ZeroLevelHandler::readProcesses()
 
         for (auto& state : state_list) {
             qDebug() << "PID: " << state.processId;
-            qDebug() << "Device Memory Used(MB): " << std::to_string(state.memSize / BYTES_IN_MB);
-            qDebug() << "Shared Memory Used(MB):  " << std::to_string(state.sharedSize / BYTES_IN_MB);
-            qDebug() << "GPU Engines: " << GetEnginesString(state.engines);
-            qDebug() << "Executable: " << GetProcessName(state.processId);
+            qDebug() << "Device Memory Used(MB): " << std::to_string(state.memSize / BYTES_IN_MB).c_str();
+            qDebug() << "Shared Memory Used(MB):  " << std::to_string(state.sharedSize / BYTES_IN_MB).c_str();
+            qDebug() << "GPU Engines: " << GetEnginesString(state.engines).c_str();
+            qDebug() << "Executable: " << GetProcessName(state.processId).c_str();
         }
     }
 }
@@ -665,7 +674,7 @@ void ZeroLevelHandler::readGpuEngine()
                 usages += std::to_string(items.second) + ";";
             }
             engines.pop_back();
-            qDebug() << "Engines: " << engines +  " Usages: " << usages;
+            qDebug() << std::string("Engines: " + engines +  " Usages: " + usages).c_str();
         }
     }
 }
@@ -739,21 +748,21 @@ void ZeroLevelHandler::readGpuFrequencies()
 
                 qDebug() << "Current Voltage(V)," <<
                     (state.currentVoltage < 0 ? "unknown" :
-                         std::to_string(state.currentVoltage));
+                         std::to_string(state.currentVoltage).c_str());
 
                 qDebug() <<
                     "Current Frequency Request(MHz)," <<
                     (state.request < 0 ? "unknown" :
-                         std::to_string(state.request));
+                         std::to_string(state.request).c_str());
 
                 qDebug() <<
                     "Efficient Min Frequency(MHz)," <<
                     (state.efficient < 0 ? "unknown" :
-                         std::to_string(state.efficient));
+                         std::to_string(state.efficient).c_str());
 
                 qDebug() <<
                     "Max Frequency For Current TDP(MHz)," <<
-                    (state.tdp < 0 ? "unknown" : std::to_string(state.tdp));
+                    (state.tdp < 0 ? "unknown" : std::to_string(state.tdp).c_str());
             }
         }
     }
@@ -785,33 +794,33 @@ void ZeroLevelHandler::readGpuMemory()
                  mem_props.subdeviceId == m_subDeviceID) ||
                 (!mem_props.onSubdevice && m_subDeviceID == UINT32_MAX))
             {
-                qDebug() << "Memory Type," << mem_types[mem_props.type];
-                qDebug() << "Memory Location," << mem_location[mem_props.location];
+                qDebug() << "Memory Type," << mem_types[mem_props.type].c_str();
+                qDebug() << "Memory Location," << mem_location[mem_props.location].c_str();
                 qDebug() << "Memory Bus Width," <<
                     (mem_props.busWidth == -1 ? "unknown" :
-                         std::to_string(mem_props.busWidth));
+                         std::to_string(mem_props.busWidth).c_str());
                 qDebug() <<
                     "Memory Channels," <<
                     (mem_props.numChannels == -1 ? "unknown" :
-                         std::to_string(mem_props.numChannels));
+                         std::to_string(mem_props.numChannels).c_str());
                 qDebug() <<
                     "Physical Memory Size(MB)," <<
                     (mem_props.physicalSize == 0 ? "unknown" :
-                         std::to_string(mem_props.physicalSize / BYTES_IN_MB));
+                         std::to_string(mem_props.physicalSize / BYTES_IN_MB).c_str());
 
                 zes_mem_state_t mem_state{ZES_STRUCTURE_TYPE_MEM_STATE, };
                 status = zesMemoryGetState(mem_modules[i], &mem_state);
                 if (status == ZE_RESULT_SUCCESS) {
                     qDebug() <<
                         "Free Memory(MB)," <<
-                        std::to_string(mem_state.free / BYTES_IN_MB);
+                        std::to_string(mem_state.free / BYTES_IN_MB).c_str();
 
                     qDebug() <<
                         "Total Allocatable Memory(MB)," <<
-                        std::to_string(mem_state.size / BYTES_IN_MB);
+                        std::to_string(mem_state.size / BYTES_IN_MB).c_str();
 
                     qDebug() <<
-                        "Memory Health," << mem_health_types[mem_state.health];
+                        "Memory Health," << mem_health_types[mem_state.health].c_str();
                 }
             }
         }
@@ -926,18 +935,18 @@ void ZeroLevelHandler::readGpuPower()
             {
                 qDebug() << "Default TDP Power Limit (W)," <<
                     (power_domain_props.defaultLimit == -1 ? "unknown" :
-                    std::to_string(power_domain_props.defaultLimit / W_IN_mW));
+                    std::to_string(power_domain_props.defaultLimit / W_IN_mW).c_str());
 
                 qDebug() << "Changeable Power Limit," <<
                     (power_domain_props.canControl ? "Yes" : "No");
 
                 qDebug() << "Max TDP Power Limit(W)," <<
                     (power_domain_props.maxLimit == -1 ? "unknown" :
-                         std::to_string(power_domain_props.maxLimit / W_IN_mW));
+                         std::to_string(power_domain_props.maxLimit / W_IN_mW).c_str());
 
                 qDebug() << "Min TDP Power Limit(W)," <<
                     (power_domain_props.minLimit == -1 ? "unknown" :
-                         std::to_string(power_domain_props.minLimit / W_IN_mW));
+                         std::to_string(power_domain_props.minLimit / W_IN_mW).c_str());
 
                 qDebug() << "Supports Energy Threshold Event," <<
                     (power_domain_props.isEnergyThresholdSupported ? "Yes" : "No");

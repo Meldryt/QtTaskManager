@@ -53,11 +53,11 @@ void CpuInfoIntel::readStaticInfo()
 #ifdef _WIN32
     m_pcmHandler->init();
 
-    m_staticInfo[Globals::SysInfoAttr::Key_Cpu_Brand] = QString::fromStdString(m_pcmHandler->cpuBrand());
+    m_staticInfo[Globals::SysInfoAttr::Key_Cpu_Static_Brand] = QString::fromStdString(m_pcmHandler->cpuBrand());
     //m_staticInfo[Globals::SysInfoAttr::Key_Cpu_Socket] = m_pcmHandler->cpuThreadCount();
-    m_staticInfo[Globals::SysInfoAttr::Key_Cpu_CoreCount] = m_pcmHandler->cpuCoreCount();
-    m_staticInfo[Globals::SysInfoAttr::Key_Cpu_ThreadCount] = m_pcmHandler->cpuThreadCount();
-    m_staticInfo[Globals::SysInfoAttr::Key_Cpu_ThermalDesignPower] = m_pcmHandler->cpuThermalDesignPower();
+    m_staticInfo[Globals::SysInfoAttr::Key_Cpu_Static_CoreCount] = m_pcmHandler->cpuCoreCount();
+    m_staticInfo[Globals::SysInfoAttr::Key_Cpu_Static_ThreadCount] = m_pcmHandler->cpuThreadCount();
+    m_staticInfo[Globals::SysInfoAttr::Key_Cpu_Static_ThermalDesignPower] = m_pcmHandler->cpuThermalDesignPower();
 #endif
 }
 
@@ -66,9 +66,9 @@ void CpuInfoIntel::readDynamicInfo()
 #ifdef _WIN32
     m_pcmHandler->update();
 
-    m_dynamicInfo[Globals::SysInfoAttr::Key_Cpu_CoreUsages] = QVariant::fromValue(m_pcmHandler->cpuCoreUsages());
-    m_dynamicInfo[Globals::SysInfoAttr::Key_Cpu_CoreFrequencies] = QVariant::fromValue(m_pcmHandler->cpuCoreFrequencies());
-    m_dynamicInfo[Globals::SysInfoAttr::Key_Cpu_Power] = m_pcmHandler->cpuPackagePower();
-    m_dynamicInfo[Globals::SysInfoAttr::Key_Cpu_Temperature] = m_pcmHandler->cpuTemperature();
+    m_dynamicInfo[Globals::SysInfoAttr::Key_Cpu_Dynamic_CoreUsages] = QVariant::fromValue(m_pcmHandler->cpuCoreUsages());
+    m_dynamicInfo[Globals::SysInfoAttr::Key_Cpu_Dynamic_CoreFrequencies] = QVariant::fromValue(m_pcmHandler->cpuCoreFrequencies());
+    m_dynamicInfo[Globals::SysInfoAttr::Key_Cpu_Dynamic_Power] = m_pcmHandler->cpuPackagePower();
+    m_dynamicInfo[Globals::SysInfoAttr::Key_Cpu_Dynamic_Temperature] = m_pcmHandler->cpuTemperature();
 #endif
 }

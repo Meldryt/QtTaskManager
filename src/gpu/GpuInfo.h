@@ -12,13 +12,10 @@
 class GpuInfoAmd;
 class GpuInfoIntel;
 class GpuInfoNVidia;
-<<<<<<< HEAD
 #ifdef _WIN32
 #else
     class GpuInfoLinux;
 #endif
-=======
->>>>>>> master
 
 class GpuInfo
 {
@@ -59,14 +56,11 @@ private:
     GpuInfoAmd* m_gpuInfoAmd{ nullptr };
     GpuInfoIntel* m_gpuInfoIntel{ nullptr };
     GpuInfoNVidia* m_gpuInfoNVidia{ nullptr };
-<<<<<<< HEAD
 
 #ifdef _WIN32
 #else
     GpuInfoLinux* m_gpuInfoLinux{ nullptr };
 #endif
-=======
->>>>>>> master
 
     QMap<uint8_t,QVariant> m_staticInfo;
     QMap<uint8_t,QVariant> m_dynamicInfo;

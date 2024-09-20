@@ -84,8 +84,7 @@ void ProcessInfo::init()
 
 void ProcessInfo::update()
 {
-    m_deltaTime = (m_elapsedTimer->elapsed() * 0.001) - m_elapsedTime;
-    m_elapsedTime = m_elapsedTimer->elapsed() * 0.001;
+    //m_elapsedTime = m_elapsedTimer->elapsed() * 0.001;
     //Enumerates all top-level windows on the screen by passing the handle to each window, in turn,
     //to an application-defined callback function. EnumWindows continues until the last top-level
     //window is enumerated or the callback function returns FALSE.
@@ -99,9 +98,10 @@ void ProcessInfo::update()
     systemUpTime();
     scanCpuTime();
     updateRunningProcesses();
-#endif
 
     qDebug() << "number of processes: " << m_procProcessMap.size();
+#endif
+
     ++m_currentFrameIdx;
 }
 
@@ -243,6 +243,7 @@ void ProcessInfo::updateRunningProcesses()
 }
 #endif
 
+#ifdef __linux__
 void ProcessInfo::scanProcessStats(const char* entryName, ProcProcess& process)
 {
     FILE* file;
@@ -573,6 +574,8 @@ void ProcessInfo::removeInactiveProcesses()
         }
     }
 }
+#endif
+
 
 #ifdef _WIN32
 void ProcessInfo::updateProcessesUsage()
@@ -589,8 +592,8 @@ void ProcessInfo::updateProcessesUsage()
         PROCESS_MEMORY_COUNTERS_EX pmc;
         GetProcessMemoryInfo(processHandle, (PROCESS_MEMORY_COUNTERS*)&pmc, sizeof(pmc));
 
-        process->second.usedVirtualMemory = pmc.PrivateUsage;
-        process->second.usedPhysicalMemory = pmc.WorkingSetSize;
+        process->second.virtualRamUsageSize = pmc.PrivateUsage;
+        process->second.ramUsageSize = pmc.WorkingSetSize;
         process->second.timestamp = int64_t(m_elapsedTimer->elapsed() * 0.001);
         updateProcessUsage(processHandle, process->second);
 
@@ -626,14 +629,15 @@ void ProcessInfo::updateProcessUsage(const HANDLE& processHandle, Process& proce
     processInfo.lastUserCpu = user;
     processInfo.lastSysCpu = sys;
     double currentUsedCpuLoad = std::ceil( percent * 10000.0) / 100.0;
-    processInfo.usedCpuLoadSum += currentUsedCpuLoad;
-    ++processInfo.usedCpuLoadCounter;
+    processInfo.cpuUsagePercent = currentUsedCpuLoad;
+    processInfo.cpuAverageUsagePercentSum += currentUsedCpuLoad;
+    ++processInfo.cpuAverageUsageCounter;
     //processInfo.usedCpuLoad = processInfo.usedCpuLoadSum/processInfo.usedCpuLoadCounter;
-    if(processInfo.usedCpuLoadCounter == 3)
+    if(processInfo.cpuAverageUsageCounter == 3)
     {
-        processInfo.usedCpuLoad = processInfo.usedCpuLoadSum/processInfo.usedCpuLoadCounter;
-        processInfo.usedCpuLoadSum = processInfo.usedCpuLoad;
-        processInfo.usedCpuLoadCounter = 1;
+        processInfo.cpuAverageUsagePercent = processInfo.cpuAverageUsagePercentSum /processInfo.cpuAverageUsageCounter;
+        processInfo.cpuAverageUsagePercentSum = processInfo.cpuAverageUsagePercent;
+        processInfo.cpuAverageUsageCounter = 1;
     }
 }
 
@@ -707,7 +711,7 @@ BOOL ProcessInfo::EnumWindowsProc(HWND hwnd)
         Process process;
         process.processID = processId;
         process.description = processWindowName;
-        process.baseName = processBaseName;
+        process.processName = processBaseName;
         process.filePath = processFilePath;
 
         bool newProcess = addProcess(process);

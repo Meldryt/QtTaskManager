@@ -75,14 +75,14 @@ void CpuInfoAmd::readStaticInfo()
 
     m_ryzenMasterSdkHandler->readStaticInfo();
 
-    m_staticInfo[Globals::SysInfoAttr::Key_Cpu_Brand] = QString::fromStdString(m_ryzenMasterSdkHandler->cpuBrand());
-    m_staticInfo[Globals::SysInfoAttr::Key_Cpu_Socket] = QString::fromStdString(m_ryzenMasterSdkHandler->cpuSocket());
-    m_staticInfo[Globals::SysInfoAttr::Key_Cpu_CoreCount] = m_ryzenMasterSdkHandler->cpuCoreCount();
-    m_staticInfo[Globals::SysInfoAttr::Key_Cpu_ThreadCount] = Globals::SysInfo_Uninitialized;
-    m_staticInfo[Globals::SysInfoAttr::Key_Cpu_BaseFrequency] = m_ryzenMasterSdkHandler->cpuBaseFrequency();
-    m_staticInfo[Globals::SysInfoAttr::Key_Cpu_L1CacheSize] = m_ryzenMasterSdkHandler->cpuL1CacheSize();
-    m_staticInfo[Globals::SysInfoAttr::Key_Cpu_L2CacheSize] = m_ryzenMasterSdkHandler->cpuL2CacheSize();
-    m_staticInfo[Globals::SysInfoAttr::Key_Cpu_L3CacheSize] = m_ryzenMasterSdkHandler->cpuL3CacheSize();
+    m_staticInfo[Globals::SysInfoAttr::Key_Cpu_Static_Brand] = QString::fromStdString(m_ryzenMasterSdkHandler->cpuBrand());
+    m_staticInfo[Globals::SysInfoAttr::Key_Cpu_Static_Socket] = QString::fromStdString(m_ryzenMasterSdkHandler->cpuSocket());
+    m_staticInfo[Globals::SysInfoAttr::Key_Cpu_Static_CoreCount] = m_ryzenMasterSdkHandler->cpuCoreCount();
+    m_staticInfo[Globals::SysInfoAttr::Key_Cpu_Static_ThreadCount] = Globals::SysInfo_Uninitialized;
+    m_staticInfo[Globals::SysInfoAttr::Key_Cpu_Static_BaseFrequency] = m_ryzenMasterSdkHandler->cpuBaseFrequency();
+    m_staticInfo[Globals::SysInfoAttr::Key_Cpu_Static_L1CacheSize] = m_ryzenMasterSdkHandler->cpuL1CacheSize();
+    m_staticInfo[Globals::SysInfoAttr::Key_Cpu_Static_L2CacheSize] = m_ryzenMasterSdkHandler->cpuL2CacheSize();
+    m_staticInfo[Globals::SysInfoAttr::Key_Cpu_Static_L3CacheSize] = m_ryzenMasterSdkHandler->cpuL3CacheSize();
     m_staticInfo[Globals::SysInfoAttr::Key_Api_Functions_StatusSupport_Wmi] = QVariant::fromValue(m_ryzenMasterSdkHandler->functionsSupportStatus());
 #endif
 }
@@ -98,12 +98,12 @@ void CpuInfoAmd::readDynamicInfo()
 
     m_ryzenMasterSdkHandler->readDynamicInfo();
 
-    m_dynamicInfo[Globals::SysInfoAttr::Key_Cpu_CoreFrequencies] = QVariant::fromValue(m_ryzenMasterSdkHandler->cpuCoreFrequencies());
-    m_dynamicInfo[Globals::SysInfoAttr::Key_Cpu_CurrentMaxFrequency] = m_ryzenMasterSdkHandler->cpuCurrentMaxFrequency();
-    m_dynamicInfo[Globals::SysInfoAttr::Key_Cpu_CoreVoltage] = m_ryzenMasterSdkHandler->cpuCoreVoltage();
-    m_dynamicInfo[Globals::SysInfoAttr::Key_Cpu_Power] = m_ryzenMasterSdkHandler->cpuPower();
-    m_dynamicInfo[Globals::SysInfoAttr::Key_Cpu_SocPower] = m_ryzenMasterSdkHandler->cpuSocPower();
-    m_dynamicInfo[Globals::SysInfoAttr::Key_Cpu_Temperature] = m_ryzenMasterSdkHandler->cpuTemperature();
-    m_dynamicInfo[Globals::SysInfoAttr::Key_Cpu_Fanspeed] = Globals::SysInfo_Uninitialized;
+    m_dynamicInfo[Globals::SysInfoAttr::Key_Cpu_Dynamic_CoreFrequencies] = QVariant::fromValue(m_ryzenMasterSdkHandler->cpuCoreFrequencies());
+    m_dynamicInfo[Globals::SysInfoAttr::Key_Cpu_Dynamic_CurrentMaxFrequency] = m_ryzenMasterSdkHandler->cpuCurrentMaxFrequency();
+    m_dynamicInfo[Globals::SysInfoAttr::Key_Cpu_Dynamic_CoreVoltage] = m_ryzenMasterSdkHandler->cpuCoreVoltage();
+    m_dynamicInfo[Globals::SysInfoAttr::Key_Cpu_Dynamic_Power] = m_ryzenMasterSdkHandler->cpuPower();
+    m_dynamicInfo[Globals::SysInfoAttr::Key_Cpu_Dynamic_SocPower] = m_ryzenMasterSdkHandler->cpuSocPower();
+    m_dynamicInfo[Globals::SysInfoAttr::Key_Cpu_Dynamic_Temperature] = m_ryzenMasterSdkHandler->cpuTemperature();
+    m_dynamicInfo[Globals::SysInfoAttr::Key_Cpu_Dynamic_Fanspeed] = Globals::SysInfo_Uninitialized;
 #endif
 }

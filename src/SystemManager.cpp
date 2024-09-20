@@ -222,8 +222,8 @@ void SystemManager::update()
             {
                 if (m_processMap.find(process.first) != m_processMap.end())
                 {
-                    m_processMap[process.first].usedGpuLoad = process.second.first;
-                    m_processMap[process.first].usedGpuMemory = process.second.second;
+                    m_processMap[process.first].gpuUsagePercent = process.second.first;
+                    m_processMap[process.first].videoRamUsageSize = process.second.second;
                 }
             }
         }
@@ -277,11 +277,11 @@ void SystemManager::update()
 
     if (m_dynamicInfoWmiChanged)
     {
-        QVariant variant = m_dynamicInfoWmi[Globals::Key_Network_BytesReceivedPerSec];
+        QVariant variant = m_dynamicInfoWmi[Globals::Key_Network_Dynamic_BytesReceivedPerSec];
         if (variant.canConvert<uint32_t>())
         {
             const uint32_t usedBytesReceivedPerSec = variant.value<uint32_t>();
-            m_tabPerformance->slotUsedNetworkSpeed(usedBytesReceivedPerSec);
+            //m_tabPerformance->slotUsedNetworkSpeed(usedBytesReceivedPerSec);
         }
 
         m_dynamicInfoWmiChanged = false;

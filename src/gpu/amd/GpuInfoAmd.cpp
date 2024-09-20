@@ -97,8 +97,8 @@ void GpuInfoAmd::readStaticInfo()
         return;
     }
 
-    m_staticInfo[Globals::SysInfoAttr::Key_Gpu_DriverInfo] = QString::fromStdString(m_agsHandler->driverVersion());
-    m_staticInfo[Globals::SysInfoAttr::Key_Gpu_DriverVersion] = QString::fromStdString(m_agsHandler->softwareVersion());
+    m_staticInfo[Globals::SysInfoAttr::Key_Gpu_Static_DriverInfo] = QString::fromStdString(m_agsHandler->driverVersion());
+    m_staticInfo[Globals::SysInfoAttr::Key_Gpu_Static_DriverVersion] = QString::fromStdString(m_agsHandler->softwareVersion());
 #endif
 }
 

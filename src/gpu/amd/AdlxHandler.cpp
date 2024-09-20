@@ -172,12 +172,12 @@ bool AdlxHandler::readStaticInfo()
 
     checkSupportedDynamicFunctions();
 
-    m_staticInfo[Globals::SysInfoAttr::Key_Gpu_ChipDesigner] = QString::fromStdString(m_gpuChipDesigner.c_str());
-    m_staticInfo[Globals::SysInfoAttr::Key_Gpu_CardManufacturer] = QString::fromStdString(m_gpuCardManufacturer);
-    m_staticInfo[Globals::SysInfoAttr::Key_Gpu_Model] = QString::fromStdString(m_gpuModel);
-    m_staticInfo[Globals::SysInfoAttr::Key_Gpu_MemorySize] = m_gpuMemorySize;
-    m_staticInfo[Globals::SysInfoAttr::Key_Gpu_MemoryType] = QString::fromStdString(m_gpuMemoryType);
-    m_staticInfo[Globals::SysInfoAttr::Key_Gpu_PnpString] = QString::fromStdString(m_gpuPnpString);
+    m_staticInfo[Globals::SysInfoAttr::Key_Gpu_Static_ChipDesigner] = QString::fromStdString(m_gpuChipDesigner.c_str());
+    m_staticInfo[Globals::SysInfoAttr::Key_Gpu_Static_CardManufacturer] = QString::fromStdString(m_gpuCardManufacturer);
+    m_staticInfo[Globals::SysInfoAttr::Key_Gpu_Static_Model] = QString::fromStdString(m_gpuModel);
+    m_staticInfo[Globals::SysInfoAttr::Key_Gpu_Static_MemorySize] = m_gpuMemorySize;
+    m_staticInfo[Globals::SysInfoAttr::Key_Gpu_Static_MemoryType] = QString::fromStdString(m_gpuMemoryType);
+    m_staticInfo[Globals::SysInfoAttr::Key_Gpu_Static_PnpString] = QString::fromStdString(m_gpuPnpString);
     m_staticInfo[Globals::SysInfoAttr::Key_Api_Functions_StatusSupport_Adlx] = QVariant::fromValue(m_functionsSupportStatus);
     m_staticInfo[Globals::SysInfoAttr::Key_Api_Functions_ErrorMessage_Adlx] = QVariant::fromValue(m_functionsStatusMessage);
 
@@ -193,18 +193,18 @@ bool AdlxHandler::readDynamicInfo()
 
     ShowCurrentAllMetrics(m_perfMonitoringService, m_oneGPU);
 
-    m_dynamicInfo[Globals::SysInfoAttr::Key_Gpu_Usage] = m_gpuUsage;
-    m_dynamicInfo[Globals::SysInfoAttr::Key_Gpu_ClockSpeed] = m_gpuClockSpeed;
-    m_dynamicInfo[Globals::SysInfoAttr::Key_Gpu_VRamUsage] = m_gpuVramUsage;
-    m_dynamicInfo[Globals::SysInfoAttr::Key_Gpu_VRamClockSpeed] = m_gpuVramClockSpeed;
-    m_dynamicInfo[Globals::SysInfoAttr::Key_Gpu_VRamUsed] = m_gpuVramUsed;
-    m_dynamicInfo[Globals::SysInfoAttr::Key_Gpu_Power] = m_gpuPower;
-    m_dynamicInfo[Globals::SysInfoAttr::Key_Gpu_TotalBoardPower] = m_gpuTotalBoardPower;
-    m_dynamicInfo[Globals::SysInfoAttr::Key_Gpu_Voltage] = m_gpuVoltage;
-    m_dynamicInfo[Globals::SysInfoAttr::Key_Gpu_Temperature] = m_gpuTemperature;
-    m_dynamicInfo[Globals::SysInfoAttr::Key_Gpu_HotSpotTemperature] = m_gpuHotspotTemperature;
-    m_dynamicInfo[Globals::SysInfoAttr::Key_Gpu_FanSpeed] = m_gpuFanSpeed;
-    m_dynamicInfo[Globals::SysInfoAttr::Key_Gpu_FanSpeedUsage] = m_gpuFanSpeedUsage;
+    m_dynamicInfo[Globals::SysInfoAttr::Key_Gpu_Dynamic_Usage] = m_gpuUsage;
+    m_dynamicInfo[Globals::SysInfoAttr::Key_Gpu_Dynamic_ClockSpeed] = m_gpuClockSpeed;
+    m_dynamicInfo[Globals::SysInfoAttr::Key_Gpu_Dynamic_VRamUsage] = m_gpuVramUsage;
+    m_dynamicInfo[Globals::SysInfoAttr::Key_Gpu_Dynamic_VRamClockSpeed] = m_gpuVramClockSpeed;
+    m_dynamicInfo[Globals::SysInfoAttr::Key_Gpu_Dynamic_VRamUsed] = m_gpuVramUsed;
+    m_dynamicInfo[Globals::SysInfoAttr::Key_Gpu_Dynamic_Power] = m_gpuPower;
+    m_dynamicInfo[Globals::SysInfoAttr::Key_Gpu_Dynamic_TotalBoardPower] = m_gpuTotalBoardPower;
+    m_dynamicInfo[Globals::SysInfoAttr::Key_Gpu_Dynamic_Voltage] = m_gpuVoltage;
+    m_dynamicInfo[Globals::SysInfoAttr::Key_Gpu_Dynamic_Temperature] = m_gpuTemperature;
+    m_dynamicInfo[Globals::SysInfoAttr::Key_Gpu_Dynamic_HotSpotTemperature] = m_gpuHotspotTemperature;
+    m_dynamicInfo[Globals::SysInfoAttr::Key_Gpu_Dynamic_FanSpeed] = m_gpuFanSpeed;
+    m_dynamicInfo[Globals::SysInfoAttr::Key_Gpu_Dynamic_FanSpeedUsage] = m_gpuFanSpeedUsage;
 
 	return true;
 }

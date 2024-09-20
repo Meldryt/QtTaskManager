@@ -93,14 +93,14 @@ void CpuInfoWindows::readStaticInfo()
     initPdh();
     readPdhBaseFrequency();
 
-    m_staticInfo[Globals::SysInfoAttr::Key_Cpu_Brand] = QString::fromStdString(m_cpuBrand);
-    m_staticInfo[Globals::SysInfoAttr::Key_Cpu_Socket] = Globals::SysInfo_Uninitialized;
-    m_staticInfo[Globals::SysInfoAttr::Key_Cpu_CoreCount] = m_cpuCoreCount;
-    m_staticInfo[Globals::SysInfoAttr::Key_Cpu_ThreadCount] = m_cpuThreadCount;
-    m_staticInfo[Globals::SysInfoAttr::Key_Cpu_BaseFrequency] = m_cpuBaseFrequency;
-    m_staticInfo[Globals::SysInfoAttr::Key_Cpu_L1CacheSize] = m_cpuL1CacheSize;
-    m_staticInfo[Globals::SysInfoAttr::Key_Cpu_L2CacheSize] = m_cpuL2CacheSize;
-    m_staticInfo[Globals::SysInfoAttr::Key_Cpu_L3CacheSize] = m_cpuL3CacheSize;
+    m_staticInfo[Globals::SysInfoAttr::Key_Cpu_Static_Brand] = QString::fromStdString(m_cpuBrand);
+    m_staticInfo[Globals::SysInfoAttr::Key_Cpu_Static_Socket] = Globals::SysInfo_Uninitialized;
+    m_staticInfo[Globals::SysInfoAttr::Key_Cpu_Static_CoreCount] = m_cpuCoreCount;
+    m_staticInfo[Globals::SysInfoAttr::Key_Cpu_Static_ThreadCount] = m_cpuThreadCount;
+    m_staticInfo[Globals::SysInfoAttr::Key_Cpu_Static_BaseFrequency] = m_cpuBaseFrequency;
+    m_staticInfo[Globals::SysInfoAttr::Key_Cpu_Static_L1CacheSize] = m_cpuL1CacheSize;
+    m_staticInfo[Globals::SysInfoAttr::Key_Cpu_Static_L2CacheSize] = m_cpuL2CacheSize;
+    m_staticInfo[Globals::SysInfoAttr::Key_Cpu_Static_L3CacheSize] = m_cpuL3CacheSize;
 }
 
 void CpuInfoWindows::readDynamicInfo()
@@ -108,9 +108,9 @@ void CpuInfoWindows::readDynamicInfo()
     readPdhCoreUsage();
     readPdhCurrentMaxFrequency();
 
-    m_dynamicInfo[Globals::SysInfoAttr::Key_Cpu_TotalUsage] = m_cpuTotalUsage;
-    m_dynamicInfo[Globals::SysInfoAttr::Key_Cpu_CoreUsages] = QVariant::fromValue(m_cpuCoreUsages);
-    m_dynamicInfo[Globals::SysInfoAttr::Key_Cpu_CurrentMaxFrequency] = m_cpuCurrentMaxFrequency;
+    m_dynamicInfo[Globals::SysInfoAttr::Key_Cpu_Dynamic_TotalUsage] = m_cpuTotalUsage;
+    m_dynamicInfo[Globals::SysInfoAttr::Key_Cpu_Dynamic_CoreUsages] = QVariant::fromValue(m_cpuCoreUsages);
+    m_dynamicInfo[Globals::SysInfoAttr::Key_Cpu_Dynamic_CurrentMaxFrequency] = m_cpuCurrentMaxFrequency;
 }
 
 void CpuInfoWindows::readCpuIdBrand()

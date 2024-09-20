@@ -62,8 +62,8 @@ void TabProcesses::updateTable()
         const ProcessInfo::Process& process = m_processList.at(index);
 
         bool newRow{false};
-        uint32_t tableRow = index + 1;
-        if(m_tableProcesses->rowCount()-1 < tableRow)
+        const uint32_t tableRow = index + 1;
+        if(static_cast<uint32_t>(m_tableProcesses->rowCount()-1) < tableRow)
         {
             m_tableProcesses->insertRow(tableRow);
             for(uint8_t colIndex = 0; colIndex < m_tableProcesses->columnCount(); ++colIndex)
@@ -213,14 +213,6 @@ void TabProcesses::sortProcessList()
         break;
     case SortMode::SortByVideoRamUsageSize:
         sortByVideoRamUsageSize();
-        break;
-    case SortMode::SortGpuUsageHigh:
-    case SortMode::SortGpuUsageLow:
-        sortGpuUsage();
-        break;
-    case SortMode::SortGpuMemoryUsedHigh:
-    case SortMode::SortGpuMemoryUsedLow:
-        sortGpuMemoryUsed();
         break;
     default:
         break;
