@@ -139,48 +139,103 @@ void TabPerformance::initGpuWidgets()
 
 void TabPerformance::initMemoryWidgets()
 {
-    m_memoryLineSeries = new QLineSeries();
-    m_memoryLineSeries->setUseOpenGL(false); //enable opengl leads to memory leak running GlWindow
-
-    m_memoryChart = new QChart();
-    m_memoryChart->legend()->hide();
-    m_memoryChart->addSeries(m_memoryLineSeries);
-    m_memoryChart->createDefaultAxes();
-    m_memoryChart->axes(Qt::Horizontal).back()->setRange(0, 60);
-    m_memoryChart->axes(Qt::Vertical).back()->setRange(0.0, 100.0);
-    //chart->setTitle("Simple line chart example");
-
-    m_memoryChartView = new QChartView(m_memoryChart);
-    m_memoryChartView->setRenderHint(QPainter::Antialiasing);
+    m_memoryStackedWidget = new QStackedWidget(this);
+    m_memoryStackedWidget->setCurrentIndex(0);
 
     m_memoryWidget = new QWidget(this);
 
+    m_memoryTableWidget = new QTableWidget(m_memoryWidget);
+    m_memoryTableWidget->setRowCount(MemoryGraphTitles.size());
+    m_memoryTableWidget->setColumnCount(2);
+    m_memoryTableWidget->horizontalHeader()->setStretchLastSection(true);
+    m_memoryTableWidget->horizontalHeader()->hide();
+    m_memoryTableWidget->verticalHeader()->hide();
+
+    for (int i = 0; i < MemoryGraphTitles.size(); ++i)
+    {
+        m_memoryTableWidget->setItem(i, 0, new QTableWidgetItem(MemoryGraphTitles.at(i)));
+        m_memoryTableWidget->setItem(i, 1, new QTableWidgetItem());
+    }
+
+    m_memoryGroupBoxActiveGraph = new QGroupBox(m_memoryWidget);
+    m_memoryLabelActiveGraph = new QLabel("Active Graph:", m_memoryWidget);
+    m_memoryComboBoxActiveGraph = new QComboBox(m_memoryWidget);
+    m_memoryComboBoxActiveGraph->addItems(MemoryGraphTitles);
+    m_memoryComboBoxActiveGraph->setCurrentIndex(0);
+
+    QGridLayout* memoryGroupBoxLayout = new QGridLayout(m_memoryWidget);
+    memoryGroupBoxLayout->addWidget(m_memoryLabelActiveGraph, 0, 0);
+    memoryGroupBoxLayout->addWidget(m_memoryComboBoxActiveGraph, 0, 1);
+    m_memoryGroupBoxActiveGraph->setLayout(memoryGroupBoxLayout);
+
+    QObject::connect(m_memoryComboBoxActiveGraph, &QComboBox::currentIndexChanged,
+        m_memoryStackedWidget, &QStackedWidget::setCurrentIndex);
+
     QGridLayout* memoryWidgetLayout = new QGridLayout(m_memoryWidget);
-    memoryWidgetLayout->addWidget(m_memoryChartView, 0, 0);
+    memoryWidgetLayout->addWidget(m_memoryGroupBoxActiveGraph, 0, 1);
+    memoryWidgetLayout->addWidget(m_memoryTableWidget, 1, 0);
+    memoryWidgetLayout->addWidget(m_memoryStackedWidget, 1, 1);
+    memoryWidgetLayout->setRowStretch(0, 1);
+    memoryWidgetLayout->setRowStretch(1, 10);
+    memoryWidgetLayout->setColumnStretch(0, 1);
+    memoryWidgetLayout->setColumnStretch(1, 2);
     m_memoryWidget->setLayout(memoryWidgetLayout);
+
+    initMemoryGraphs();
 }
 
 void TabPerformance::initNetworkWidgets()
 {
-    m_networkLineSeries = new QLineSeries();
-    m_networkLineSeries->setUseOpenGL(false);
-
-    m_networkChart = new QChart();
-    m_networkChart->legend()->hide();
-    m_networkChart->addSeries(m_networkLineSeries);
-    m_networkChart->createDefaultAxes();
-    m_networkChart->axes(Qt::Horizontal).back()->setRange(0, 60);
-    m_networkChart->axes(Qt::Vertical).back()->setRange(0.0, 1000.0);
-    //chart->setTitle("Simple line chart example");
-
-    m_networkChartView = new QChartView(m_networkChart);
-    m_networkChartView->setRenderHint(QPainter::Antialiasing);
+    m_networkStackedWidget = new QStackedWidget(this);
+    m_networkStackedWidget->setCurrentIndex(0);
 
     m_networkWidget = new QWidget(this);
 
+    m_networkTableWidget = new QTableWidget(m_networkWidget);
+    m_networkTableWidget->setRowCount(NetworkGraphTitles.size());
+    m_networkTableWidget->setColumnCount(2);
+    m_networkTableWidget->horizontalHeader()->setStretchLastSection(true);
+    m_networkTableWidget->horizontalHeader()->hide();
+    m_networkTableWidget->verticalHeader()->hide();
+
+    for (int i = 0; i < NetworkGraphTitles.size(); ++i)
+    {
+        m_networkTableWidget->setItem(i, 0, new QTableWidgetItem(NetworkGraphTitles.at(i)));
+        m_networkTableWidget->setItem(i, 1, new QTableWidgetItem());
+    }
+
+    m_networkGroupBoxActiveNetwork = new QGroupBox(m_networkWidget);
+    // m_networkLabelActiveNetwork = new QLabel("Active Network:", m_networkWidget);
+    m_networkComboBoxActiveNetwork = new QComboBox(m_networkWidget);
+    //m_networkComboBoxActiveNetwork->addItems(NetworkGraphTitles);
+    //m_networkComboBoxActiveNetwork->setCurrentIndex(0);
+
+    m_networkGroupBoxActiveGraph = new QGroupBox(m_networkWidget);
+   // m_networkLabelActiveGraph = new QLabel("Active Graph:", m_networkWidget);
+    m_networkComboBoxActiveGraph = new QComboBox(m_networkWidget);
+    m_networkComboBoxActiveGraph->addItems(NetworkGraphTitles);
+    m_networkComboBoxActiveGraph->setCurrentIndex(0);
+
+    QGridLayout* networkGroupBoxLayout = new QGridLayout(m_networkWidget);
+    networkGroupBoxLayout->addWidget(m_networkComboBoxActiveGraph, 0, 0);
+    //networkGroupBoxLayout->addWidget(m_networkComboBoxActiveGraph, 0, 1);
+    m_networkGroupBoxActiveGraph->setLayout(networkGroupBoxLayout);
+
+    QObject::connect(m_networkComboBoxActiveGraph, &QComboBox::currentIndexChanged,
+        m_networkStackedWidget, &QStackedWidget::setCurrentIndex);
+
     QGridLayout* networkWidgetLayout = new QGridLayout(m_networkWidget);
-    networkWidgetLayout->addWidget(m_networkChartView, 0, 0);
+    networkWidgetLayout->addWidget(m_networkGroupBoxActiveNetwork, 0, 0);
+    networkWidgetLayout->addWidget(m_networkGroupBoxActiveGraph, 0, 1);
+    networkWidgetLayout->addWidget(m_networkTableWidget, 1, 0);
+    networkWidgetLayout->addWidget(m_networkStackedWidget, 1, 1);
+    networkWidgetLayout->setRowStretch(0, 1);
+    networkWidgetLayout->setRowStretch(1, 10);
+    networkWidgetLayout->setColumnStretch(0, 1);
+    networkWidgetLayout->setColumnStretch(1, 2);
     m_networkWidget->setLayout(networkWidgetLayout);
+
+    initNetworkGraphs();
 }
 
 void TabPerformance::initCpuGraphs()
@@ -227,6 +282,33 @@ void TabPerformance::initGpuGraphs()
     {
         m_gpuDynamicMax[i] = 0.0;
         m_gpuStackedWidget->addWidget(m_gpuGraphs[i]->chartView);
+    }
+}
+
+void TabPerformance::initMemoryGraphs()
+{
+    int index = 0;
+
+    m_memoryGraphs[index++] = new GraphInfo(QString("MB"), 60, 1000);             //RAM Size Usage
+
+    for (int i = 0; i < MemoryGraphTitles.size(); ++i)
+    {
+        m_memoryDynamicMax[i] = 0.0;
+        m_memoryStackedWidget->addWidget(m_memoryGraphs[i]->chartView);
+    }
+}
+
+void TabPerformance::initNetworkGraphs()
+{
+    int index = 0;
+
+    m_networkGraphs[index++] = new GraphInfo(QString("Bytes"), 60, 1000);             //Network Download (Bytes/Sec Received)
+    m_networkGraphs[index++] = new GraphInfo(QString("Bytes"), 60, 1000);             //Network Upload (Bytes/Sec Sent)
+
+    for (int i = 0; i < NetworkGraphTitles.size(); ++i)
+    {
+        m_networkDynamicMax[i] = 0.0;
+        m_networkStackedWidget->addWidget(m_networkGraphs[i]->chartView);
     }
 }
 
@@ -334,48 +416,92 @@ void TabPerformance::processGpu()
 
 void TabPerformance::processMemory()
 {
-    QList<QPointF> points = m_memoryLineSeries->points();
-    if (!points.empty())
+    for (int i = 0; i < m_memoryGraphs.size(); ++i)
     {
-        m_memoryLineSeries->clear();
-        for (uint8_t i = 0; i < points.size(); ++i)
+        GraphInfo*& graphInfo = m_memoryGraphs[i];
+        graphInfo->chartView->setUpdatesEnabled(false);
+
+        for (int lineSeriesIndex = 0; lineSeriesIndex < graphInfo->lineSeries.size(); ++lineSeriesIndex)
         {
-            points[i].setX(points.at(i).x() - 1);
+            QLineSeries* lineSeries = graphInfo->lineSeries.at(lineSeriesIndex);
+            QVector<QPointF>& points = graphInfo->points.at(lineSeriesIndex);
+            const size_t pointSize = points.size();
+
+            if (!points.empty())
+            {
+                for (uint8_t j = 0; j < pointSize; ++j)
+                {
+                    points[j].setX(points[j].x() - 1);
+                }
+                if (points.first().x() < 0)
+                {
+                    points.removeFirst();
+                }
+            }
+
+            double currentY = 0.0;
+            if (!graphInfo->values.empty())
+            {
+                currentY = std::round(graphInfo->values.at(lineSeriesIndex));
+            }
+            points.append({ 60.0, currentY });
+            lineSeries->replace(points);
         }
-        if (points.first().x() < 0)
-        {
-            points.removeFirst();
-        }
-        m_memoryLineSeries->append(points);
+
+        graphInfo->chartView->setUpdatesEnabled(true);
     }
 
-    double x = 60;
-    double y = m_memoryUsedSize;
-    m_memoryLineSeries->append(x, y);
-    m_memoryChartView->repaint();
+    //m_cpuGraphs[m_cpuComboBoxActiveGraph->currentIndex()]->chartView->repaint();
+
+    for (int i = 0; i < m_memoryTableInfos.size(); ++i)
+    {
+        m_memoryTableWidget->item(i, 1)->setText(m_memoryTableInfos[i]);
+    }
 }
 
 void TabPerformance::processNetwork()
 {
-    QList<QPointF> points = m_networkLineSeries->points();
-    if (!points.empty())
+    for (int i = 0; i < m_networkGraphs.size(); ++i)
     {
-        m_networkLineSeries->clear();
-        for (uint8_t i = 0; i < points.size(); ++i)
+        GraphInfo*& graphInfo = m_networkGraphs[i];
+        graphInfo->chartView->setUpdatesEnabled(false);
+
+        for (int lineSeriesIndex = 0; lineSeriesIndex < graphInfo->lineSeries.size(); ++lineSeriesIndex)
         {
-            points[i].setX(points.at(i).x() - 1);
+            QLineSeries* lineSeries = graphInfo->lineSeries.at(lineSeriesIndex);
+            QVector<QPointF>& points = graphInfo->points.at(lineSeriesIndex);
+            const size_t pointSize = points.size();
+
+            if (!points.empty())
+            {
+                for (uint8_t j = 0; j < pointSize; ++j)
+                {
+                    points[j].setX(points[j].x() - 1);
+                }
+                if (points.first().x() < 0)
+                {
+                    points.removeFirst();
+                }
+            }
+
+            double currentY = 0.0;
+            if (!graphInfo->values.empty())
+            {
+                currentY = std::round(graphInfo->values.at(lineSeriesIndex));
+            }
+            points.append({ 60.0, currentY });
+            lineSeries->replace(points);
         }
-        if (points.first().x() < 0)
-        {
-            points.removeFirst();
-        }
-        m_networkLineSeries->append(points);
+
+        graphInfo->chartView->setUpdatesEnabled(true);
     }
 
-    double x = 60;
-    double y = m_networkBytesReceivedPerSec;
-    m_networkLineSeries->append(x, y);
-    m_networkChartView->repaint();
+    //m_cpuGraphs[m_cpuComboBoxActiveGraph->currentIndex()]->chartView->repaint();
+
+    for (int i = 0; i < m_networkTableInfos.size(); ++i)
+    {
+        m_networkTableWidget->item(i, 1)->setText(m_networkTableInfos[i]);
+    }
 }
 
 void TabPerformance::updateCpuMultiGraphs(const QMap<uint8_t, QVariant>& dynamicInfo)
@@ -545,22 +671,51 @@ void TabPerformance::slotGpuDynamicInfo(const QMap<uint8_t, QVariant>& dynamicIn
 void TabPerformance::slotTotalMemory(const uint32_t& val)
 {
     m_memoryTotalSize = val;
-    m_memoryChart->axes(Qt::Vertical).back()->setRange(0.0, m_memoryTotalSize);
+    //m_memoryChart->axes(Qt::Vertical).back()->setRange(0.0, m_memoryTotalSize);
 }
 
 void TabPerformance::slotUsedMemory(const uint32_t& val)
 {
     m_memoryUsedSize = val;
+
+    int index = 0;
+
+    m_memoryGraphs[index]->values[0] = m_memoryUsedSize;
+
+    for (int i = 0; i < m_memoryGraphs.size(); ++i)
+    {
+        if (m_memoryGraphs[i]->values.size() == 1)
+        {
+            if (m_memoryDynamicMax[i] < m_memoryGraphs[i]->values[0])
+            {
+                m_memoryDynamicMax[i] = m_memoryGraphs[i]->values[0];
+                m_memoryGraphs[i]->axisMax = std::ceil(m_memoryDynamicMax[i]);
+                m_memoryGraphs[i]->chart->axes(Qt::Vertical).back()->setMax(m_memoryGraphs[i]->axisMax);
+            }
+            m_memoryTableInfos[i] = QString::number(m_memoryGraphs[i]->values[0], 'f', 2) + " " + m_memoryGraphs[i]->unit;
+        }
+    }
 }
 
-void TabPerformance::slotBytesReceivedPerSec(const std::vector<uint32_t>& val)
+void TabPerformance::slotNetworkDynamicInfo(const QMap<uint8_t, QVariant>& dynamicInfo)
 {
-    m_networkBytesReceivedPerSec = val[0];
+    int index = 0;
 
-    if (m_networkBytesReceivedPerSec > m_networkCurrentMaxSpeed)
+    m_networkGraphs[index++]->values[0] = dynamicInfo[Globals::SysInfoAttr::Key_Network_Dynamic_BytesReceivedPerSec].value<std::vector<uint32_t>>()[0];
+    m_networkGraphs[index++]->values[0] = dynamicInfo[Globals::SysInfoAttr::Key_Network_Dynamic_BytesSentPerSec].value<std::vector<uint32_t>>()[0];
+
+    for (int i = 0; i < m_networkGraphs.size(); ++i)
     {
-        m_networkCurrentMaxSpeed = m_networkBytesReceivedPerSec;
-        m_networkChart->axes(Qt::Vertical).back()->setRange(0.0, m_networkCurrentMaxSpeed);
+        if (m_networkGraphs[i]->values.size() == 1)
+        {
+            if (m_networkDynamicMax[i] < m_networkGraphs[i]->values[0])
+            {
+                m_networkDynamicMax[i] = m_networkGraphs[i]->values[0];
+                m_networkGraphs[i]->axisMax = std::ceil(m_networkDynamicMax[i]);
+                m_networkGraphs[i]->chart->axes(Qt::Vertical).back()->setMax(m_networkGraphs[i]->axisMax);
+            }
+            m_networkTableInfos[i] = QString::number(m_networkGraphs[i]->values[0], 'f', 2) + " " + m_networkGraphs[i]->unit;
+        }
     }
 }
 

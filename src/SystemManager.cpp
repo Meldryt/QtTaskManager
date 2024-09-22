@@ -277,12 +277,7 @@ void SystemManager::update()
 
     if (m_dynamicInfoWmiChanged)
     {
-        QVariant variant = m_dynamicInfoWmi[Globals::Key_Network_Dynamic_BytesReceivedPerSec];
-        if (variant.canConvert<uint32_t>())
-        {
-            const uint32_t usedBytesReceivedPerSec = variant.value<uint32_t>();
-            //m_tabPerformance->slotUsedNetworkSpeed(usedBytesReceivedPerSec);
-        }
+        m_tabPerformance->slotNetworkDynamicInfo(m_dynamicInfoWmi);
 
         m_dynamicInfoWmiChanged = false;
     }

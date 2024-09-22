@@ -30,6 +30,8 @@ private:
 
     void initCpuGraphs();
     void initGpuGraphs();
+    void initMemoryGraphs();
+    void initNetworkGraphs();
 
     void updateCpuMultiGraphs(const QMap<uint8_t, QVariant>& dynamicInfo);
 
@@ -98,7 +100,6 @@ private:
     std::map<int, GraphInfo*> m_cpuGraphs;
     std::map<int, QString> m_cpuTableInfos;
     std::map<int, double> m_cpuDynamicMax;
-    std::map<int, double> m_gpuDynamicMax;
 
     const QStringList CpuGraphTitles
     {
@@ -142,33 +143,53 @@ private:
     QComboBox* m_gpuComboBoxActiveGraph{ nullptr };
     std::map<int, GraphInfo*> m_gpuGraphs;
     std::map<int, QString> m_gpuTableInfos;
+    std::map<int, double> m_gpuDynamicMax;
 
-    double m_cpuTotalLoad{0.0};
+    const QStringList MemoryGraphTitles
+    {
+        "Memory Size Usage"
+    };
 
     //memory
     QWidget* m_memoryWidget{ nullptr };
-    QChartView* m_memoryChartView{ nullptr };
-    QChart* m_memoryChart{ nullptr };
-    QLineSeries* m_memoryLineSeries{ nullptr };
+    QTableWidget* m_memoryTableWidget{ nullptr };
+    QStackedWidget* m_memoryStackedWidget{ nullptr };
+    QGroupBox* m_memoryGroupBoxActiveGraph{ nullptr };
+    QLabel* m_memoryLabelActiveGraph{ nullptr };
+    QComboBox* m_memoryComboBoxActiveGraph{ nullptr };
+    std::map<int, GraphInfo*> m_memoryGraphs;
+    std::map<int, QString> m_memoryTableInfos;
+    std::map<int, double> m_memoryDynamicMax;
 
     uint32_t m_memoryTotalSize{ 0 };
     uint32_t m_memoryUsedSize{ 0 };
 
+    const QStringList NetworkGraphTitles
+    {
+        "Network Download",
+        "Network Upload",
+    };
+
+    const uint8_t MaxNetworkCount = 10;
+
     //network
     QWidget* m_networkWidget{ nullptr };
-    QChartView* m_networkChartView{ nullptr };
-    QChart* m_networkChart{ nullptr };
-    QLineSeries* m_networkLineSeries{ nullptr };
-
-    uint32_t m_networkBytesReceivedPerSec{ 0 };
-    uint32_t m_networkCurrentMaxSpeed{ 0 };
+    QTableWidget* m_networkTableWidget{ nullptr };
+    QStackedWidget* m_networkStackedWidget{ nullptr };
+    QGroupBox* m_networkGroupBoxActiveNetwork{ nullptr };
+    QComboBox* m_networkComboBoxActiveNetwork{ nullptr };
+    QGroupBox* m_networkGroupBoxActiveGraph{ nullptr };
+    QComboBox* m_networkComboBoxActiveGraph{ nullptr };
+    std::map<int, GraphInfo*> m_networkGraphs;
+    std::map<int, QString> m_networkTableInfos;
+    std::map<int, double> m_networkDynamicMax;
 
 public slots:
     void slotCpuDynamicInfo(const QMap<uint8_t, QVariant>& dynamicInfo);
     void slotGpuDynamicInfo(const QMap<uint8_t, QVariant>& dynamicInfo);
     void slotTotalMemory(const uint32_t& val);
     void slotUsedMemory(const uint32_t& val);
-    void slotBytesReceivedPerSec(const std::vector<uint32_t>& val);
+    void slotNetworkDynamicInfo(const QMap<uint8_t, QVariant>& dynamicInfo);
 
 private slots:
     void showSelectionWidget();
