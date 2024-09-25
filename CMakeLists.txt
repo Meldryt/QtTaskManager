@@ -15,14 +15,18 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets Charts Concurrent OpenGLWidgets)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets Charts Concurrent OpenGLWidgets)
-#find_package(NVML)
-#
-#if(NVML_FOUND)
-#  include_directories(
-#    include
-#    ${NVML_INCLUDE_DIRS}
-#  )
-#endif()
+
+find_library(NVML_LIBRARY
+    NAMES libnvidia-ml nvidia-ml
+    PATHS /usr/lib
+          /usr/lib64
+          /usr/local/lib
+          /usr/local/lib64
+)
+
+if(NVML_LIBRARY)
+    set(NVML_FOUND ${NVML_LIBRARY})
+endif(NVML_LIBRARY)
 
 add_subdirectory(external)
 
@@ -36,8 +40,6 @@ set(PROJECT_SOURCES
 
     src/cpu/CpuInfo.h
     src/cpu/CpuInfo.cpp
-    src/cpu/CpuWorker.cpp
-    src/cpu/CpuWorker.h
 
     src/cpu/amd/CpuInfoAmd.h
     src/cpu/amd/CpuInfoAmd.cpp
@@ -47,8 +49,6 @@ set(PROJECT_SOURCES
     src/gpu/GlGlobals.h
     src/gpu/GpuInfo.h
     src/gpu/GpuInfo.cpp
-    src/gpu/GpuWorker.h
-    src/gpu/GpuWorker.cpp
 
     src/gpu/amd/GpuInfoAmd.h
     src/gpu/amd/GpuInfoAmd.cpp
@@ -61,18 +61,12 @@ set(PROJECT_SOURCES
 
     src/memory/MemoryInfo.h
     src/memory/MemoryInfo.cpp
-    src/memory/MemoryWorker.h
-    src/memory/MemoryWorker.cpp
 
     src/network/NetworkInfo.h
     src/network/NetworkInfo.cpp
-    src/network/NetworkWorker.h
-    src/network/NetworkWorker.cpp
 
     src/process/ProcessInfo.h
     src/process/ProcessInfo.cpp
-    src/process/ProcessWorker.cpp
-    src/process/ProcessWorker.h
 
     src/tabs/TabHardware.cpp
     src/tabs/TabHardware.h
@@ -89,8 +83,6 @@ set(PROJECT_SOURCES
     
     src/system/SystemInfo.h
     src/system/SystemInfo.cpp
-    src/system/SystemWorker.h
-    src/system/SystemWorker.cpp
 
     #src/DevicesInfo.h
     #src/DevicesInfo.cpp
@@ -145,8 +137,6 @@ if (WIN32)
         src/windows/DxHandler.cpp
         src/windows/WmiInfo.h
         src/windows/WmiInfo.cpp
-        src/windows/WmiWorker.h
-        src/windows/WmiWorker.cpp
 
         external/ADLX/SDK/ADLXHelper/Windows/Cpp/ADLXHelper.h
         external/ADLX/SDK/ADLXHelper/Windows/Cpp/ADLXHelper.cpp
@@ -259,6 +249,11 @@ else()
     target_link_libraries(${PROJECT_NAME} PRIVATE
         ze_loader
     )
+    if(NVML_FOUND)
+        target_link_libraries(${PROJECT_NAME} PRIVATE
+            ${NVML_LIBRARY}
+        )
+    endif(NVML_FOUND)
 endif (WIN32)
 
 set_target_properties(${PROJECT_NAME} PROPERTIES

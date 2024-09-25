@@ -12,18 +12,9 @@
 
 #include <QDebug>
 
-GpuInfo::GpuInfo()
+GpuInfo::GpuInfo() : BaseInfo("GpuInfo")
 {
     qDebug() << __FUNCTION__;
-
-    for (uint8_t key = Globals::Key_Gpu_Static_Start + 1; key < Globals::Key_Gpu_Static_End; ++key)
-    {
-        m_staticInfo[key] = Globals::SysInfo_Uninitialized;
-    }
-    for (uint8_t key = Globals::Key_Gpu_Dynamic_Start + 1; key < Globals::Key_Gpu_Dynamic_End; ++key)
-    {
-        m_dynamicInfo[key] = Globals::SysInfo_Uninitialized;
-    }
 
 #ifdef _WIN32
 #else
@@ -38,16 +29,6 @@ GpuInfo::~GpuInfo()
 
 void GpuInfo::init()
 {
-    for (uint8_t i = Globals::Key_Gpu_Static_Start + 1; i < Globals::Key_Gpu_Static_End; ++i)
-    {
-        m_staticInfo[i] = Globals::SysInfo_Uninitialized;
-    }
-
-    for (uint8_t i = Globals::Key_Gpu_Dynamic_Start + 1; i < Globals::Key_Gpu_Dynamic_End; ++i)
-    {
-        m_dynamicInfo[i] = Globals::SysInfo_Uninitialized;
-    }
-
     detectGpu();
 
     if (m_gpuManufacturer == GpuManufacturer::AMD)
@@ -129,7 +110,7 @@ void GpuInfo::readStaticInfo()
         }
 
         m_gpuInfoAmd->readStaticInfo();
-        m_staticInfo = m_gpuInfoAmd->staticInfo();
+        setStaticInfo(m_gpuInfoAmd->staticInfo());
     }
     else if (m_gpuManufacturer == GpuManufacturer::INTEL)
     {        
@@ -139,7 +120,7 @@ void GpuInfo::readStaticInfo()
         }
 
         m_gpuInfoIntel->readStaticInfo();
-        m_staticInfo = m_gpuInfoIntel->staticInfo();
+        setStaticInfo(m_gpuInfoIntel->staticInfo());
     }
     else if (m_gpuManufacturer == GpuManufacturer::NVIDIA)
     {        
@@ -149,7 +130,7 @@ void GpuInfo::readStaticInfo()
         }
 
         m_gpuInfoNVidia->readStaticInfo();
-        m_staticInfo = m_gpuInfoNVidia->staticInfo();
+        setStaticInfo(m_gpuInfoNVidia->staticInfo());
     }
 
 #ifdef _WIN32
@@ -160,7 +141,7 @@ void GpuInfo::readStaticInfo()
     }
 
     m_gpuInfoLinux->readStaticInfo();
-    m_staticInfo = m_gpuInfoLinux->staticInfo();
+    setStaticInfo(m_gpuInfoLinux->staticInfo());
 #endif
 }
 
@@ -174,7 +155,7 @@ void GpuInfo::readDynamicInfo()
         }
 
         m_gpuInfoAmd->readDynamicInfo();
-        m_dynamicInfo = m_gpuInfoAmd->dynamicInfo();
+        setDynamicInfo(m_gpuInfoAmd->dynamicInfo());
     }
     else if (m_gpuManufacturer == GpuManufacturer::INTEL)
     {
@@ -184,7 +165,7 @@ void GpuInfo::readDynamicInfo()
         }
 
         m_gpuInfoIntel->readDynamicInfo();
-        m_dynamicInfo = m_gpuInfoIntel->dynamicInfo();
+        setDynamicInfo(m_gpuInfoIntel->dynamicInfo());
     }
     else if (m_gpuManufacturer == GpuManufacturer::NVIDIA)
     {
@@ -194,7 +175,7 @@ void GpuInfo::readDynamicInfo()
         }
 
         m_gpuInfoNVidia->readDynamicInfo();
-        m_dynamicInfo = m_gpuInfoNVidia->dynamicInfo();
+        setDynamicInfo(m_gpuInfoNVidia->dynamicInfo());
     }
 
 #ifdef _WIN32
@@ -205,6 +186,6 @@ void GpuInfo::readDynamicInfo()
     }
 
     m_gpuInfoLinux->readDynamicInfo();
-    m_dynamicInfo = m_gpuInfoLinux->dynamicInfo();
+    setDynamicInfo(m_gpuInfoLinux->dynamicInfo());
 #endif
 }

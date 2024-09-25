@@ -1,7 +1,6 @@
 #pragma once
 
-#include <QMap>
-#include <QVariant>
+#include "../main/BaseInfo.h"
 
 #ifdef _WIN32
 class CpuInfoWindows;
@@ -12,7 +11,7 @@ class CpuInfoLinux;
 class CpuInfoAmd;
 class CpuInfoIntel;
 
-class CpuInfo
+class CpuInfo : public BaseInfo
 {
 public:
 
@@ -26,23 +25,14 @@ public:
     CpuInfo();
     ~CpuInfo();
 
-    void init();
-    void update();
-
-    const QMap<uint8_t,QVariant>& staticInfo() const
-    {
-        return m_staticInfo;
-    }
-
-    const QMap<uint8_t,QVariant>& dynamicInfo() const
-    {
-        return m_dynamicInfo;
-    }
+    virtual void init() override;
+    virtual void update() override;
 
 private:
-    void detectCpu();
     void readStaticInfo();
     void readDynamicInfo();
+
+    void detectCpu();
 
     bool m_cpuDetected{false};
     CpuManufacturer m_cpuManufacturer{UNKNOWN};
@@ -55,8 +45,5 @@ private:
 
     CpuInfoAmd* m_cpuInfoAmd{ nullptr };
     CpuInfoIntel* m_cpuInfoIntel{ nullptr };
-
-    QMap<uint8_t,QVariant> m_staticInfo;
-    QMap<uint8_t,QVariant> m_dynamicInfo;
 };
 

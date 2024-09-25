@@ -1,4 +1,7 @@
 #include "TabProcesses.h"
+
+#include "../Globals.h"
+
 #include <QGridLayout>
 #include <QDebug>
 #include <QHeaderView>
@@ -117,8 +120,15 @@ void TabProcesses::updateTotalInfo()
 //                                                       QString::number(totalVirtualMemory) + " MB"));
 }
 
-void TabProcesses::slotProcesses(const std::map<uint32_t, ProcessInfo::Process>& processMap)
+void TabProcesses::slotProcessDynamicInfo(const QMap<uint8_t, QVariant>& dynamicInfo)
 {
+    QVariant variant = dynamicInfo[Globals::SysInfoAttr::Key_Process_Dynamic_Info];
+    std::map<uint32_t, ProcessInfo::Process> processMap;
+    if (variant.canConvert<std::map<uint32_t, ProcessInfo::Process>>())
+    {
+        processMap = variant.value<std::map<uint32_t, ProcessInfo::Process>>();
+    }
+
     if (processMap.empty())
     {
         return;

@@ -106,5 +106,5 @@ private:
     bool m_sortAscending{true};
 
 public slots:
-    void slotProcesses(const std::map<uint32_t, ProcessInfo::Process>& processMap);
+    void slotProcessDynamicInfo(const QMap<uint8_t, QVariant>& dynamicInfo);
 };

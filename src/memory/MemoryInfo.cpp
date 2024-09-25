@@ -10,7 +10,7 @@
 #include "sys/sysinfo.h"
 #endif
 
-MemoryInfo::MemoryInfo() : BaseInfo()
+MemoryInfo::MemoryInfo() : BaseInfo("MemoryInfo")
 {
     qDebug() << __FUNCTION__;
 }
@@ -24,16 +24,16 @@ void MemoryInfo::init()
 {
     readTotalMemory();
 
-    setStaticInfo(Globals::SysInfoAttr::Key_Memory_Static_TotalVirtualMemory,m_totalVirtualMemory);
-    setStaticInfo(Globals::SysInfoAttr::Key_Memory_Static_TotalPhysicalMemory,m_totalPhysicalMemory);
+    setStaticValue(Globals::SysInfoAttr::Key_Memory_Static_TotalVirtualMemory,m_totalVirtualMemory);
+    setStaticValue(Globals::SysInfoAttr::Key_Memory_Static_TotalPhysicalMemory,m_totalPhysicalMemory);
 }
 
 void MemoryInfo::update()
 {
     readUsedMemory();
 
-    setDynamicInfo(Globals::SysInfoAttr::Key_Memory_Dynamic_UsedVirtualMemory, m_usedVirtualMemory);
-    setDynamicInfo(Globals::SysInfoAttr::Key_Memory_Dynamic_UsedPhysicalMemory, m_usedPhysicalMemory);
+    setDynamicValue(Globals::SysInfoAttr::Key_Memory_Dynamic_UsedVirtualMemory, m_usedVirtualMemory);
+    setDynamicValue(Globals::SysInfoAttr::Key_Memory_Dynamic_UsedPhysicalMemory, m_usedPhysicalMemory);
 }
 
 void MemoryInfo::readTotalMemory()

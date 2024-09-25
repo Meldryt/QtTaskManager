@@ -1,13 +1,8 @@
 #pragma once
 
-#include <QObject>
-#include <QMap>
-#include <QVariant>
+#include "../main/BaseInfo.h"
 
 #include <string>
-
-#include "../Globals.h"
-
 
 class GpuInfoAmd;
 class GpuInfoIntel;
@@ -17,7 +12,7 @@ class GpuInfoNVidia;
     class GpuInfoLinux;
 #endif
 
-class GpuInfo
+class GpuInfo : public BaseInfo
 {
 public:
 
@@ -32,18 +27,8 @@ public:
     GpuInfo();
     ~GpuInfo();
 
-    void init();
-    void update();
-
-    const QMap<uint8_t,QVariant>& getStaticInfo() const
-    {
-        return m_staticInfo;
-    }
-
-    const QMap<uint8_t,QVariant>& getDynamicInfo() const
-    {
-        return m_dynamicInfo;
-    }
+    virtual void init();
+    virtual void update();
 
 private:
     void detectGpu();
@@ -61,7 +46,4 @@ private:
 #else
     GpuInfoLinux* m_gpuInfoLinux{ nullptr };
 #endif
-
-    QMap<uint8_t,QVariant> m_staticInfo;
-    QMap<uint8_t,QVariant> m_dynamicInfo;
 };

@@ -176,8 +176,8 @@ private:
     QWidget* m_networkWidget{ nullptr };
     QTableWidget* m_networkTableWidget{ nullptr };
     QStackedWidget* m_networkStackedWidget{ nullptr };
-    QGroupBox* m_networkGroupBoxActiveNetwork{ nullptr };
-    QComboBox* m_networkComboBoxActiveNetwork{ nullptr };
+    QGroupBox* m_networkGroupBoxActiveNetworks{ nullptr };
+    QComboBox* m_networkComboBoxActiveNetworks{ nullptr };
     QGroupBox* m_networkGroupBoxActiveGraph{ nullptr };
     QComboBox* m_networkComboBoxActiveGraph{ nullptr };
     std::map<int, GraphInfo*> m_networkGraphs;

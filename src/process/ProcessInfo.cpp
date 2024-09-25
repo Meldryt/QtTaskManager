@@ -1,5 +1,7 @@
 #include "ProcessInfo.h"
 
+#include "../Globals.h"
+
 #include <cmath>
 
 #ifdef _WIN32
@@ -19,6 +21,8 @@
 #include <QDebug>
 
 #ifdef __linux__
+
+#define PROC_LINE_LENGTH 4096
 
 static inline unsigned long long LinuxProcess_adjustTime(unsigned long long t) {
     static double jiffy = NAN;
@@ -44,7 +48,7 @@ static inline bool String_startsWith(const char* s, const char* match) {
 
 #endif
 
-ProcessInfo::ProcessInfo()
+ProcessInfo::ProcessInfo() : BaseInfo("ProcessInfo")
 {
     qDebug() << __FUNCTION__;
 
@@ -57,11 +61,6 @@ ProcessInfo::~ProcessInfo()
     qDebug() << __FUNCTION__;
 }
 
-void ProcessInfo::setCoreCount(uint16_t newCoreCount)
-{
-    m_cpuCoreCount = newCoreCount;
-}
-
 const std::map<uint32_t, ProcessInfo::Process> &ProcessInfo::processMap() const
 {
     return m_processMap;
@@ -69,8 +68,8 @@ const std::map<uint32_t, ProcessInfo::Process> &ProcessInfo::processMap() const
 
 void ProcessInfo::init()
 {
+    readCpuCount();
 #ifdef __linux__
-    scanCpuCount();
     m_cpuData.resize(m_cpuCoreCount);
     for (int i = 0; i < m_cpuCoreCount; i++) {
         m_cpuData[i].totalTime = 1;
@@ -94,13 +93,28 @@ void ProcessInfo::update()
     updateRunningProcesses();
 #else
     scanMemory();
-    scanCpuCount();
     systemUpTime();
     scanCpuTime();
     updateRunningProcesses();
 
     qDebug() << "number of processes: " << m_procProcessMap.size();
 #endif
+
+//    setDynamicInfo(Globals::SysInfoAttr::Key_Process_Dynamic_Names, );
+//    setDynamicInfo(Globals::SysInfoAttr::Key_Process_Dynamic_Descriptions, );
+//    setDynamicInfo(Globals::SysInfoAttr::Key_Process_Dynamic_FilePaths, );
+//    setDynamicInfo(Globals::SysInfoAttr::Key_Process_Dynamic_States, );
+//    setDynamicInfo(Globals::SysInfoAttr::Key_Process_Dynamic_RamUsagesPercent, );
+//    setDynamicInfo(Globals::SysInfoAttr::Key_Process_Dynamic_CpuUsagesPercent, );
+//    setDynamicInfo(Globals::SysInfoAttr::Key_Process_Dynamic_GpuUsagesPercent, );
+//    setDynamicInfo(Globals::SysInfoAttr::Key_Process_Dynamic_VideoRamUsagesPercent, );
+//    setDynamicInfo(Globals::SysInfoAttr::Key_Process_Dynamic_RamUsagesSize, );
+//    setDynamicInfo(Globals::SysInfoAttr::Key_Process_Dynamic_VirtualRamUsagesSize, );
+//    setDynamicInfo(Globals::SysInfoAttr::Key_Process_Dynamic_VideoRamUsagesSize, );
+//    setDynamicInfo(Globals::SysInfoAttr::Key_Process_Dynamic_TimeStamps, );
+    //std::map<uint32_t, std::string> names;
+    QVariant variant = QVariant::fromValue(m_processMap);
+    setDynamicValue(Globals::SysInfoAttr::Key_Process_Dynamic_Info, variant);
 
     ++m_currentFrameIdx;
 }
@@ -243,6 +257,39 @@ void ProcessInfo::updateRunningProcesses()
 }
 #endif
 
+void ProcessInfo::readCpuCount()
+{
+#ifdef __linux__
+    FILE* file;
+    char statPath[256 + 10];
+    snprintf(statPath, sizeof(statPath), "/proc/stat");
+    file = fopen(statPath, "r");
+    if (!file) {
+        //perror(statPath);
+        return;
+    }
+
+    int cpus = 0;
+    char buffer[PROC_LINE_LENGTH + 1];
+    while(fgets(buffer, sizeof(buffer), file)) {
+        if (String_startsWith(buffer, "cpu"))
+            cpus++;
+    }
+
+    fclose(file);
+
+    /* subtract raw cpu entry */
+    if (cpus > 0)
+        cpus--;
+
+    m_cpuCoreCount = cpus;
+#elif _WIN32
+    SYSTEM_INFO sysInfo;
+    GetSystemInfo(&sysInfo);
+    m_cpuCoreCount = sysInfo.dwNumberOfProcessors;
+#endif
+}
+
 #ifdef __linux__
 void ProcessInfo::scanProcessStats(const char* entryName, ProcProcess& process)
 {
@@ -352,7 +399,6 @@ void ProcessInfo::updateProcessUsage(ProcProcess& process)
         {
             double percent_cpu = (100.0 * deltaProcessTime) / m_currentPeriod;
             process.percent_cpu = std::clamp(percent_cpu, 0.0, m_cpuCoreCount * 100.0);
-            qDebug() << "name: " << process.comm << " percent_cpu: " << percent_cpu << " deltaProcessTime: " << deltaProcessTime << " m_currentPeriod: " << m_currentPeriod;
         }
     }
 
@@ -368,35 +414,6 @@ void ProcessInfo::updateProcessUsage(ProcProcess& process)
     process.used_memory = process.resident * CRT_pageSizeKB;
     process.virtualRam = process.virtualRam * CRT_pageSizeKB;
     process.percent_mem = process.used_memory / (double)(m_totalMem) * 100.0;
-}
-
-#define PROC_LINE_LENGTH 4096
-
-void ProcessInfo::scanCpuCount()
-{
-    FILE* file;
-    char statPath[256 + 10];
-    snprintf(statPath, sizeof(statPath), "/proc/stat");
-    file = fopen(statPath, "r");
-    if (!file) {
-        //perror(statPath);
-        return;
-    }
-
-    int cpus = 0;
-    char buffer[PROC_LINE_LENGTH + 1];
-    while(fgets(buffer, sizeof(buffer), file)) {
-        if (String_startsWith(buffer, "cpu"))
-            cpus++;
-    }
-
-    fclose(file);
-
-    /* subtract raw cpu entry */
-    if (cpus > 0)
-        cpus--;
-
-    m_cpuCoreCount = cpus;
 }
 
 void ProcessInfo::scanCpuTime()
@@ -551,8 +568,6 @@ void ProcessInfo::removeInactiveProcesses()
     {
         if (process->second.timestamp + 10 < currentTime)
         {
-            qDebug() << __FUNCTION__  << " name: " << process->second.processName << " state: " << process->second.description;
-
             process = m_processMap.erase(process);
         }
         else
@@ -734,7 +749,6 @@ bool ProcessInfo::addProcess(const Process& processInfo)
         Process process = processInfo;;
         m_processMap.insert({process.processID,process});
 
-        //qDebug() << __FUNCTION__ << " added new process " << process.processName.c_str() << " id: " << process.processID;
         return true;
     }
     else

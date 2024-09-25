@@ -1,4 +1,5 @@
 #include "TabPerformance.h"
+#include "qforeach.h"
 
 #include <QGridLayout>
 #include <QPainter>
@@ -204,29 +205,28 @@ void TabPerformance::initNetworkWidgets()
         m_networkTableWidget->setItem(i, 1, new QTableWidgetItem());
     }
 
-    m_networkGroupBoxActiveNetwork = new QGroupBox(m_networkWidget);
+    //m_networkGroupBoxActiveNetworks = new QGroupBox(m_networkWidget);
     // m_networkLabelActiveNetwork = new QLabel("Active Network:", m_networkWidget);
-    m_networkComboBoxActiveNetwork = new QComboBox(m_networkWidget);
+    m_networkComboBoxActiveNetworks = new QComboBox(m_networkWidget);
     //m_networkComboBoxActiveNetwork->addItems(NetworkGraphTitles);
     //m_networkComboBoxActiveNetwork->setCurrentIndex(0);
 
-    m_networkGroupBoxActiveGraph = new QGroupBox(m_networkWidget);
+    //m_networkGroupBoxActiveGraph = new QGroupBox(m_networkWidget);
    // m_networkLabelActiveGraph = new QLabel("Active Graph:", m_networkWidget);
     m_networkComboBoxActiveGraph = new QComboBox(m_networkWidget);
     m_networkComboBoxActiveGraph->addItems(NetworkGraphTitles);
     m_networkComboBoxActiveGraph->setCurrentIndex(0);
 
-    QGridLayout* networkGroupBoxLayout = new QGridLayout(m_networkWidget);
-    networkGroupBoxLayout->addWidget(m_networkComboBoxActiveGraph, 0, 0);
-    //networkGroupBoxLayout->addWidget(m_networkComboBoxActiveGraph, 0, 1);
-    m_networkGroupBoxActiveGraph->setLayout(networkGroupBoxLayout);
+//    QGridLayout* networkGroupBoxLayout = new QGridLayout(m_networkWidget);
+//    networkGroupBoxLayout->addWidget(m_networkComboBoxActiveGraph, 0, 0);
+//    m_networkGroupBoxActiveGraph->setLayout(networkGroupBoxLayout);
 
     QObject::connect(m_networkComboBoxActiveGraph, &QComboBox::currentIndexChanged,
         m_networkStackedWidget, &QStackedWidget::setCurrentIndex);
 
     QGridLayout* networkWidgetLayout = new QGridLayout(m_networkWidget);
-    networkWidgetLayout->addWidget(m_networkGroupBoxActiveNetwork, 0, 0);
-    networkWidgetLayout->addWidget(m_networkGroupBoxActiveGraph, 0, 1);
+    networkWidgetLayout->addWidget(m_networkComboBoxActiveNetworks, 0, 0);
+    networkWidgetLayout->addWidget(m_networkComboBoxActiveGraph, 0, 1);
     networkWidgetLayout->addWidget(m_networkTableWidget, 1, 0);
     networkWidgetLayout->addWidget(m_networkStackedWidget, 1, 1);
     networkWidgetLayout->setRowStretch(0, 1);
@@ -699,10 +699,27 @@ void TabPerformance::slotUsedMemory(const uint32_t& val)
 
 void TabPerformance::slotNetworkDynamicInfo(const QMap<uint8_t, QVariant>& dynamicInfo)
 {
+    return;
+
     int index = 0;
 
     m_networkGraphs[index++]->values[0] = dynamicInfo[Globals::SysInfoAttr::Key_Network_Dynamic_BytesReceivedPerSec].value<std::vector<uint32_t>>()[0];
     m_networkGraphs[index++]->values[0] = dynamicInfo[Globals::SysInfoAttr::Key_Network_Dynamic_BytesSentPerSec].value<std::vector<uint32_t>>()[0];
+
+    std::vector<std::string> networkNames = dynamicInfo[Globals::SysInfoAttr::Key_Network_Dynamic_Names].value<std::vector<std::string>>();
+
+    if(m_networkComboBoxActiveNetworks->count() != networkNames.size())
+    {
+        QStringList list;
+        for(auto&& str : networkNames)
+        {
+            list << str.c_str();
+        }
+
+        m_networkComboBoxActiveNetworks->clear();
+        m_networkComboBoxActiveNetworks->addItems(list);
+        qDebug() << __FUNCTION__ << " networkNames: " <<m_networkComboBoxActiveNetworks->count();
+    }
 
     for (int i = 0; i < m_networkGraphs.size(); ++i)
     {

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "../main/BaseInfo.h"
+
 #include <string>
 #include <vector>
 #include <map>
@@ -11,7 +13,7 @@
 
 #include <QElapsedTimer>
 
-class ProcessInfo
+class ProcessInfo : public BaseInfo
 {
 public:
     struct ProcProcess
@@ -90,11 +92,10 @@ public:
     ProcessInfo();
     ~ProcessInfo();
 
-    void setCoreCount(uint16_t newProcessorCount);
     const std::map<uint32_t, Process> &processMap() const;
 
-    void init();
-    void update();
+    virtual void init() override;
+    virtual void update() override;
 
 private:
 
@@ -106,6 +107,11 @@ private:
 
 
 private:
+    void readStaticInfo();
+    void readDynamicInfo();
+
+    void readCpuCount();
+
     void updateRunningProcesses();
     void updateProcessesUsage();
 #ifdef _WIN32
@@ -115,7 +121,7 @@ private:
     void updateProcessUsage(ProcProcess& process);
     void scanProcessStats(const char* entryName, ProcProcess& process);
     void scanProcessMemoryStats(const char* entryName, ProcProcess& process);
-    void scanCpuCount();
+    
     void scanCpuTime();
     void scanMemory();
 #endif

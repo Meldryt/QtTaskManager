@@ -1,7 +1,6 @@
 #pragma once
 
-#include <QMap>
-#include <QVariant>
+#include "../main/BaseInfo.h"
 
 #ifdef _WIN32
 class SystemInfoWindows;
@@ -11,25 +10,15 @@ class SystemInfoLinux;
 
 #include <cstdint>
 
-class SystemInfo
+class SystemInfo : public BaseInfo
 {
 public:
 
     SystemInfo();
     ~SystemInfo();
 
-    void init();
-    void update();
-
-    const QMap<uint8_t, QVariant>& getStaticInfo() const
-    {
-        return m_staticInfo;
-    }
-
-    const QMap<uint8_t, QVariant>& getDynamicInfo() const
-    {
-        return m_dynamicInfo;
-    }
+    virtual void init() override;
+    virtual void update() override;
 
 private:
     void readStaticInfo();

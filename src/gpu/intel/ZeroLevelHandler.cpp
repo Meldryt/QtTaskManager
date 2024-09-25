@@ -272,7 +272,7 @@ bool ZeroLevelHandler::init()
 { 
 #ifdef _WIN32
     SetEnvironmentVariable(L"ZES_ENABLE_SYSMAN", L"1");
-#elif
+#elif __linux__
     setenv("ZES_ENABLE_SYSMAN", "1", 1);
 #endif
 
@@ -734,35 +734,35 @@ void ZeroLevelHandler::readGpuFrequencies()
 
                 m_gpuClockSpeed = current_frequency;
 
-                qDebug() << "Current Frequency(MHz)," <<
-                    current_frequency;
+//                qDebug() << "Current Frequency(MHz)," <<
+//                    current_frequency;
 
-                qDebug() << "Changeable Frequency," <<
-                    (freq_domain_props.canControl ? "Yes" : "No");
+//                qDebug() << "Changeable Frequency," <<
+//                    (freq_domain_props.canControl ? "Yes" : "No");
 
-                qDebug() << "Max Core Frequency(MHz)," <<
-                    freq_domain_props.max;
+//                qDebug() << "Max Core Frequency(MHz)," <<
+//                    freq_domain_props.max;
 
-                qDebug() << "Min Core Frequency(MHz)," <<
-                    freq_domain_props.min;
+//                qDebug() << "Min Core Frequency(MHz)," <<
+//                    freq_domain_props.min;
 
-                qDebug() << "Current Voltage(V)," <<
-                    (state.currentVoltage < 0 ? "unknown" :
-                         std::to_string(state.currentVoltage).c_str());
+//                qDebug() << "Current Voltage(V)," <<
+//                    (state.currentVoltage < 0 ? "unknown" :
+//                         std::to_string(state.currentVoltage).c_str());
 
-                qDebug() <<
-                    "Current Frequency Request(MHz)," <<
-                    (state.request < 0 ? "unknown" :
-                         std::to_string(state.request).c_str());
+//                qDebug() <<
+//                    "Current Frequency Request(MHz)," <<
+//                    (state.request < 0 ? "unknown" :
+//                         std::to_string(state.request).c_str());
 
-                qDebug() <<
-                    "Efficient Min Frequency(MHz)," <<
-                    (state.efficient < 0 ? "unknown" :
-                         std::to_string(state.efficient).c_str());
+//                qDebug() <<
+//                    "Efficient Min Frequency(MHz)," <<
+//                    (state.efficient < 0 ? "unknown" :
+//                         std::to_string(state.efficient).c_str());
 
-                qDebug() <<
-                    "Max Frequency For Current TDP(MHz)," <<
-                    (state.tdp < 0 ? "unknown" : std::to_string(state.tdp).c_str());
+//                qDebug() <<
+//                    "Max Frequency For Current TDP(MHz)," <<
+//                    (state.tdp < 0 ? "unknown" : std::to_string(state.tdp).c_str());
             }
         }
     }

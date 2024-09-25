@@ -16,7 +16,7 @@
 #include <linux/if_link.h>
 #endif
 
-NetworkInfo::NetworkInfo() : BaseInfo()
+NetworkInfo::NetworkInfo() : BaseInfo("NetworkInfo")
 {
     qDebug() << __FUNCTION__;
 }
@@ -53,10 +53,10 @@ void NetworkInfo::readDynamicInfo()
     readInterfaces();
 #endif
 
-    setDynamicInfo(Globals::SysInfoAttr::Key_Network_Dynamic_Names, QVariant::fromValue(m_networkNames));
-    setDynamicInfo(Globals::SysInfoAttr::Key_Network_Dynamic_BytesReceivedPerSec, QVariant::fromValue(m_networkBytesReceivedPerSec));
-    setDynamicInfo(Globals::SysInfoAttr::Key_Network_Dynamic_BytesSentPerSec, QVariant::fromValue(m_networkBytesSentPerSec));
-    setDynamicInfo(Globals::SysInfoAttr::Key_Network_Dynamic_TotalBytesPerSec, QVariant::fromValue(m_networkBytesTotalPerSec));
+    setDynamicValue(Globals::SysInfoAttr::Key_Network_Dynamic_Names, QVariant::fromValue(m_networkNames));
+    setDynamicValue(Globals::SysInfoAttr::Key_Network_Dynamic_BytesReceivedPerSec, QVariant::fromValue(m_networkBytesReceivedPerSec));
+    setDynamicValue(Globals::SysInfoAttr::Key_Network_Dynamic_BytesSentPerSec, QVariant::fromValue(m_networkBytesSentPerSec));
+    setDynamicValue(Globals::SysInfoAttr::Key_Network_Dynamic_TotalBytesPerSec, QVariant::fromValue(m_networkBytesTotalPerSec));
 }
 
 #ifdef __linux__

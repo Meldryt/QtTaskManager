@@ -8,18 +8,9 @@
 #include "SystemInfoLinux.h"
 #endif
 
-SystemInfo::SystemInfo()
+SystemInfo::SystemInfo() : BaseInfo("SystemInfo")
 {
     qDebug() << __FUNCTION__;
-
-    for (uint8_t key = Globals::Key_Cpu_Static_Start + 1; key < Globals::Key_Cpu_Static_End; ++key)
-    {
-        m_staticInfo[key] = Globals::SysInfo_Uninitialized;
-    }
-    for (uint8_t key = Globals::Key_Cpu_Dynamic_Start + 1; key < Globals::Key_Cpu_Dynamic_End; ++key)
-    {
-        m_dynamicInfo[key] = Globals::SysInfo_Uninitialized;
-    }
 }
 
 SystemInfo::~SystemInfo()
@@ -51,17 +42,17 @@ void SystemInfo::readStaticInfo()
     if(m_systemInfoWindows)
     {
         m_systemInfoWindows->readStaticInfo();
-        m_staticInfo[Globals::SysInfoAttr::Key_SysInfo_OS_Name] = m_systemInfoWindows->osName().c_str();
-        m_staticInfo[Globals::SysInfoAttr::Key_SysInfo_OS_CodeName] = m_systemInfoWindows->osCodeName().c_str();
-        m_staticInfo[Globals::SysInfoAttr::Key_SysInfo_OS_Version] = m_systemInfoWindows->osVersion().c_str();
+        setStaticValue(Globals::SysInfoAttr::Key_SysInfo_OS_Name,m_systemInfoWindows->osName().c_str());
+        setStaticValue(Globals::SysInfoAttr::Key_SysInfo_OS_CodeName,m_systemInfoWindows->osCodeName().c_str());
+        setStaticValue(Globals::SysInfoAttr::Key_SysInfo_OS_Version,m_systemInfoWindows->osVersion().c_str());
     }
 #elif __linux__
     if(m_systemInfoLinux)
     {
         m_systemInfoLinux->readStaticInfo();
-        m_staticInfo[Globals::SysInfoAttr::Key_SysInfo_OS_Name] = QString::fromStdString(m_systemInfoLinux->osName());
-        m_staticInfo[Globals::SysInfoAttr::Key_SysInfo_OS_CodeName] = QString::fromStdString(m_systemInfoLinux->osCodeName());
-        m_staticInfo[Globals::SysInfoAttr::Key_SysInfo_OS_Version] = QString::fromStdString(m_systemInfoLinux->osVersion());
+        setStaticValue(Globals::SysInfoAttr::Key_SysInfo_OS_Name,QString::fromStdString(m_systemInfoLinux->osName()));
+        setStaticValue(Globals::SysInfoAttr::Key_SysInfo_OS_CodeName,QString::fromStdString(m_systemInfoLinux->osCodeName()));
+        setStaticValue(Globals::SysInfoAttr::Key_SysInfo_OS_Version,QString::fromStdString(m_systemInfoLinux->osVersion()));
     }
 #endif
 }

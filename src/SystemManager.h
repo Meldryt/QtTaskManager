@@ -12,13 +12,6 @@
 #include <QThread>
 #include <QTimer>
 
-class CpuWorker;
-class GpuWorker;
-class MemoryWorker;
-class NetworkWorker;
-class ProcessWorker;
-class SystemWorker;
-
 #ifdef _WIN32
 class WmiWorker;
 #endif
@@ -43,15 +36,15 @@ private:
     std::vector<QThread*> m_workerThreads;
     std::vector<Worker*> m_worker;
 
-    std::unique_ptr<CpuWorker> m_cpuWorker{nullptr};
-    std::unique_ptr<GpuWorker> m_gpuWorker{nullptr};
-    std::unique_ptr<MemoryWorker> m_memoryWorker{ nullptr };
-    std::unique_ptr<NetworkWorker> m_networkWorker{ nullptr };
-    std::unique_ptr<ProcessWorker> m_processWorker{ nullptr };
-    std::unique_ptr<SystemWorker> m_systemWorker{nullptr};
+    std::unique_ptr<Worker> m_cpuWorker{nullptr};
+    std::unique_ptr<Worker> m_gpuWorker{nullptr};
+    std::unique_ptr<Worker> m_memoryWorker{ nullptr };
+    std::unique_ptr<Worker> m_networkWorker{ nullptr };
+    std::unique_ptr<Worker> m_processWorker{ nullptr };
+    std::unique_ptr<Worker> m_systemWorker{nullptr};
 
 #ifdef _WIN32
-    std::unique_ptr<WmiWorker> m_wmiWorker{ nullptr };
+    std::unique_ptr<Worker> m_wmiWorker{ nullptr };
 #endif
 
     QTimer* m_timer{ nullptr };
@@ -62,7 +55,7 @@ private:
     bool m_staticInfoGpuChanged{ false };
     bool m_dynamicInfoGpuChanged{ false };
 
-    bool m_processMapChanged{ false };
+    bool m_dynamicInfoProcessChanged{ false };
 
     bool m_staticInfoMemoryChanged{ false };
     bool m_dynamicInfoMemoryChanged{ false };
@@ -82,7 +75,7 @@ private:
     QMap<uint8_t,QVariant> m_staticInfoGpu;
     QMap<uint8_t,QVariant> m_dynamicInfoGpu;
 
-    std::map<uint32_t, ProcessInfo::Process> m_processMap;
+    QMap<uint8_t,QVariant> m_dynamicInfoProcess;
 
     QMap<uint8_t,QVariant> m_staticInfoMemory;
     QMap<uint8_t,QVariant> m_dynamicInfoMemory;

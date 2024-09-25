@@ -10,18 +10,9 @@
 #include "amd/CpuInfoAmd.h"
 #include "intel/CpuInfoIntel.h"
 
-CpuInfo::CpuInfo()
+CpuInfo::CpuInfo() : BaseInfo("CpuInfo")
 {
     qDebug() << __FUNCTION__;
-
-    for (uint8_t key = Globals::Key_Cpu_Static_Start + 1; key < Globals::Key_Cpu_Static_End; ++key)
-    {
-        m_staticInfo[key] = Globals::SysInfo_Uninitialized;
-    }
-    for (uint8_t key = Globals::Key_Cpu_Dynamic_Start + 1; key < Globals::Key_Cpu_Dynamic_End; ++key)
-    {
-        m_dynamicInfo[key] = Globals::SysInfo_Uninitialized;
-    }
 }
 
 CpuInfo::~CpuInfo()
@@ -147,11 +138,11 @@ void CpuInfo::readStaticInfo()
     {
         if (staticInfoOs.contains(key) && staticInfoOs[key] != Globals::SysInfo_Uninitialized)
         {
-            m_staticInfo[key] = staticInfoOs[key];
+            setStaticValue(key,staticInfoOs[key]);
         }
         else if (staticInfoCpu.contains(key) && staticInfoCpu[key] != Globals::SysInfo_Uninitialized)
         {
-            m_staticInfo[key] = staticInfoCpu[key];
+            setStaticValue(key,staticInfoCpu[key]);
         }
     }
 }
@@ -200,11 +191,11 @@ void CpuInfo::readDynamicInfo()
     {
         if (dynamicInfoOs.contains(key) && dynamicInfoOs[key] != Globals::SysInfo_Uninitialized)
         {
-            m_dynamicInfo[key] = dynamicInfoOs[key];
+            setDynamicValue(key,dynamicInfoOs[key]);
         }
         else if (dynamicInfoCpu.contains(key) && dynamicInfoCpu[key] != Globals::SysInfo_Uninitialized)
         {
-            m_dynamicInfo[key] = dynamicInfoCpu[key];
+            setDynamicValue(key,dynamicInfoCpu[key]);
         }
     }
 }

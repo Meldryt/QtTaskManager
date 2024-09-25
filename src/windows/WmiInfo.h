@@ -1,43 +1,30 @@
 #pragma once
 
+#include "../main/BaseInfo.h"
+
 #ifdef _WIN32
 #include <Wbemidl.h>
 #endif
-
-#include "../Globals.h"
-
-#include <QMap>
-#include <QVariant>
 
 #include <vector>
 #include <string>
 #include <map>
 
-class WmiInfo
+class WmiInfo : public BaseInfo
 {
 public:
     WmiInfo();
     ~WmiInfo();
 
-    bool init();
-    void update();
-
-    void readStaticInfo();
+    virtual void init();
+    virtual void update();
 
     //@note: disable costly updates
     //void disableCpuUpdates();
 
-    const QMap<uint8_t, QVariant>& staticInfo() const
-    {
-        return m_staticInfo;
-    }
-
-    const QMap<uint8_t, QVariant>& dynamicInfo() const
-    {
-        return m_dynamicInfo;
-    }
-
 private:
+    void readStaticInfo();
+
     void checkSupportedFunctions();
 
     bool executeQuery(const std::wstring& query);
@@ -60,9 +47,6 @@ private:
     IWbemLocator* m_locator{ nullptr };
     IWbemServices* m_service{ nullptr };
     IEnumWbemClassObject* m_enumerator{ nullptr };
-
-    QMap<uint8_t, QVariant> m_staticInfo;
-    QMap<uint8_t, QVariant> m_dynamicInfo;
 
     std::string m_cpuBrand{ "" };
     uint16_t m_cpuCoreCount{ 0 };

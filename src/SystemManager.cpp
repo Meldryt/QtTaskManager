@@ -1,20 +1,5 @@
 #include "SystemManager.h"
 
-#include "process/ProcessWorker.h"
-#include "cpu/CpuWorker.h"
-#include "gpu/GpuWorker.h"
-#include "memory/MemoryWorker.h"
-#include "network/NetworkWorker.h"
-#include "system/SystemWorker.h"
-
-#ifdef _WIN32
-#include "windows/WmiWorker.h"
-#endif
-
-#include "cpu/intel/PcmHandler.h"
-
-#include "cpu/intel/PcmHandler.h"
-
 #include <QElapsedTimer>
 #include <QDebug>
 
@@ -36,15 +21,15 @@ SystemManager::SystemManager(QWidget* parent) : QTabWidget(parent)
     addTab(m_tabApiSupport, QString("ApiSupport"));
     addTab(m_tabBenchmark, QString("Benchmark"));
 
-    m_processWorker = std::make_unique<ProcessWorker>(2000); //500
-    m_cpuWorker = std::make_unique<CpuWorker>(1000);
-    m_gpuWorker = std::make_unique<GpuWorker>(500);
-    m_memoryWorker = std::make_unique<MemoryWorker>(500);
-    m_networkWorker = std::make_unique<NetworkWorker>(1000);
-    m_systemWorker = std::make_unique<SystemWorker>(500);
+    m_processWorker = std::make_unique<Worker>(2000, Worker::InfoType::Process); //500
+    m_cpuWorker = std::make_unique<Worker>(1000, Worker::InfoType::Cpu);
+    m_gpuWorker = std::make_unique<Worker>(1000, Worker::InfoType::Gpu);
+    m_memoryWorker = std::make_unique<Worker>(1000, Worker::InfoType::Memory);
+    m_networkWorker = std::make_unique<Worker>(1000, Worker::InfoType::Network);
+    m_systemWorker = std::make_unique<Worker>(1000, Worker::InfoType::System);
 
 #ifdef _WIN32
-    m_wmiWorker = std::make_unique<WmiWorker>(1000);
+    m_wmiWorker = std::make_unique<Worker>(1000, Worker::InfoType::Wmi);
 #endif
     m_worker.push_back(m_processWorker.get());
     m_worker.push_back(m_cpuWorker.get());
@@ -67,68 +52,68 @@ SystemManager::SystemManager(QWidget* parent) : QTabWidget(parent)
         connect(thread, &QThread::finished, thread, &QThread::deleteLater);
     }
 
-    connect(m_cpuWorker.get(), &CpuWorker::signalStaticInfo, this, [&](const QMap<uint8_t,QVariant>& staticInfo)
+    connect(m_cpuWorker.get(), &Worker::signalStaticInfo, this, [&](const QMap<uint8_t,QVariant>& staticInfo)
     {
         m_staticInfoCpu = staticInfo;
         m_staticInfoCpuChanged = true;
     });
 
-    connect(m_cpuWorker.get(), &CpuWorker::signalDynamicInfo, this, [&](const QMap<uint8_t,QVariant>& dynamicInfo)
+    connect(m_cpuWorker.get(), &Worker::signalDynamicInfo, this, [&](const QMap<uint8_t,QVariant>& dynamicInfo)
     {     
         m_dynamicInfoCpu = dynamicInfo;
         m_dynamicInfoCpuChanged = true;
     });
 
-    connect(m_gpuWorker.get(), &GpuWorker::signalStaticInfo, this, [&](const QMap<uint8_t,QVariant>& staticInfo)
+    connect(m_gpuWorker.get(), &Worker::signalStaticInfo, this, [&](const QMap<uint8_t,QVariant>& staticInfo)
     {
         m_staticInfoGpu = staticInfo;
         m_staticInfoGpuChanged = true;
     });
 
-    connect(m_gpuWorker.get(), &GpuWorker::signalDynamicInfo, this, [&](const QMap<uint8_t,QVariant>& dynamicInfo)
+    connect(m_gpuWorker.get(), &Worker::signalDynamicInfo, this, [&](const QMap<uint8_t,QVariant>& dynamicInfo)
     {
         m_dynamicInfoGpu = dynamicInfo;
         m_dynamicInfoGpuChanged = true;
     });
 
-    connect(m_processWorker.get(), &ProcessWorker::signalDynamicInfo, this, [&](const std::map<uint32_t, ProcessInfo::Process>& processMap)
+    connect(m_processWorker.get(), &Worker::signalDynamicInfo, this, [&](const QMap<uint8_t,QVariant>& dynamicInfo)
     {
-        m_processMap = processMap;
-        m_processMapChanged = true;
+        m_dynamicInfoProcess = dynamicInfo;
+        m_dynamicInfoProcessChanged = true;
     });
 
-    connect(m_memoryWorker.get(), &MemoryWorker::signalStaticInfo, this, [&](const QMap<uint8_t,QVariant>& staticInfo)
+    connect(m_memoryWorker.get(), &Worker::signalStaticInfo, this, [&](const QMap<uint8_t,QVariant>& staticInfo)
     {
         m_staticInfoMemory = staticInfo;
         m_staticInfoMemoryChanged = true;
     });
 
-    connect(m_memoryWorker.get(), &MemoryWorker::signalDynamicInfo, this, [&](const QMap<uint8_t,QVariant>& dynamicInfo)
+    connect(m_memoryWorker.get(), &Worker::signalDynamicInfo, this, [&](const QMap<uint8_t,QVariant>& dynamicInfo)
     {
         m_dynamicInfoMemory = dynamicInfo;
         m_dynamicInfoMemoryChanged = true;
     });
 
-    connect(m_networkWorker.get(), &NetworkWorker::signalDynamicInfo, this, [&](const QMap<uint8_t,QVariant>& dynamicInfo)
+    connect(m_networkWorker.get(), &Worker::signalDynamicInfo, this, [&](const QMap<uint8_t,QVariant>& dynamicInfo)
     {
         m_dynamicInfoNetwork = dynamicInfo;
         m_dynamicInfoNetworkChanged = true;
     });
 
-    connect(m_systemWorker.get(), &SystemWorker::signalStaticInfo, this, [&](const QMap<uint8_t,QVariant>& staticInfo)
+    connect(m_systemWorker.get(), &Worker::signalStaticInfo, this, [&](const QMap<uint8_t,QVariant>& staticInfo)
     {
         m_staticInfoSystem = staticInfo;
         m_staticInfoSystemChanged = true;
     });
 
 #ifdef _WIN32
-    connect(m_wmiWorker.get(), &WmiWorker::signalStaticInfo, this, [&](const QMap<uint8_t, QVariant>& staticInfo)
+    connect(m_wmiWorker.get(), &Worker::signalStaticInfo, this, [&](const QMap<uint8_t, QVariant>& staticInfo)
     {
         m_staticInfoWmi = staticInfo;
         m_staticInfoWmiChanged = true;
     });
 
-    connect(m_wmiWorker.get(), &WmiWorker::signalDynamicInfo, this, [&](const QMap<uint8_t,QVariant>& dynamicInfo)
+    connect(m_wmiWorker.get(), &Worker::signalDynamicInfo, this, [&](const QMap<uint8_t,QVariant>& dynamicInfo)
     {
         m_dynamicInfoWmi = dynamicInfo;
         m_dynamicInfoWmiChanged = true;
@@ -174,7 +159,7 @@ void SystemManager::update()
             if (variant.canConvert<uint16_t>())
             {
                 const uint16_t coreCount = variant.value<uint16_t>();
-                m_processWorker->slotCoreCount(coreCount);
+                //m_processWorker->slotCoreCount(coreCount);
             }
         }
         m_staticInfoCpuChanged = false;
@@ -211,25 +196,25 @@ void SystemManager::update()
         m_dynamicInfoGpuChanged = false;
     }
 
-    if (m_processMapChanged)
+    if (m_dynamicInfoProcessChanged)
     {
-#ifdef _WIN32
-        QVariant var = m_dynamicInfoWmi[Globals::SysInfoAttr::Key_Process_GpuUsages];
-        if (var.canConvert<QMap<uint32_t, QPair<uint8_t, uint64_t>>>())
-        {
-            QMap<uint32_t, QPair<uint8_t, uint64_t>> processGpuUsages = var.value<QMap<uint32_t, QPair<uint8_t, uint64_t>> >();
-            for (auto&& process : processGpuUsages.asKeyValueRange())
-            {
-                if (m_processMap.find(process.first) != m_processMap.end())
-                {
-                    m_processMap[process.first].gpuUsagePercent = process.second.first;
-                    m_processMap[process.first].videoRamUsageSize = process.second.second;
-                }
-            }
-        }
-#endif
-        m_tabProcesses->slotProcesses(m_processMap);
-        m_processMapChanged = false;
+//#ifdef _WIN32
+//        QVariant var = m_dynamicInfoWmi[Globals::SysInfoAttr::Key_Process_GpuUsages];
+//        if (var.canConvert<QMap<uint32_t, QPair<uint8_t, uint64_t>>>())
+//        {
+//            QMap<uint32_t, QPair<uint8_t, uint64_t>> processGpuUsages = var.value<QMap<uint32_t, QPair<uint8_t, uint64_t>> >();
+//            for (auto&& process : processGpuUsages.asKeyValueRange())
+//            {
+//                if (m_processMap.find(process.first) != m_processMap.end())
+//                {
+//                    m_processMap[process.first].gpuUsagePercent = process.second.first;
+//                    m_processMap[process.first].videoRamUsageSize = process.second.second;
+//                }
+//            }
+//        }
+//#endif
+        m_tabProcesses->slotProcessDynamicInfo(m_dynamicInfoProcess);
+        m_dynamicInfoProcessChanged = false;
     }
 
     if (m_staticInfoMemoryChanged)
@@ -284,12 +269,7 @@ void SystemManager::update()
 #elif __linux__
     if (m_dynamicInfoNetworkChanged)
     {
-        QVariant variant = m_dynamicInfoNetwork[Globals::Key_Network_Dynamic_BytesReceivedPerSec];
-        if (variant.canConvert<std::vector<uint32_t>>())
-        {
-            const std::vector<uint32_t> bytesReceivedPerSec = variant.value<std::vector<uint32_t>>();
-            m_tabPerformance->slotBytesReceivedPerSec(bytesReceivedPerSec);
-        }
+        m_tabPerformance->slotNetworkDynamicInfo(m_dynamicInfoNetwork);
 
         m_dynamicInfoNetworkChanged = false;
     }
@@ -314,8 +294,8 @@ void SystemManager::update()
 
     elapsedTime = elapsedTimer.nsecsElapsed() / 1000000;
 
-    if(elapsedTime > 1)
+    if(elapsedTime > 5)
     {
-        qDebug() << __FUNCTION__ << elapsedTime;        
-    }  
+        qDebug() << __FUNCTION__ << elapsedTime;
+    }
 }
