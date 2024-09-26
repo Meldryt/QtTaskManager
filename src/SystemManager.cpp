@@ -21,15 +21,15 @@ SystemManager::SystemManager(QWidget* parent) : QTabWidget(parent)
     addTab(m_tabApiSupport, QString("ApiSupport"));
     addTab(m_tabBenchmark, QString("Benchmark"));
 
-    m_processWorker = std::make_unique<Worker>(2000, Worker::InfoType::Process); //500
-    m_cpuWorker = std::make_unique<Worker>(1000, Worker::InfoType::Cpu);
-    m_gpuWorker = std::make_unique<Worker>(1000, Worker::InfoType::Gpu);
-    m_memoryWorker = std::make_unique<Worker>(1000, Worker::InfoType::Memory);
-    m_networkWorker = std::make_unique<Worker>(1000, Worker::InfoType::Network);
-    m_systemWorker = std::make_unique<Worker>(1000, Worker::InfoType::System);
+    m_processWorker.reset(new Worker(2000, { BaseInfo::InfoType::Process }));
+    m_cpuWorker.reset(new Worker(1000, { BaseInfo::InfoType::Cpu}));
+    m_gpuWorker.reset(new Worker(1000, { BaseInfo::InfoType::Gpu}));
+    m_memoryWorker.reset(new Worker(1000, { BaseInfo::InfoType::Memory}));
+    m_networkWorker.reset(new Worker(1000, { BaseInfo::InfoType::Network}));
+    m_systemWorker.reset(new Worker(1000, { BaseInfo::InfoType::System}));
 
 #ifdef _WIN32
-    m_wmiWorker = std::make_unique<Worker>(1000, Worker::InfoType::Wmi);
+    m_wmiWorker.reset(new Worker(1000, { BaseInfo::InfoType::Wmi }));
 #endif
     m_worker.push_back(m_processWorker.get());
     m_worker.push_back(m_cpuWorker.get());
@@ -52,68 +52,68 @@ SystemManager::SystemManager(QWidget* parent) : QTabWidget(parent)
         connect(thread, &QThread::finished, thread, &QThread::deleteLater);
     }
 
-    connect(m_cpuWorker.get(), &Worker::signalStaticInfo, this, [&](const QMap<uint8_t,QVariant>& staticInfo)
+    connect(m_cpuWorker.get(), &Worker::signalStaticInfo, this, [&](const BaseInfo::InfoType& infoType, const QMap<uint8_t,QVariant>& staticInfo)
     {
         m_staticInfoCpu = staticInfo;
         m_staticInfoCpuChanged = true;
     });
 
-    connect(m_cpuWorker.get(), &Worker::signalDynamicInfo, this, [&](const QMap<uint8_t,QVariant>& dynamicInfo)
+    connect(m_cpuWorker.get(), &Worker::signalDynamicInfo, this, [&](const BaseInfo::InfoType& infoType, const QMap<uint8_t,QVariant>& dynamicInfo)
     {     
         m_dynamicInfoCpu = dynamicInfo;
         m_dynamicInfoCpuChanged = true;
     });
 
-    connect(m_gpuWorker.get(), &Worker::signalStaticInfo, this, [&](const QMap<uint8_t,QVariant>& staticInfo)
+    connect(m_gpuWorker.get(), &Worker::signalStaticInfo, this, [&](const BaseInfo::InfoType& infoType, const QMap<uint8_t,QVariant>& staticInfo)
     {
         m_staticInfoGpu = staticInfo;
         m_staticInfoGpuChanged = true;
     });
 
-    connect(m_gpuWorker.get(), &Worker::signalDynamicInfo, this, [&](const QMap<uint8_t,QVariant>& dynamicInfo)
+    connect(m_gpuWorker.get(), &Worker::signalDynamicInfo, this, [&](const BaseInfo::InfoType& infoType, const QMap<uint8_t,QVariant>& dynamicInfo)
     {
         m_dynamicInfoGpu = dynamicInfo;
         m_dynamicInfoGpuChanged = true;
     });
 
-    connect(m_processWorker.get(), &Worker::signalDynamicInfo, this, [&](const QMap<uint8_t,QVariant>& dynamicInfo)
+    connect(m_processWorker.get(), &Worker::signalDynamicInfo, this, [&](const BaseInfo::InfoType& infoType, const QMap<uint8_t,QVariant>& dynamicInfo)
     {
         m_dynamicInfoProcess = dynamicInfo;
         m_dynamicInfoProcessChanged = true;
     });
 
-    connect(m_memoryWorker.get(), &Worker::signalStaticInfo, this, [&](const QMap<uint8_t,QVariant>& staticInfo)
+    connect(m_memoryWorker.get(), &Worker::signalStaticInfo, this, [&](const BaseInfo::InfoType& infoType, const QMap<uint8_t,QVariant>& staticInfo)
     {
         m_staticInfoMemory = staticInfo;
         m_staticInfoMemoryChanged = true;
     });
 
-    connect(m_memoryWorker.get(), &Worker::signalDynamicInfo, this, [&](const QMap<uint8_t,QVariant>& dynamicInfo)
+    connect(m_memoryWorker.get(), &Worker::signalDynamicInfo, this, [&](const BaseInfo::InfoType& infoType, const QMap<uint8_t,QVariant>& dynamicInfo)
     {
         m_dynamicInfoMemory = dynamicInfo;
         m_dynamicInfoMemoryChanged = true;
     });
 
-    connect(m_networkWorker.get(), &Worker::signalDynamicInfo, this, [&](const QMap<uint8_t,QVariant>& dynamicInfo)
+    connect(m_networkWorker.get(), &Worker::signalDynamicInfo, this, [&](const BaseInfo::InfoType& infoType, const QMap<uint8_t,QVariant>& dynamicInfo)
     {
         m_dynamicInfoNetwork = dynamicInfo;
         m_dynamicInfoNetworkChanged = true;
     });
 
-    connect(m_systemWorker.get(), &Worker::signalStaticInfo, this, [&](const QMap<uint8_t,QVariant>& staticInfo)
+    connect(m_systemWorker.get(), &Worker::signalStaticInfo, this, [&](const BaseInfo::InfoType& infoType, const QMap<uint8_t,QVariant>& staticInfo)
     {
         m_staticInfoSystem = staticInfo;
         m_staticInfoSystemChanged = true;
     });
 
 #ifdef _WIN32
-    connect(m_wmiWorker.get(), &Worker::signalStaticInfo, this, [&](const QMap<uint8_t, QVariant>& staticInfo)
+    connect(m_wmiWorker.get(), &Worker::signalStaticInfo, this, [&](const BaseInfo::InfoType& infoType, const QMap<uint8_t, QVariant>& staticInfo)
     {
         m_staticInfoWmi = staticInfo;
         m_staticInfoWmiChanged = true;
     });
 
-    connect(m_wmiWorker.get(), &Worker::signalDynamicInfo, this, [&](const QMap<uint8_t,QVariant>& dynamicInfo)
+    connect(m_wmiWorker.get(), &Worker::signalDynamicInfo, this, [&](const BaseInfo::InfoType& infoType, const QMap<uint8_t,QVariant>& dynamicInfo)
     {
         m_dynamicInfoWmi = dynamicInfo;
         m_dynamicInfoWmiChanged = true;

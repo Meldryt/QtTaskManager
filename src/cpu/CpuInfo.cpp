@@ -10,7 +10,7 @@
 #include "amd/CpuInfoAmd.h"
 #include "intel/CpuInfoIntel.h"
 
-CpuInfo::CpuInfo() : BaseInfo("CpuInfo")
+CpuInfo::CpuInfo() : BaseInfo("CpuInfo", InfoType::Cpu)
 {
     qDebug() << __FUNCTION__;
 }

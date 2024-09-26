@@ -8,7 +8,7 @@
 #include "SystemInfoLinux.h"
 #endif
 
-SystemInfo::SystemInfo() : BaseInfo("SystemInfo")
+SystemInfo::SystemInfo() : BaseInfo("SystemInfo", InfoType::System)
 {
     qDebug() << __FUNCTION__;
 }

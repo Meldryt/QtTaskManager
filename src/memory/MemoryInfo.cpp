@@ -10,7 +10,7 @@
 #include "sys/sysinfo.h"
 #endif
 
-MemoryInfo::MemoryInfo() : BaseInfo("MemoryInfo")
+MemoryInfo::MemoryInfo() : BaseInfo("MemoryInfo", InfoType::Memory)
 {
     qDebug() << __FUNCTION__;
 }

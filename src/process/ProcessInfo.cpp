@@ -48,7 +48,7 @@ static inline bool String_startsWith(const char* s, const char* match) {
 
 #endif
 
-ProcessInfo::ProcessInfo() : BaseInfo("ProcessInfo")
+ProcessInfo::ProcessInfo() : BaseInfo("ProcessInfo", InfoType::Process)
 {
     qDebug() << __FUNCTION__;
 

@@ -12,7 +12,7 @@
 
 #include <QDebug>
 
-GpuInfo::GpuInfo() : BaseInfo("GpuInfo")
+GpuInfo::GpuInfo() : BaseInfo("GpuInfo", InfoType::Gpu)
 {
     qDebug() << __FUNCTION__;
 

@@ -13,7 +13,7 @@
 #include <D3d9.h>
 //#include <Wbemidl.h>
 
-WmiInfo::WmiInfo() : BaseInfo("WmiInfo")
+WmiInfo::WmiInfo() : BaseInfo("WmiInfo", InfoType::Wmi)
 {
     qDebug() << __FUNCTION__;
 

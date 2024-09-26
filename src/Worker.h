@@ -5,29 +5,13 @@
 #include <QVariant>
 #include <QTimer>
 
-//class ProcessInfo;
-//class CpuInfo;
-//class GpuInfo;
-//class NetworkInfo;
-//class MemoryInfo;
-class BaseInfo;
+#include "main/BaseInfo.h"
 
 class Worker : public QObject
 {
     Q_OBJECT
 public:
-    enum InfoType : uint8_t
-    {
-        Cpu,
-        Gpu,
-        Memory,
-        Network,
-        Process,
-        System,
-        Wmi
-    };
-
-    explicit Worker(const int timerInterval, const InfoType type, QObject* parent=nullptr);
+    explicit Worker(const int timerInterval, std::initializer_list<BaseInfo::InfoType> infoTypes, QObject* parent=nullptr);
     ~Worker();
 
 public slots:
@@ -40,12 +24,13 @@ signals:
     void signalStopped();
     void signalFinished();
 
-    void signalStaticInfo(const QMap<uint8_t,QVariant>&);
-    void signalDynamicInfo(const QMap<uint8_t,QVariant>&);
+    void signalStaticInfo(const BaseInfo::InfoType& infoType, const QMap<uint8_t,QVariant>&);
+    void signalDynamicInfo(const BaseInfo::InfoType& infoType, const QMap<uint8_t,QVariant>&);
 
 private:
+    void createInfoObjects(std::initializer_list<BaseInfo::InfoType>& infoTypes);
+
     QTimer* m_timer{nullptr};
-    InfoType m_infoType{Cpu};
-    std::unique_ptr<BaseInfo> m_baseInfo{nullptr};
+    std::vector<std::unique_ptr<BaseInfo>> m_infoObjects;
 };
 

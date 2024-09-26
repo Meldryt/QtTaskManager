@@ -11,36 +11,12 @@
 #endif
 #include <QElapsedTimer>
 
-Worker::Worker(const int timerInterval, const InfoType type, QObject* parent)
-    : m_infoType{type}, QObject{parent}
+Worker::Worker(const int timerInterval, std::initializer_list<BaseInfo::InfoType> infoTypes, QObject* parent)
+    : QObject{parent}
 {
     qDebug() << __FUNCTION__;
 
-    switch (m_infoType) {
-    case Cpu:
-        m_baseInfo = std::make_unique<CpuInfo>();
-        break;
-    case Gpu:
-        m_baseInfo = std::make_unique<GpuInfo>();
-        break;
-    case Memory:
-        m_baseInfo = std::make_unique<MemoryInfo>();
-        break;
-    case Network:
-        m_baseInfo = std::make_unique<NetworkInfo>();
-        break;
-    case Process:
-        m_baseInfo = std::make_unique<ProcessInfo>();
-        break;
-    case System:
-        m_baseInfo = std::make_unique<SystemInfo>();
-        break;
-    case Wmi:
-        m_baseInfo = std::make_unique<WmiInfo>();
-        break;
-    default:
-        break;
-    }
+    createInfoObjects(infoTypes);
 
     m_timer = new QTimer(this);
     m_timer->setInterval(timerInterval);
@@ -53,15 +29,52 @@ Worker::~Worker()
     qDebug() << __FUNCTION__;
 }
 
+void Worker::createInfoObjects(std::initializer_list<BaseInfo::InfoType>& infoTypes)
+{
+    for (auto&& infoType : infoTypes)
+    {
+        switch (infoType) 
+        {
+            case BaseInfo::InfoType::Cpu:
+                m_infoObjects.push_back(std::unique_ptr<CpuInfo>(new CpuInfo()));
+                break;
+            case BaseInfo::InfoType::Gpu:
+                m_infoObjects.push_back(std::unique_ptr<GpuInfo>(new GpuInfo()));
+                break;
+            case BaseInfo::InfoType::Memory:
+                m_infoObjects.push_back(std::unique_ptr<MemoryInfo>(new MemoryInfo()));
+                break;
+            case BaseInfo::InfoType::Network:
+                m_infoObjects.push_back(std::unique_ptr<NetworkInfo>(new NetworkInfo()));
+                break;
+            case BaseInfo::InfoType::Process:
+                m_infoObjects.push_back(std::unique_ptr<ProcessInfo>(new ProcessInfo()));
+                break;
+            case BaseInfo::InfoType::System:
+                m_infoObjects.push_back(std::unique_ptr<SystemInfo>(new SystemInfo()));
+                break;
+            case BaseInfo::InfoType::Wmi:
+                m_infoObjects.push_back(std::unique_ptr<WmiInfo>(new WmiInfo()));
+                break;
+            default:
+                break;
+        }
+
+    }
+}
+
 void Worker::start()
 {   
     m_timer->start();
 
     emit signalStarted();
 
-    m_baseInfo->init();
+    for (auto&& infoObject : m_infoObjects)
+    {
+        infoObject->init();
 
-    emit signalStaticInfo(m_baseInfo->staticInfo());
+        emit signalStaticInfo(infoObject->infoType(), infoObject->staticInfo());
+    }
 }
 
 void Worker::stop()
@@ -76,14 +89,21 @@ void Worker::update()
     QElapsedTimer elapsedTimer;
     elapsedTimer.start();
 
-    m_baseInfo->update();
+    std::string names;
 
-    emit signalDynamicInfo(m_baseInfo->dynamicInfo());
+    for (auto&& infoObject : m_infoObjects)
+    {
+        infoObject->update();
+
+        emit signalDynamicInfo(infoObject->infoType(), infoObject->dynamicInfo());
+
+        names += infoObject->name();
+    }
 
     const qint64 elapsedTime = elapsedTimer.nsecsElapsed() / 1000000;
 
     if (elapsedTime >= 5)
     {
-        qDebug() << __FUNCTION__ << " " << m_baseInfo->name().c_str() << " " << elapsedTime << " ms";
+        qDebug() << __FUNCTION__ << " info class: " << names.c_str() << " process time: " << elapsedTime << " ms";
     }
 }

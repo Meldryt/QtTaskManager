@@ -4,7 +4,7 @@
 
 #include <QDebug>
 
-BaseInfo::BaseInfo(const std::string className) : m_name{className}
+BaseInfo::BaseInfo(const std::string className, const InfoType infoType) : m_name{className}, m_infoType{infoType}
 {
     qDebug() << __FUNCTION__;
 
@@ -26,6 +26,11 @@ BaseInfo::~BaseInfo()
 const std::string& BaseInfo::name() const
 {
     return m_name;
+}
+
+const BaseInfo::InfoType& BaseInfo::infoType() const
+{
+    return m_infoType;
 }
 
 const QMap<uint8_t, QVariant>& BaseInfo::staticInfo() const

@@ -16,7 +16,7 @@
 #include <linux/if_link.h>
 #endif
 
-NetworkInfo::NetworkInfo() : BaseInfo("NetworkInfo")
+NetworkInfo::NetworkInfo() : BaseInfo("NetworkInfo", InfoType::Network)
 {
     qDebug() << __FUNCTION__;
 }
