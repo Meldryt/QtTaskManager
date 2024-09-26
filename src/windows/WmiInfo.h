@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../main/BaseInfo.h"
+#include "../network/NetworkInfo.h"
 
 #ifdef _WIN32
 #include <Wbemidl.h>
@@ -68,11 +69,7 @@ private:
     double m_gpuUsage{0.0};
     QMap<uint32_t, QPair<uint8_t,uint64_t>> m_processGpuUsage;
 
-    std::vector<std::string> m_networkNames;
-    std::vector<uint32_t> m_networkBytesReceivedPerSec;
-    std::vector<uint32_t> m_networkBytesSentPerSec;
-    std::vector<uint32_t> m_networkBytesTotalPerSec;
-    std::vector<uint32_t> m_networkCurrentBandwidth;
+    std::map<std::string, NetworkInfo::Network> m_networkMap;
 
     QMap<QString, bool> m_functionsSupportStatus;
     QMap<QString, QString> m_functionsStatusMessage;

@@ -198,21 +198,29 @@ void SystemManager::update()
 
     if (m_dynamicInfoProcessChanged)
     {
-//#ifdef _WIN32
-//        QVariant var = m_dynamicInfoWmi[Globals::SysInfoAttr::Key_Process_GpuUsages];
-//        if (var.canConvert<QMap<uint32_t, QPair<uint8_t, uint64_t>>>())
-//        {
-//            QMap<uint32_t, QPair<uint8_t, uint64_t>> processGpuUsages = var.value<QMap<uint32_t, QPair<uint8_t, uint64_t>> >();
-//            for (auto&& process : processGpuUsages.asKeyValueRange())
-//            {
-//                if (m_processMap.find(process.first) != m_processMap.end())
-//                {
-//                    m_processMap[process.first].gpuUsagePercent = process.second.first;
-//                    m_processMap[process.first].videoRamUsageSize = process.second.second;
-//                }
-//            }
-//        }
-//#endif
+#ifdef _WIN32
+        QVariant var = m_dynamicInfoWmi[Globals::SysInfoAttr::Key_Process_GpuUsages];
+        if (var.canConvert<QMap<uint32_t, QPair<uint8_t, uint64_t>>>())
+        {
+            QVariant variant = m_dynamicInfoProcess[Globals::SysInfoAttr::Key_Process_Dynamic_Info];
+            std::map<uint32_t, ProcessInfo::Process> processMap;
+            if (variant.canConvert<std::map<uint32_t, ProcessInfo::Process>>())
+            {
+                processMap = variant.value<std::map<uint32_t, ProcessInfo::Process>>();
+
+                QMap<uint32_t, QPair<uint8_t, uint64_t>> processGpuUsages = var.value<QMap<uint32_t, QPair<uint8_t, uint64_t>> >();
+                for (auto&& process : processGpuUsages.asKeyValueRange())
+                {
+                    if (processMap.find(process.first) != processMap.end())
+                    {
+                        processMap[process.first].gpuUsagePercent = process.second.first;
+                        processMap[process.first].videoRamUsageSize = process.second.second;
+                    }
+                }
+                m_dynamicInfoProcess[Globals::SysInfoAttr::Key_Process_Dynamic_Info] = QVariant::fromValue(processMap);
+            }          
+        }
+#endif
         m_tabProcesses->slotProcessDynamicInfo(m_dynamicInfoProcess);
         m_dynamicInfoProcessChanged = false;
     }

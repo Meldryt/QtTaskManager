@@ -31,7 +31,7 @@ private:
     void initCpuGraphs();
     void initGpuGraphs();
     void initMemoryGraphs();
-    void initNetworkGraphs();
+    void initNetworkGraphs(const QStringList& list);
 
     void updateCpuMultiGraphs(const QMap<uint8_t, QVariant>& dynamicInfo);
 
@@ -176,13 +176,17 @@ private:
     QWidget* m_networkWidget{ nullptr };
     QTableWidget* m_networkTableWidget{ nullptr };
     QStackedWidget* m_networkStackedWidget{ nullptr };
-    QGroupBox* m_networkGroupBoxActiveNetworks{ nullptr };
+    //QGroupBox* m_networkGroupBoxActiveNetworks{ nullptr };
     QComboBox* m_networkComboBoxActiveNetworks{ nullptr };
-    QGroupBox* m_networkGroupBoxActiveGraph{ nullptr };
+    //QGroupBox* m_networkGroupBoxActiveGraph{ nullptr };
     QComboBox* m_networkComboBoxActiveGraph{ nullptr };
-    std::map<int, GraphInfo*> m_networkGraphs;
-    std::map<int, QString> m_networkTableInfos;
-    std::map<int, double> m_networkDynamicMax;
+    struct NetworkPerfInfo
+    {
+        std::map<int, GraphInfo*> graph;
+        std::map<int, QString> tableInfos;
+        std::map<int, double> dynamicMax;
+    };
+    std::vector<NetworkPerfInfo> m_networkPerfInfos;
 
 public slots:
     void slotCpuDynamicInfo(const QMap<uint8_t, QVariant>& dynamicInfo);
@@ -190,6 +194,7 @@ public slots:
     void slotTotalMemory(const uint32_t& val);
     void slotUsedMemory(const uint32_t& val);
     void slotNetworkDynamicInfo(const QMap<uint8_t, QVariant>& dynamicInfo);
+    void slotActiveNetworkChanged(const int& index);
 
 private slots:
     void showSelectionWidget();

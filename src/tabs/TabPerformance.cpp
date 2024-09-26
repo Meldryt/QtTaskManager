@@ -1,5 +1,6 @@
 #include "TabPerformance.h"
-#include "qforeach.h"
+
+#include "../network/NetworkInfo.h"
 
 #include <QGridLayout>
 #include <QPainter>
@@ -224,6 +225,9 @@ void TabPerformance::initNetworkWidgets()
     QObject::connect(m_networkComboBoxActiveGraph, &QComboBox::currentIndexChanged,
         m_networkStackedWidget, &QStackedWidget::setCurrentIndex);
 
+    QObject::connect(m_networkComboBoxActiveNetworks, &QComboBox::currentIndexChanged,
+        this, &TabPerformance::slotActiveNetworkChanged);
+
     QGridLayout* networkWidgetLayout = new QGridLayout(m_networkWidget);
     networkWidgetLayout->addWidget(m_networkComboBoxActiveNetworks, 0, 0);
     networkWidgetLayout->addWidget(m_networkComboBoxActiveGraph, 0, 1);
@@ -235,7 +239,7 @@ void TabPerformance::initNetworkWidgets()
     networkWidgetLayout->setColumnStretch(1, 2);
     m_networkWidget->setLayout(networkWidgetLayout);
 
-    initNetworkGraphs();
+    //initNetworkGraphs();
 }
 
 void TabPerformance::initCpuGraphs()
@@ -298,18 +302,23 @@ void TabPerformance::initMemoryGraphs()
     }
 }
 
-void TabPerformance::initNetworkGraphs()
+void TabPerformance::initNetworkGraphs(const QStringList& list)
 {
-    int index = 0;
-
-    m_networkGraphs[index++] = new GraphInfo(QString("Bytes"), 60, 1000);             //Network Download (Bytes/Sec Received)
-    m_networkGraphs[index++] = new GraphInfo(QString("Bytes"), 60, 1000);             //Network Upload (Bytes/Sec Sent)
-
-    for (int i = 0; i < NetworkGraphTitles.size(); ++i)
+    for (auto&& e : list)
     {
-        m_networkDynamicMax[i] = 0.0;
-        m_networkStackedWidget->addWidget(m_networkGraphs[i]->chartView);
+        NetworkPerfInfo networkPerfInfo;
+
+        networkPerfInfo.graph[0] = new GraphInfo(QString("Bytes"), 60, 1000);             //Network Download (Bytes/Sec Received)
+        networkPerfInfo.graph[1] = new GraphInfo(QString("Bytes"), 60, 1000);             //Network Upload (Bytes/Sec Sent)
+
+        networkPerfInfo.dynamicMax[0] = 0.0;
+        networkPerfInfo.dynamicMax[1] = 0.0;
+
+        m_networkPerfInfos.push_back(networkPerfInfo);
     }
+
+    m_networkStackedWidget->addWidget(m_networkPerfInfos[0].graph[0]->chartView);
+    m_networkStackedWidget->addWidget(m_networkPerfInfos[0].graph[1]->chartView);
 }
 
 void TabPerformance::process()
@@ -461,46 +470,55 @@ void TabPerformance::processMemory()
 
 void TabPerformance::processNetwork()
 {
-    for (int i = 0; i < m_networkGraphs.size(); ++i)
+    if (m_networkPerfInfos.empty())
     {
-        GraphInfo*& graphInfo = m_networkGraphs[i];
-        graphInfo->chartView->setUpdatesEnabled(false);
-
-        for (int lineSeriesIndex = 0; lineSeriesIndex < graphInfo->lineSeries.size(); ++lineSeriesIndex)
-        {
-            QLineSeries* lineSeries = graphInfo->lineSeries.at(lineSeriesIndex);
-            QVector<QPointF>& points = graphInfo->points.at(lineSeriesIndex);
-            const size_t pointSize = points.size();
-
-            if (!points.empty())
-            {
-                for (uint8_t j = 0; j < pointSize; ++j)
-                {
-                    points[j].setX(points[j].x() - 1);
-                }
-                if (points.first().x() < 0)
-                {
-                    points.removeFirst();
-                }
-            }
-
-            double currentY = 0.0;
-            if (!graphInfo->values.empty())
-            {
-                currentY = std::round(graphInfo->values.at(lineSeriesIndex));
-            }
-            points.append({ 60.0, currentY });
-            lineSeries->replace(points);
-        }
-
-        graphInfo->chartView->setUpdatesEnabled(true);
+        return;
     }
 
+    for (auto&& info : m_networkPerfInfos)
+    {
+        for (int i = 0; i < info.graph.size(); ++i)
+        {
+            GraphInfo*& graphInfo = info.graph[i];
+            graphInfo->chartView->setUpdatesEnabled(false);
+
+            for (int lineSeriesIndex = 0; lineSeriesIndex < graphInfo->lineSeries.size(); ++lineSeriesIndex)
+            {
+                QLineSeries* lineSeries = graphInfo->lineSeries.at(lineSeriesIndex);
+                QVector<QPointF>& points = graphInfo->points.at(lineSeriesIndex);
+                const size_t pointSize = points.size();
+
+                if (!points.empty())
+                {
+                    for (uint8_t j = 0; j < pointSize; ++j)
+                    {
+                        points[j].setX(points[j].x() - 1);
+                    }
+                    if (points.first().x() < 0)
+                    {
+                        points.removeFirst();
+                    }
+                }
+
+                double currentY = 0.0;
+                if (!graphInfo->values.empty())
+                {
+                    currentY = std::round(graphInfo->values.at(lineSeriesIndex));
+                }
+                points.append({ 60.0, currentY });
+                lineSeries->replace(points);
+            }
+
+            graphInfo->chartView->setUpdatesEnabled(true);
+        }
+    }
     //m_cpuGraphs[m_cpuComboBoxActiveGraph->currentIndex()]->chartView->repaint();
 
-    for (int i = 0; i < m_networkTableInfos.size(); ++i)
+    const int activeNetworkIndex = m_networkComboBoxActiveNetworks->currentIndex();
+
+    for (int i = 0; i < m_networkPerfInfos[activeNetworkIndex].tableInfos.size(); ++i)
     {
-        m_networkTableWidget->item(i, 1)->setText(m_networkTableInfos[i]);
+        m_networkTableWidget->item(i, 1)->setText(m_networkPerfInfos[activeNetworkIndex].tableInfos[i]);
     }
 }
 
@@ -699,41 +717,87 @@ void TabPerformance::slotUsedMemory(const uint32_t& val)
 
 void TabPerformance::slotNetworkDynamicInfo(const QMap<uint8_t, QVariant>& dynamicInfo)
 {
-    return;
+    QVariant variant = dynamicInfo[Globals::SysInfoAttr::Key_Network_Dynamic_Info];
+    std::map<std::string, NetworkInfo::Network> networkMap;
+    if (variant.canConvert<std::map<std::string, NetworkInfo::Network>>())
+    {
+        networkMap = variant.value<std::map<std::string, NetworkInfo::Network>>();
+    }
 
-    int index = 0;
+    if (networkMap.empty())
+    {
+        return;
+    }
 
-    m_networkGraphs[index++]->values[0] = dynamicInfo[Globals::SysInfoAttr::Key_Network_Dynamic_BytesReceivedPerSec].value<std::vector<uint32_t>>()[0];
-    m_networkGraphs[index++]->values[0] = dynamicInfo[Globals::SysInfoAttr::Key_Network_Dynamic_BytesSentPerSec].value<std::vector<uint32_t>>()[0];
-
-    std::vector<std::string> networkNames = dynamicInfo[Globals::SysInfoAttr::Key_Network_Dynamic_Names].value<std::vector<std::string>>();
-
-    if(m_networkComboBoxActiveNetworks->count() != networkNames.size())
+    if(m_networkComboBoxActiveNetworks->count() == 0)
     {
         QStringList list;
-        for(auto&& str : networkNames)
+        for(auto&& network : networkMap)
         {
-            list << str.c_str();
+            list << network.first.c_str();
         }
 
         m_networkComboBoxActiveNetworks->clear();
         m_networkComboBoxActiveNetworks->addItems(list);
-        qDebug() << __FUNCTION__ << " networkNames: " <<m_networkComboBoxActiveNetworks->count();
+
+        initNetworkGraphs(list);
     }
 
-    for (int i = 0; i < m_networkGraphs.size(); ++i)
+    std::vector<uint32_t> bytesReceivedPerSec;
+    std::vector<uint32_t> bytesSentPerSec;
+    for (auto&& network : networkMap)
     {
-        if (m_networkGraphs[i]->values.size() == 1)
+        bytesReceivedPerSec.push_back(network.second.bytesReceivedPerSec);
+        bytesSentPerSec.push_back(network.second.bytesSentPerSec);
+    }
+
+    for (int i = 0; i < m_networkPerfInfos.size(); ++i)
+    {
+        m_networkPerfInfos[i].graph[0]->values[0] = bytesReceivedPerSec.at(i);
+        m_networkPerfInfos[i].graph[1]->values[0] = bytesSentPerSec.at(i);
+    }
+
+    //@todo: add case when network was added/removed
+
+    for (auto&& info : m_networkPerfInfos)
+    {
+        for (int i = 0; i < info.graph.size(); ++i)
         {
-            if (m_networkDynamicMax[i] < m_networkGraphs[i]->values[0])
+            if (info.graph[i]->values.size() == 1)
             {
-                m_networkDynamicMax[i] = m_networkGraphs[i]->values[0];
-                m_networkGraphs[i]->axisMax = std::ceil(m_networkDynamicMax[i]);
-                m_networkGraphs[i]->chart->axes(Qt::Vertical).back()->setMax(m_networkGraphs[i]->axisMax);
+                if (info.dynamicMax[i] < info.graph[i]->values[0])
+                {
+                    info.dynamicMax[i] = info.graph[i]->values[0];
+                    info.graph[i]->axisMax = std::ceil(info.dynamicMax[i]);
+                    info.graph[i]->chart->axes(Qt::Vertical).back()->setMax(info.graph[i]->axisMax);
+                }
+                info.tableInfos[i] = QString::number(info.graph[i]->values[0], 'f', 2) + " " + info.graph[i]->unit;
             }
-            m_networkTableInfos[i] = QString::number(m_networkGraphs[i]->values[0], 'f', 2) + " " + m_networkGraphs[i]->unit;
         }
     }
+}
+
+void TabPerformance::slotActiveNetworkChanged(const int& index)
+{
+    if (m_networkPerfInfos.empty())
+    {
+        return;
+    }
+
+    for (int i = m_networkStackedWidget->count(); i >= 0; i--)
+    {
+        QWidget* widget = m_networkStackedWidget->widget(i);
+        m_networkStackedWidget->removeWidget(widget);
+        //widget->deleteLater();
+    }
+
+    for (int i = 0; i < m_networkPerfInfos[index].tableInfos.size(); ++i)
+    {
+        m_networkTableWidget->item(i, 1)->setText(m_networkPerfInfos[index].tableInfos[i]);
+    }
+
+    m_networkStackedWidget->addWidget(m_networkPerfInfos[index].graph[0]->chartView);
+    m_networkStackedWidget->addWidget(m_networkPerfInfos[index].graph[1]->chartView);
 }
 
 void TabPerformance::showSelectionWidget()

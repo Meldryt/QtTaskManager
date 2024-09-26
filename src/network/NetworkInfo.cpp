@@ -53,10 +53,7 @@ void NetworkInfo::readDynamicInfo()
     readInterfaces();
 #endif
 
-    setDynamicValue(Globals::SysInfoAttr::Key_Network_Dynamic_Names, QVariant::fromValue(m_networkNames));
-    setDynamicValue(Globals::SysInfoAttr::Key_Network_Dynamic_BytesReceivedPerSec, QVariant::fromValue(m_networkBytesReceivedPerSec));
-    setDynamicValue(Globals::SysInfoAttr::Key_Network_Dynamic_BytesSentPerSec, QVariant::fromValue(m_networkBytesSentPerSec));
-    setDynamicValue(Globals::SysInfoAttr::Key_Network_Dynamic_TotalBytesPerSec, QVariant::fromValue(m_networkBytesTotalPerSec));
+    setDynamicValue(Globals::SysInfoAttr::Key_Network_Dynamic_Info, QVariant::fromValue(m_networks));
 }
 
 #ifdef __linux__
@@ -72,10 +69,7 @@ void NetworkInfo::readInterfaces()
         exit(EXIT_FAILURE);
     }
 
-    m_networkNames.clear();
-    m_networkBytesReceivedPerSec.clear();
-    m_networkBytesSentPerSec.clear();
-    m_networkBytesTotalPerSec.clear();
+    m_networks.clear();
 
     /* Walk through linked list, maintaining head pointer so we
               can free list later. */
@@ -128,8 +122,10 @@ void NetworkInfo::readInterfaces()
             inet_ntop(family, cp, buffer, sizeof(buffer));
 
             ipaddress_human_readable_form = std::string(buffer);
-            m_networkNames.push_back(interface_name + " : " + ipaddress_human_readable_form);
-
+            
+            Network network;
+            network.name = interface_name + " : " + ipaddress_human_readable_form;
+            m_networks[network.name] = network;
             //qDebug() << "\t\taddress: <%s>\n" << host;
         }
         else if(family == AF_PACKET && ifa->ifa_data != NULL)
@@ -143,13 +139,13 @@ void NetworkInfo::readInterfaces()
 
     for (auto&& afPacket : afPackets)
     {
-        for (auto&& name : m_networkNames)
+        for (auto&& network : networks)
         {
-            if(name.find(afPacket.first)!=std::string::npos)
+            if(network.name.find(afPacket.first)!=std::string::npos)
             {
-                m_networkBytesReceivedPerSec.push_back(afPacket.second.first);
-                m_networkBytesSentPerSec.push_back(afPacket.second.second);
-                m_networkBytesTotalPerSec.push_back(afPacket.second.first + afPacket.second.second);
+                network.bytesReceivedPerSec = afPacket.second.first;
+                network.bytesSentPerSec =  afPacket.second.second;
+                network.bytesTotalPerSec = afPacket.second.first + afPacket.second.second;
                 break;
             }
         }

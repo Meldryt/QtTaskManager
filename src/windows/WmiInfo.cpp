@@ -59,6 +59,8 @@ void WmiInfo::init()
     if (!SUCCEEDED(hr)) {
         qWarning() << "CoSetProxyBlanket failed! reason: " << std::system_category().message(hr).c_str();
     }
+
+    readStaticInfo();
 }
 
 void WmiInfo::checkSupportedFunctions()
@@ -119,17 +121,14 @@ void WmiInfo::update()
     }
 
     readNetworkSpeed();
+
     //readPowerSupply();
 
     setDynamicValue(Globals::SysInfoAttr::Key_Cpu_Dynamic_CurrentMaxFrequency, m_cpuCurrentMaxFrequency);
     setDynamicValue(Globals::SysInfoAttr::Key_Cpu_Dynamic_ThreadFrequencies, QVariant::fromValue(m_cpuThreadFrequencies));
     setDynamicValue(Globals::SysInfoAttr::Key_Cpu_Dynamic_ThreadUsages, QVariant::fromValue(m_cpuThreadUsages));
 
-    setDynamicValue(Globals::SysInfoAttr::Key_Network_Dynamic_Names, QVariant::fromValue(m_networkNames));
-    setDynamicValue(Globals::SysInfoAttr::Key_Network_Dynamic_BytesReceivedPerSec, QVariant::fromValue(m_networkBytesReceivedPerSec));
-    setDynamicValue(Globals::SysInfoAttr::Key_Network_Dynamic_BytesSentPerSec, QVariant::fromValue(m_networkBytesSentPerSec));
-    setDynamicValue(Globals::SysInfoAttr::Key_Network_Dynamic_TotalBytesPerSec, QVariant::fromValue(m_networkBytesTotalPerSec));
-    setDynamicValue(Globals::SysInfoAttr::Key_Network_Dynamic_CurrentBandwidth, QVariant::fromValue(m_networkCurrentBandwidth));
+    setDynamicValue(Globals::SysInfoAttr::Key_Network_Dynamic_Info, QVariant::fromValue(m_networkMap));
 
     setDynamicValue(Globals::SysInfoAttr::Key_Process_GpuUsages, QVariant::fromValue(m_processGpuUsage));
 }
@@ -444,6 +443,12 @@ void WmiInfo::readGpuInfo()
 
 void WmiInfo::readNetworkSpeed()
 {
+    std::vector<std::string> networkNames;
+    std::vector<uint32_t> networkBytesReceivedPerSec;
+    std::vector<uint32_t> networkBytesSentPerSec;
+    std::vector<uint32_t> networkBytesTotalPerSec;
+    std::vector<uint32_t> networkCurrentBandwidth;
+
     if (!m_functionsSupportStatus["Win32_PerfFormattedData_Tcpip_NetworkInterface"])
     {
         return;
@@ -453,43 +458,49 @@ void WmiInfo::readNetworkSpeed()
     std::map<std::string, std::vector<std::string>> fieldMap = queryArray(L"Win32_PerfFormattedData_Tcpip_NetworkInterface", fields);
 
     if (!fieldMap["Name"].empty()) {
-        m_networkNames.clear();
         for (auto&& netWorkInterfaceName : fieldMap["Name"])
         {
-            m_networkNames.push_back(netWorkInterfaceName);
+            networkNames.push_back(netWorkInterfaceName);
         }
     }
 
     if (!fieldMap["BytesReceivedPerSec"].empty()) {
-        m_networkBytesReceivedPerSec.clear();
         for (auto&& bytesReceivedPerSec : fieldMap["BytesReceivedPerSec"])
         {
-            m_networkBytesReceivedPerSec.push_back(std::stoi(bytesReceivedPerSec));
+            networkBytesReceivedPerSec.push_back(std::stoi(bytesReceivedPerSec));
         }
     }
 
     if (!fieldMap["BytesSentPerSec"].empty()) {
-        m_networkBytesSentPerSec.clear();
         for (auto&& bytesSentPerSec : fieldMap["BytesSentPerSec"])
         {
-            m_networkBytesSentPerSec.push_back(std::stoi(bytesSentPerSec));
+            networkBytesSentPerSec.push_back(std::stoi(bytesSentPerSec));
         }
     }
 
     if (!fieldMap["BytesTotalPerSec"].empty()) {
-        m_networkBytesTotalPerSec.clear();
         for (auto&& bytesTotalPerSec : fieldMap["BytesTotalPerSec"])
         {
-            m_networkBytesTotalPerSec.push_back(std::stoi(bytesTotalPerSec));
+            networkBytesTotalPerSec.push_back(std::stoi(bytesTotalPerSec));
         }
     }
 
     if (!fieldMap["CurrentBandwidth"].empty()) {
-        m_networkCurrentBandwidth.clear();
         for (auto&& currentBandwidth : fieldMap["CurrentBandwidth"])
         {
-            m_networkCurrentBandwidth.push_back(std::stoi(currentBandwidth));
+            networkCurrentBandwidth.push_back(std::stoi(currentBandwidth));
         }
+    }
+
+    for (uint8_t i = 0; i < networkNames.size(); ++i)
+    {
+        NetworkInfo::Network network;
+        network.name = networkNames.at(i);
+        network.bytesReceivedPerSec = networkBytesReceivedPerSec.at(i);
+        network.bytesSentPerSec = networkBytesSentPerSec.at(i);
+        network.bytesTotalPerSec = networkBytesTotalPerSec.at(i);
+
+        m_networkMap[networkNames.at(i)] = network;
     }
 }
 

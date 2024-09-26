@@ -5,6 +5,13 @@
 class NetworkInfo : public BaseInfo
 {
 public:
+    struct Network
+    {
+        std::string name;
+        uint32_t bytesReceivedPerSec;
+        uint32_t bytesSentPerSec;
+        uint32_t bytesTotalPerSec;
+    };
 
     NetworkInfo();
     ~NetworkInfo();
@@ -17,9 +24,6 @@ private:
     void readDynamicInfo();
     void readInterfaces();
 
-    std::vector<std::string> m_networkNames;
-    std::vector<uint32_t> m_networkBytesReceivedPerSec;
-    std::vector<uint32_t> m_networkBytesSentPerSec;
-    std::vector<uint32_t> m_networkBytesTotalPerSec;
+    std::map<std::string, Network> m_networks;
 };
 
