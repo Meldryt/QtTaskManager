@@ -153,6 +153,7 @@ void WmiInfo::readGpuUsage()
             pidStr = pidStr.substr(startIdx, count);
             const uint32_t pid = std::stoi(pidStr);
             const uint64_t dedicatedUsage = std::stoul(gpuProcessMemory["DedicatedUsage"][i]);
+            m_processGpuUsage[pid].first = 0;
             m_processGpuUsage[pid].second = dedicatedUsage;
         }
     }
@@ -178,6 +179,7 @@ void WmiInfo::readGpuUsage()
             }
         }
     }
+    //qDebug() << __FUNCTION__ << " Gpu Total Usage: " << m_gpuUsage;
 }
 /*
 * read CPU frequency.

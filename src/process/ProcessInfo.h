@@ -66,7 +66,7 @@ public:
 
         uint64_t ramUsageSize{0};
         uint64_t virtualRamUsageSize{0};
-        uint64_t videoRamUsageSize;
+        uint64_t videoRamUsageSize{0};
 
         double cpuAverageUsagePercentSum{0.0};
         double cpuAverageUsagePercent{ 0.0 };

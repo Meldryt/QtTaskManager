@@ -21,7 +21,7 @@ SystemManager::SystemManager(QWidget* parent) : QTabWidget(parent)
     addTab(m_tabApiSupport, QString("ApiSupport"));
     addTab(m_tabBenchmark, QString("Benchmark"));
 
-    m_processWorker.reset(new Worker(2000, { BaseInfo::InfoType::Process }));
+    m_processWorker.reset(new Worker(1000, { BaseInfo::InfoType::Process }));
     m_cpuWorker.reset(new Worker(1000, { BaseInfo::InfoType::Cpu}));
     m_gpuWorker.reset(new Worker(1000, { BaseInfo::InfoType::Gpu}));
     m_memoryWorker.reset(new Worker(1000, { BaseInfo::InfoType::Memory}));
@@ -50,75 +50,20 @@ SystemManager::SystemManager(QWidget* parent) : QTabWidget(parent)
         connect(m_worker[i], &Worker::signalFinished, thread, &QThread::quit);
         connect(m_worker[i], &Worker::signalFinished, m_worker[i], &Worker::deleteLater);
         connect(thread, &QThread::finished, thread, &QThread::deleteLater);
+
+        connect(m_worker[i], &Worker::signalStaticInfo, this, [&](const BaseInfo::InfoType& infoType, const QMap<uint8_t, QVariant>& staticInfo)
+        {
+            m_staticInfos[infoType] = staticInfo;
+            m_staticInfosChanged[infoType] = true;
+        });
+
+        connect(m_worker[i], &Worker::signalDynamicInfo, this, [&](const BaseInfo::InfoType& infoType, const QMap<uint8_t, QVariant>& dynamicInfo)
+        {
+            m_dynamicInfos[infoType] = dynamicInfo;
+            m_dynamicInfosChanged[infoType] = true;
+        });
     }
 
-    connect(m_cpuWorker.get(), &Worker::signalStaticInfo, this, [&](const BaseInfo::InfoType& infoType, const QMap<uint8_t,QVariant>& staticInfo)
-    {
-        m_staticInfoCpu = staticInfo;
-        m_staticInfoCpuChanged = true;
-    });
-
-    connect(m_cpuWorker.get(), &Worker::signalDynamicInfo, this, [&](const BaseInfo::InfoType& infoType, const QMap<uint8_t,QVariant>& dynamicInfo)
-    {     
-        m_dynamicInfoCpu = dynamicInfo;
-        m_dynamicInfoCpuChanged = true;
-    });
-
-    connect(m_gpuWorker.get(), &Worker::signalStaticInfo, this, [&](const BaseInfo::InfoType& infoType, const QMap<uint8_t,QVariant>& staticInfo)
-    {
-        m_staticInfoGpu = staticInfo;
-        m_staticInfoGpuChanged = true;
-    });
-
-    connect(m_gpuWorker.get(), &Worker::signalDynamicInfo, this, [&](const BaseInfo::InfoType& infoType, const QMap<uint8_t,QVariant>& dynamicInfo)
-    {
-        m_dynamicInfoGpu = dynamicInfo;
-        m_dynamicInfoGpuChanged = true;
-    });
-
-    connect(m_processWorker.get(), &Worker::signalDynamicInfo, this, [&](const BaseInfo::InfoType& infoType, const QMap<uint8_t,QVariant>& dynamicInfo)
-    {
-        m_dynamicInfoProcess = dynamicInfo;
-        m_dynamicInfoProcessChanged = true;
-    });
-
-    connect(m_memoryWorker.get(), &Worker::signalStaticInfo, this, [&](const BaseInfo::InfoType& infoType, const QMap<uint8_t,QVariant>& staticInfo)
-    {
-        m_staticInfoMemory = staticInfo;
-        m_staticInfoMemoryChanged = true;
-    });
-
-    connect(m_memoryWorker.get(), &Worker::signalDynamicInfo, this, [&](const BaseInfo::InfoType& infoType, const QMap<uint8_t,QVariant>& dynamicInfo)
-    {
-        m_dynamicInfoMemory = dynamicInfo;
-        m_dynamicInfoMemoryChanged = true;
-    });
-
-    connect(m_networkWorker.get(), &Worker::signalDynamicInfo, this, [&](const BaseInfo::InfoType& infoType, const QMap<uint8_t,QVariant>& dynamicInfo)
-    {
-        m_dynamicInfoNetwork = dynamicInfo;
-        m_dynamicInfoNetworkChanged = true;
-    });
-
-    connect(m_systemWorker.get(), &Worker::signalStaticInfo, this, [&](const BaseInfo::InfoType& infoType, const QMap<uint8_t,QVariant>& staticInfo)
-    {
-        m_staticInfoSystem = staticInfo;
-        m_staticInfoSystemChanged = true;
-    });
-
-#ifdef _WIN32
-    connect(m_wmiWorker.get(), &Worker::signalStaticInfo, this, [&](const BaseInfo::InfoType& infoType, const QMap<uint8_t, QVariant>& staticInfo)
-    {
-        m_staticInfoWmi = staticInfo;
-        m_staticInfoWmiChanged = true;
-    });
-
-    connect(m_wmiWorker.get(), &Worker::signalDynamicInfo, this, [&](const BaseInfo::InfoType& infoType, const QMap<uint8_t,QVariant>& dynamicInfo)
-    {
-        m_dynamicInfoWmi = dynamicInfo;
-        m_dynamicInfoWmiChanged = true;
-    });
-#endif
     for (int i = 0; i < m_workerThreads.size(); ++i)
     {
         m_workerThreads[i]->start();
@@ -148,67 +93,56 @@ void SystemManager::update()
     bool processTabApiSupport = false;
     bool processTabSystem = false;
 
-    if (m_staticInfoCpuChanged)
+    if (m_staticInfosChanged[BaseInfo::InfoType::Cpu])
     {
-        m_tabHardware->slotCpuStaticInfo(m_staticInfoCpu);
+        m_tabHardware->slotCpuStaticInfo(m_staticInfos[BaseInfo::InfoType::Cpu]);
         processTabHardware = true;
 
-        if (m_processWorker)
-        {
-            QVariant variant = m_staticInfoCpu[Globals::Key_Cpu_Static_CoreCount];
-            if (variant.canConvert<uint16_t>())
-            {
-                const uint16_t coreCount = variant.value<uint16_t>();
-                //m_processWorker->slotCoreCount(coreCount);
-            }
-        }
-        m_staticInfoCpuChanged = false;
+        m_staticInfosChanged[BaseInfo::InfoType::Cpu] = false;
     }
 
-    if (m_dynamicInfoCpuChanged)
+    if (m_dynamicInfosChanged[BaseInfo::InfoType::Cpu])
     {
 #ifdef _WIN32
-        if(m_dynamicInfoWmi[Globals::SysInfoAttr::Key_Cpu_Dynamic_ThreadFrequencies] != Globals::SysInfo_Uninitialized)
+        if(m_dynamicInfos[BaseInfo::InfoType::Wmi][Globals::SysInfoAttr::Key_Cpu_Dynamic_ThreadFrequencies] != Globals::SysInfo_Uninitialized)
         {
-            m_dynamicInfoCpu[Globals::SysInfoAttr::Key_Cpu_Dynamic_ThreadFrequencies] = m_dynamicInfoWmi[Globals::SysInfoAttr::Key_Cpu_Dynamic_ThreadFrequencies];
+            m_dynamicInfos[BaseInfo::InfoType::Cpu][Globals::SysInfoAttr::Key_Cpu_Dynamic_ThreadFrequencies] = m_dynamicInfos[BaseInfo::InfoType::Wmi][Globals::SysInfoAttr::Key_Cpu_Dynamic_ThreadFrequencies];
         }
-        if(m_dynamicInfoWmi[Globals::SysInfoAttr::Key_Cpu_Dynamic_ThreadUsages] != Globals::SysInfo_Uninitialized)
+        if(m_dynamicInfos[BaseInfo::InfoType::Wmi][Globals::SysInfoAttr::Key_Cpu_Dynamic_ThreadUsages] != Globals::SysInfo_Uninitialized)
         {
-            m_dynamicInfoCpu[Globals::SysInfoAttr::Key_Cpu_Dynamic_ThreadUsages] = m_dynamicInfoWmi[Globals::SysInfoAttr::Key_Cpu_Dynamic_ThreadUsages];
+            m_dynamicInfos[BaseInfo::InfoType::Cpu][Globals::SysInfoAttr::Key_Cpu_Dynamic_ThreadUsages] = m_dynamicInfos[BaseInfo::InfoType::Wmi][Globals::SysInfoAttr::Key_Cpu_Dynamic_ThreadUsages];
         }
 #endif
-        m_tabPerformance->slotCpuDynamicInfo(m_dynamicInfoCpu);
-        m_dynamicInfoCpuChanged = false;
+        m_tabPerformance->slotCpuDynamicInfo(m_dynamicInfos[BaseInfo::InfoType::Cpu]);
+        m_dynamicInfosChanged[BaseInfo::InfoType::Cpu] = false;
     }
 
-    if (m_staticInfoGpuChanged)
+    if (m_staticInfosChanged[BaseInfo::InfoType::Gpu])
     {
-        m_tabHardware->slotGpuStaticInfo(m_staticInfoGpu);
-        m_tabApiSupport->slotApiSupportStaticInfo(m_staticInfoGpu);
-        m_staticInfoGpuChanged = false;
+        m_tabHardware->slotGpuStaticInfo(m_staticInfos[BaseInfo::InfoType::Gpu]);
+        m_tabApiSupport->slotApiSupportStaticInfo(m_staticInfos[BaseInfo::InfoType::Gpu]);
+        m_staticInfosChanged[BaseInfo::InfoType::Gpu] = false;
         processTabHardware = true;
         processTabApiSupport = true;
     }
 
-    if (m_dynamicInfoGpuChanged)
+    if (m_dynamicInfosChanged[BaseInfo::InfoType::Gpu])
     {
-        m_tabPerformance->slotGpuDynamicInfo(m_dynamicInfoGpu);
-        m_dynamicInfoGpuChanged = false;
+        m_tabPerformance->slotGpuDynamicInfo(m_dynamicInfos[BaseInfo::InfoType::Gpu]);
+        m_dynamicInfosChanged[BaseInfo::InfoType::Gpu] = false;
     }
 
-    if (m_dynamicInfoProcessChanged)
+    if (m_dynamicInfosChanged[BaseInfo::InfoType::Process])
     {
 #ifdef _WIN32
-        QVariant var = m_dynamicInfoWmi[Globals::SysInfoAttr::Key_Process_GpuUsages];
-        if (var.canConvert<QMap<uint32_t, QPair<uint8_t, uint64_t>>>())
+        const QVariant varGpuUsages = m_dynamicInfos[BaseInfo::InfoType::Wmi][Globals::SysInfoAttr::Key_Process_GpuUsages];
+        if (varGpuUsages.canConvert<QMap<uint32_t, QPair<uint8_t, uint64_t>>>())
         {
-            QVariant variant = m_dynamicInfoProcess[Globals::SysInfoAttr::Key_Process_Dynamic_Info];
-            std::map<uint32_t, ProcessInfo::Process> processMap;
-            if (variant.canConvert<std::map<uint32_t, ProcessInfo::Process>>())
+            const QVariant varProcesses = m_dynamicInfos[BaseInfo::InfoType::Process][Globals::SysInfoAttr::Key_Process_Dynamic_Info];
+            if (varProcesses.canConvert<std::map<uint32_t, ProcessInfo::Process>>())
             {
-                processMap = variant.value<std::map<uint32_t, ProcessInfo::Process>>();
-
-                QMap<uint32_t, QPair<uint8_t, uint64_t>> processGpuUsages = var.value<QMap<uint32_t, QPair<uint8_t, uint64_t>> >();
+                const QMap<uint32_t, QPair<uint8_t, uint64_t>> processGpuUsages = varGpuUsages.value<QMap<uint32_t, QPair<uint8_t, uint64_t>> >();
+                std::map<uint32_t, ProcessInfo::Process> processMap = varProcesses.value<std::map<uint32_t, ProcessInfo::Process>>();
                 for (auto&& process : processGpuUsages.asKeyValueRange())
                 {
                     if (processMap.find(process.first) != processMap.end())
@@ -217,17 +151,17 @@ void SystemManager::update()
                         processMap[process.first].videoRamUsageSize = process.second.second;
                     }
                 }
-                m_dynamicInfoProcess[Globals::SysInfoAttr::Key_Process_Dynamic_Info] = QVariant::fromValue(processMap);
+                m_dynamicInfos[BaseInfo::InfoType::Process][Globals::SysInfoAttr::Key_Process_Dynamic_Info] = QVariant::fromValue(processMap);
             }          
         }
 #endif
-        m_tabProcesses->slotProcessDynamicInfo(m_dynamicInfoProcess);
-        m_dynamicInfoProcessChanged = false;
+        m_tabProcesses->slotProcessDynamicInfo(m_dynamicInfos[BaseInfo::InfoType::Process]);
+        m_dynamicInfosChanged[BaseInfo::InfoType::Process] = false;
     }
 
-    if (m_staticInfoMemoryChanged)
+    if (m_staticInfosChanged[BaseInfo::InfoType::Memory])
     {
-        QVariant variant = m_staticInfoMemory[Globals::Key_Memory_Static_TotalPhysicalMemory];
+        QVariant variant = m_staticInfos[BaseInfo::InfoType::Memory][Globals::Key_Memory_Static_TotalPhysicalMemory];
         if (variant.canConvert<uint32_t>())
         {
             const uint32_t totalPhysicalMemory = variant.value<uint32_t>();
@@ -236,43 +170,43 @@ void SystemManager::update()
             processTabHardware = true;
         }
         
-        m_staticInfoMemoryChanged = false;
+        m_staticInfosChanged[BaseInfo::InfoType::Memory] = false;
     }
 
-    if (m_dynamicInfoMemoryChanged)
+    if (m_dynamicInfosChanged[BaseInfo::InfoType::Memory])
     {
-        QVariant variant = m_dynamicInfoMemory[Globals::Key_Memory_Dynamic_UsedPhysicalMemory];
+        QVariant variant = m_dynamicInfos[BaseInfo::InfoType::Memory][Globals::Key_Memory_Dynamic_UsedPhysicalMemory];
         if (variant.canConvert<uint32_t>())
         {
             const uint32_t usedPhysicalMemory = variant.value<uint32_t>();
             m_tabPerformance->slotUsedMemory(usedPhysicalMemory);
         }
 
-        m_dynamicInfoMemoryChanged = false;
+        m_dynamicInfosChanged[BaseInfo::InfoType::Memory] = false;
     }
 
-    if (m_staticInfoSystemChanged)
+    if (m_staticInfosChanged[BaseInfo::InfoType::System])
     {
-        m_tabSystemInfo->slotOSInfo(m_staticInfoSystem);
+        m_tabSystemInfo->slotOSInfo(m_staticInfos[BaseInfo::InfoType::System]);
         processTabSystem = true;
 
-        m_staticInfoSystemChanged = false;
+        m_staticInfosChanged[BaseInfo::InfoType::System] = false;
     }
 
 #ifdef _WIN32
-    if (m_staticInfoWmiChanged)
+    if (m_staticInfosChanged[BaseInfo::InfoType::Wmi])
     {
-        m_tabApiSupport->slotApiSupportStaticInfo(m_staticInfoWmi);
+        m_tabApiSupport->slotApiSupportStaticInfo(m_staticInfos[BaseInfo::InfoType::Wmi]);
 
-        m_staticInfoWmiChanged = false;
+        m_staticInfosChanged[BaseInfo::InfoType::Wmi] = false;
         processTabApiSupport = true;
     }
 
-    if (m_dynamicInfoWmiChanged)
+    if (m_dynamicInfosChanged[BaseInfo::InfoType::Wmi])
     {
-        m_tabPerformance->slotNetworkDynamicInfo(m_dynamicInfoWmi);
+        m_tabPerformance->slotNetworkDynamicInfo(m_dynamicInfos[BaseInfo::InfoType::Wmi]);
 
-        m_dynamicInfoWmiChanged = false;
+        m_dynamicInfosChanged[BaseInfo::InfoType::Wmi] = false;
     }
 #elif __linux__
     if (m_dynamicInfoNetworkChanged)

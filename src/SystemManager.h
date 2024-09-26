@@ -49,45 +49,10 @@ private:
 
     QTimer* m_timer{ nullptr };
 
-    bool m_staticInfoCpuChanged{ false };
-    bool m_dynamicInfoCpuChanged{ false };
+    QMap<BaseInfo::InfoType, QMap<uint8_t, QVariant>> m_staticInfos;
+    QMap<BaseInfo::InfoType, QMap<uint8_t, QVariant>> m_dynamicInfos;
 
-    bool m_staticInfoGpuChanged{ false };
-    bool m_dynamicInfoGpuChanged{ false };
-
-    bool m_dynamicInfoProcessChanged{ false };
-
-    bool m_staticInfoMemoryChanged{ false };
-    bool m_dynamicInfoMemoryChanged{ false };
-
-    bool m_dynamicInfoNetworkChanged{ false };
-
-    bool m_staticInfoSystemChanged{ false };
-    bool m_dynamicInfoSystemChanged{ false };
-
-#ifdef _WIN32
-    bool m_staticInfoWmiChanged{ false };
-    bool m_dynamicInfoWmiChanged{ false };
-#endif
-    QMap<uint8_t,QVariant> m_staticInfoCpu;
-    QMap<uint8_t,QVariant> m_dynamicInfoCpu;
-
-    QMap<uint8_t,QVariant> m_staticInfoGpu;
-    QMap<uint8_t,QVariant> m_dynamicInfoGpu;
-
-    QMap<uint8_t,QVariant> m_dynamicInfoProcess;
-
-    QMap<uint8_t,QVariant> m_staticInfoMemory;
-    QMap<uint8_t,QVariant> m_dynamicInfoMemory;
-
-    QMap<uint8_t,QVariant> m_dynamicInfoNetwork;
-
-    QMap<uint8_t,QVariant> m_staticInfoSystem;
-    QMap<uint8_t,QVariant> m_dynamicInfoSystem;
-
-#ifdef _WIN32
-    QMap<uint8_t, QVariant> m_staticInfoWmi;
-    QMap<uint8_t, QVariant> m_dynamicInfoWmi;
-#endif
+    QMap<BaseInfo::InfoType, bool> m_staticInfosChanged;
+    QMap<BaseInfo::InfoType, bool> m_dynamicInfosChanged;
 };
 
