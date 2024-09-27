@@ -49,40 +49,6 @@ private:
         NoSort
     };
 
-    enum class ColumnType : uint8_t
-    {
-        ProcessName = 0,
-        ID,
-        Description,
-        FilePath,
-        RamUsagePercent,
-        CpuUsagePercent,
-        GpuUsagePercent,
-        VideoRamUsagePercent,
-        RamUsageSize,
-        VirtualRamUsageSize,
-        VideoRamUsageSize,
-        DiskUsage,
-        NetworkUsage
-    };
-
-    const QStringList TableHeaderNames
-    {
-        "Name",
-        "ID",
-        "Description",
-        "FilePath",
-        "Ram %",
-        "Cpu %",
-        "Gpu %",
-        "VRam %",
-        "Ram (MB)",
-        "VirtualRam (MB)",
-        "VideoRam (MB)",
-        "Disk %",
-        "Network %",
-    };
-
     const std::map<SortMode, bool> DefaultAscendingSortMode = {
         {SortMode::SortByProcessName, true},
         {SortMode::SortByID, true},

@@ -69,6 +69,7 @@ const std::map<uint32_t, ProcessInfo::Process> &ProcessInfo::processMap() const
 void ProcessInfo::init()
 {
     readCpuCount();
+    readTotalRamSize();
 #ifdef __linux__
     m_cpuData.resize(m_cpuCoreCount);
     for (int i = 0; i < m_cpuCoreCount; i++) {
@@ -287,6 +288,20 @@ void ProcessInfo::readCpuCount()
     SYSTEM_INFO sysInfo;
     GetSystemInfo(&sysInfo);
     m_cpuCoreCount = sysInfo.dwNumberOfProcessors;
+#endif
+}
+
+void ProcessInfo::readTotalRamSize()
+{
+#ifdef __linux__
+
+#elif _WIN32
+    MEMORYSTATUSEX memInfo;
+    memInfo.dwLength = sizeof(MEMORYSTATUSEX);
+    GlobalMemoryStatusEx(&memInfo);
+
+    DWORDLONG totalPhysMem = memInfo.ullTotalPhys;
+    m_totalPhysicalMemory = totalPhysMem; //size in MB: (totalPhysMem / 1024) / 1024
 #endif
 }
 
@@ -609,6 +624,7 @@ void ProcessInfo::updateProcessesUsage()
 
         process->second.virtualRamUsageSize = pmc.PrivateUsage;
         process->second.ramUsageSize = pmc.WorkingSetSize;
+        process->second.ramUsagePercent = (100.0 * process->second.ramUsageSize) / m_totalPhysicalMemory;
         process->second.timestamp = int64_t(m_elapsedTimer->elapsed() * 0.001);
         updateProcessUsage(processHandle, process->second);
 

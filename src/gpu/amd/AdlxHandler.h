@@ -4,10 +4,6 @@
 #include "external/ADLX/SDK/Include/IPerformanceMonitoring.h"
 #include "external/ADLX/SDK/Include/ISystem.h"
 
-#include <map>
-#include <vector>
-#include <string>
-
 #include <QMap>
 #include <QVariant>
 #include <QString>
@@ -21,17 +17,10 @@ public:
     AdlxHandler();
     ~AdlxHandler();
 
-    bool init();
+    void init();
 
-    const QMap<uint8_t,QVariant>& staticInfo() const
-    {
-        return m_staticInfo;
-    }
-
-    const QMap<uint8_t,QVariant>& dynamicInfo() const
-    {
-        return m_dynamicInfo;
-    }
+    const QMap<uint8_t, QVariant>& staticInfo() const;
+    const QMap<uint8_t, QVariant>& dynamicInfo() const;
 
     bool readStaticInfo();
     bool readDynamicInfo();
@@ -60,59 +49,16 @@ private:
     void ShowGPUVoltage(IADLXGPUMetricsSupportPtr gpuMetricsSupport, IADLXGPUMetricsPtr gpuMetrics);
     void ShowGPUTotalBoardPower(IADLXGPUMetricsSupportPtr gpuMetricsSupport, IADLXGPUMetricsPtr gpuMetrics);
     void ShowGPUIntakeTemperature(IADLXGPUMetricsSupportPtr gpuMetricsSupport, IADLXGPUMetricsPtr gpuMetrics);
-    
-    const std::map<uint32_t, std::string> MapVendorIdName = {
-        {0x1002, "AMD"},
-        {0x10DE, "NVIDIA"},
-        {0x1043, "ASUS"},
-        {0x196D, "Club 3D"},
-        {0x1092, "Diamond Multimedia"},
-        {0x18BC, "GeCube"},
-        {0x1458, "Gigabyte"},
-        {0x17AF, "HIS"},
-        {0x16F3, "Jetway"},
-        {0x1462, "MSI"},
-        {0x1DA2, "Sapphire"},
-        {0x148C, "PowerColor"},
-        {0x1545, "VisionTek"},
-        {0x1682, "XFX"},
-        {0x1025, "Acer"},
-        {0x106B, "Apple"},
-        {0x1028, "Dell"},
-        {0x107B, "Gateway"},
-        {0x103C, "HP"},
-        {0x17AA, "Lenovo"},
-        {0x104D, "Sony"},
-        {0x1179, "Toshiba"}
-    };
-
-    const std::map<ADLX_RESULT, std::string> AdlxResultMap = {
-        {ADLX_OK, "ADLX_OK"},
-        {ADLX_ALREADY_ENABLED, "ADLX_ALREADY_ENABLED"},
-        {ADLX_ALREADY_INITIALIZED, "ADLX_ALREADY_INITIALIZED"},
-        {ADLX_FAIL, "ADLX_FAIL"},
-        {ADLX_INVALID_ARGS, "ADLX_INVALID_ARGS"},
-        {ADLX_BAD_VER, "ADLX_BAD_VER"},
-        {ADLX_UNKNOWN_INTERFACE, "ADLX_UNKNOWN_INTERFACE"},
-        {ADLX_TERMINATED, "ADLX_TERMINATED"},
-        {ADLX_ADL_INIT_ERROR, "ADLX_ADL_INIT_ERROR"},
-        {ADLX_NOT_FOUND, "ADLX_NOT_FOUND"},
-        {ADLX_INVALID_OBJECT, "ADLX_INVALID_OBJECT"},
-        {ADLX_ORPHAN_OBJECTS, "ADLX_ORPHAN_OBJECTS"},
-        {ADLX_NOT_SUPPORTED, "ADLX_NOT_SUPPORTED"},
-        {ADLX_PENDING_OPERATION, "ADLX_PENDING_OPERATION"},
-        {ADLX_GPU_INACTIVE, "ADLX_GPU_INACTIVE"},
-    };
 
     QMap<uint8_t, QVariant> m_staticInfo;
     QMap<uint8_t, QVariant> m_dynamicInfo;
 
-    std::string m_gpuChipDesigner;
-    std::string m_gpuCardManufacturer;
-    std::string m_gpuModel;
-    uint16_t m_gpuMemorySize;
-    std::string m_gpuMemoryType;
-    std::string m_gpuPnpString;
+    std::string m_gpuChipDesigner{ "" };
+    std::string m_gpuCardManufacturer{ "" };
+    std::string m_gpuModel{ "" };
+    uint16_t m_gpuMemorySize{ 0 };
+    std::string m_gpuMemoryType{ "" };
+    std::string m_gpuPnpString{ "" };
 
     double m_gpuUsage{ 0 }; // Current graphic activity level in percentage
     double m_gpuVramUsage{ 0 }; // Current memory activity level in percentage

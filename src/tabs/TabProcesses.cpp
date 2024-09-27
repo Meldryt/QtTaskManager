@@ -9,23 +9,72 @@
 #include <QTreeWidget>
 #include <QScrollBar>
 
+enum class ColumnType : uint8_t
+{
+    ProcessName = 0,
+    ProcessId,
+    Description,
+    FilePath,
+    RamUsagePercent,
+    CpuUsagePercent,
+    GpuUsagePercent,
+    VideoRamUsagePercent,
+    RamUsageSize,
+    VirtualRamUsageSize,
+    VideoRamUsageSize,
+    DiskUsage,
+    NetworkUsage
+};
+
+const std::map<ColumnType, uint16_t> DefaultColumnSizes
+{
+    {ColumnType::ProcessName,150},
+    {ColumnType::ProcessId,60},
+    {ColumnType::Description,60},
+    {ColumnType::FilePath,60},
+    {ColumnType::RamUsagePercent,60},
+    {ColumnType::CpuUsagePercent,60},
+    {ColumnType::GpuUsagePercent,60},
+    {ColumnType::VideoRamUsagePercent,60},
+    {ColumnType::RamUsageSize,60},
+    {ColumnType::VirtualRamUsageSize,60},
+    {ColumnType::VideoRamUsageSize,60},
+    {ColumnType::DiskUsage,60},
+    {ColumnType::NetworkUsage,60},
+};
+
+const QStringList ColumnNames
+{
+    "Name",
+    "ID",
+    "Description",
+    "FilePath",
+    "Ram %",
+    "Cpu %",
+    "Gpu %",
+    "VRam %",
+    "Ram (MB)",
+    "VirtualRam (MB)",
+    "VideoRam (MB)",
+    "Disk %",
+    "Network %",
+};
+
 TabProcesses::TabProcesses(QWidget *parent) : QWidget(parent)
 {
     qDebug() << __FUNCTION__;
 
     m_tableProcesses = new QTableWidget(this);
-    m_tableProcesses->setColumnCount(TableHeaderNames.size());
+    m_tableProcesses->setColumnCount(ColumnNames.size());
 
-    m_tableProcesses->setHorizontalHeaderLabels(TableHeaderNames);
+    m_tableProcesses->setHorizontalHeaderLabels(ColumnNames);
     m_tableProcesses->verticalHeader()->hide();
-    m_tableProcesses->setColumnWidth(0,200);
-    m_tableProcesses->setColumnWidth(1,200);
-    m_tableProcesses->setColumnWidth(2,200);
     m_tableProcesses->setWordWrap(false);
     m_tableProcesses->insertRow(0);
 
-    for(uint8_t colIndex = 0; colIndex < TableHeaderNames.count(); ++colIndex)
+    for(uint8_t colIndex = 0; colIndex < ColumnNames.count(); ++colIndex)
     {
+        m_tableProcesses->setColumnWidth(colIndex, DefaultColumnSizes.at(static_cast<ColumnType>(colIndex)));
         m_tableProcesses->setItem(0,colIndex, new QTableWidgetItem());
     }
     m_tableProcesses->item(0,0)->setText("Total");
@@ -81,7 +130,7 @@ void TabProcesses::updateTable()
             m_tableProcesses->item(tableRow, static_cast<int>(ColumnType::Description))->setText(process.description.c_str());
             m_tableProcesses->item(tableRow, static_cast<int>(ColumnType::FilePath))->setText(process.filePath.c_str());
         }
-        m_tableProcesses->item(tableRow, static_cast<int>(ColumnType::ID))->setText(QString::number(process.processID));
+        m_tableProcesses->item(tableRow, static_cast<int>(ColumnType::ProcessId))->setText(QString::number(process.processID));
         m_tableProcesses->item(tableRow, static_cast<int>(ColumnType::RamUsagePercent))->setText(QString::number(process.ramUsagePercent, 'g', 2));
         m_tableProcesses->item(tableRow, static_cast<int>(ColumnType::CpuUsagePercent))->setText(QString::number(process.cpuUsagePercent, 'g', 2));
         m_tableProcesses->item(tableRow, static_cast<int>(ColumnType::GpuUsagePercent))->setText(QString::number(process.gpuUsagePercent, 'g', 2));
@@ -137,6 +186,7 @@ void TabProcesses::slotProcessDynamicInfo(const QMap<uint8_t, QVariant>& dynamic
     bool changed{false};
     uint8_t index = 0;
     auto process = std::begin(processMap);
+    std::vector<uint32_t> visitedProcesses;
 
     while (process != std::end(processMap))
     {
@@ -148,7 +198,6 @@ void TabProcesses::slotProcessDynamicInfo(const QMap<uint8_t, QVariant>& dynamic
         if(it == m_processList.end())
         {
             m_processList.push_back(process->second);
-            m_processList.back().visited = true;
             changed = true;
         }
         else
@@ -163,8 +212,9 @@ void TabProcesses::slotProcessDynamicInfo(const QMap<uint8_t, QVariant>& dynamic
             it->cpuAverageUsagePercent = process->second.cpuAverageUsagePercent;
             it->gpuAverageUsagePercent = process->second.cpuAverageUsagePercent;
             it->timestamp = process->second.timestamp;
-            it->visited = true;
         }
+
+        visitedProcesses.push_back(process->second.processID);
 
         ++process;
         ++index;
@@ -172,14 +222,13 @@ void TabProcesses::slotProcessDynamicInfo(const QMap<uint8_t, QVariant>& dynamic
 
     for(auto it = std::begin(m_processList); it != std::end(m_processList); )
     {
-        if(!it->visited)
+        if(std::find(visitedProcesses.begin(), visitedProcesses.end(), it->processID) == visitedProcesses.end())
         {
             it = m_processList.erase(it);
             changed = true;
         }
         else
         {
-            it->visited = false;
             ++it;
         }
     }

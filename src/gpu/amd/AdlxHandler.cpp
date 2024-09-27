@@ -12,6 +12,49 @@
 // Use global variables to ensure validity of the interface.
 static ADLXHelper g_ADLXHelp;
 
+const std::map<uint32_t, std::string> MapVendorIdName = {
+    {0x1002, "AMD"},
+    {0x10DE, "NVIDIA"},
+    {0x1043, "ASUS"},
+    {0x196D, "Club 3D"},
+    {0x1092, "Diamond Multimedia"},
+    {0x18BC, "GeCube"},
+    {0x1458, "Gigabyte"},
+    {0x17AF, "HIS"},
+    {0x16F3, "Jetway"},
+    {0x1462, "MSI"},
+    {0x1DA2, "Sapphire"},
+    {0x148C, "PowerColor"},
+    {0x1545, "VisionTek"},
+    {0x1682, "XFX"},
+    {0x1025, "Acer"},
+    {0x106B, "Apple"},
+    {0x1028, "Dell"},
+    {0x107B, "Gateway"},
+    {0x103C, "HP"},
+    {0x17AA, "Lenovo"},
+    {0x104D, "Sony"},
+    {0x1179, "Toshiba"}
+};
+
+const std::map<ADLX_RESULT, std::string> AdlxResultMap = {
+    {ADLX_OK, "ADLX_OK"},
+    {ADLX_ALREADY_ENABLED, "ADLX_ALREADY_ENABLED"},
+    {ADLX_ALREADY_INITIALIZED, "ADLX_ALREADY_INITIALIZED"},
+    {ADLX_FAIL, "ADLX_FAIL"},
+    {ADLX_INVALID_ARGS, "ADLX_INVALID_ARGS"},
+    {ADLX_BAD_VER, "ADLX_BAD_VER"},
+    {ADLX_UNKNOWN_INTERFACE, "ADLX_UNKNOWN_INTERFACE"},
+    {ADLX_TERMINATED, "ADLX_TERMINATED"},
+    {ADLX_ADL_INIT_ERROR, "ADLX_ADL_INIT_ERROR"},
+    {ADLX_NOT_FOUND, "ADLX_NOT_FOUND"},
+    {ADLX_INVALID_OBJECT, "ADLX_INVALID_OBJECT"},
+    {ADLX_ORPHAN_OBJECTS, "ADLX_ORPHAN_OBJECTS"},
+    {ADLX_NOT_SUPPORTED, "ADLX_NOT_SUPPORTED"},
+    {ADLX_PENDING_OPERATION, "ADLX_PENDING_OPERATION"},
+    {ADLX_GPU_INACTIVE, "ADLX_GPU_INACTIVE"},
+};
+
 AdlxHandler::AdlxHandler()
 {
     qDebug() << __FUNCTION__;
@@ -27,7 +70,7 @@ AdlxHandler::~AdlxHandler()
     qDebug() << "Destroy ADLX result: " << res;
 }
 
-bool AdlxHandler::init()
+void AdlxHandler::init()
 {
     ADLX_RESULT res = ADLX_FAIL;
 
@@ -43,8 +86,16 @@ bool AdlxHandler::init()
         m_initialized = true;
     }
     setFunctionStatus("ADLXHelper::Initialize", m_initialized, res);
+}
 
-	return true;
+const QMap<uint8_t, QVariant>& AdlxHandler::staticInfo() const
+{
+    return m_staticInfo;
+}
+
+const QMap<uint8_t, QVariant>& AdlxHandler::dynamicInfo() const
+{
+    return m_dynamicInfo;
 }
 
 void AdlxHandler::checkSupportedDynamicFunctions()
@@ -332,25 +383,21 @@ void AdlxHandler::ShowCurrentAllMetrics(IADLXPerformanceMonitoringServicesPtr pe
     ADLX_RESULT res1 = perfMonitoringServices->GetCurrentAllMetrics(&allMetrics);
     if (ADLX_SUCCEEDED(res1))
     {
-        //qDebug() << "The current all metrics: ";
         // Get current system metrics.
         res1 = allMetrics->GetSystemMetrics(&systemMetrics);
         // Show timestamp, CPU usage, system RAM and smart shift
         if (ADLX_SUCCEEDED(res1) && ADLX_SUCCEEDED(res2))
         {
-            //qDebug() << std::boolalpha;  // display bool variable as true of false
             GetTimeStamp(systemMetrics);
             ShowCPUUsage(systemMetricsSupport, systemMetrics);
             ShowSystemRAM(systemMetricsSupport, systemMetrics);
             ShowSmartShift(systemMetricsSupport, systemMetrics);
-            //qDebug() << std::noboolalpha;
         }
         // Get current GPU metrics
         res1 = allMetrics->GetGPUMetrics(oneGPU, &gpuMetrics);
         // Show timestamp and GPU metrics
         if (ADLX_SUCCEEDED(res1) && ADLX_SUCCEEDED(res2))
         {
-            //qDebug() << std::boolalpha;  // display bool variable as true of false
             GetTimeStamp(gpuMetrics);
             ShowGPUUsage(gpuMetricsSupport, gpuMetrics);
             ShowGPUClockSpeed(gpuMetricsSupport, gpuMetrics);
@@ -363,23 +410,7 @@ void AdlxHandler::ShowCurrentAllMetrics(IADLXPerformanceMonitoringServicesPtr pe
             ShowGPUVoltage(gpuMetricsSupport, gpuMetrics);
             ShowGPUTotalBoardPower(gpuMetricsSupport, gpuMetrics);
             ShowGPUIntakeTemperature(gpuMetricsSupport, gpuMetrics);
-            //qDebug() << std::noboolalpha;
         }
-        // Get current FPS metrics
-        //res1 = allMetrics->GetFPS(&oneFPS);
-        //if (ADLX_SUCCEEDED(res1))
-        //{
-        //    adlx_int64 timeStamp = 0;
-        //    res1 = oneFPS->TimeStamp(&timeStamp);
-        //    if (ADLX_SUCCEEDED(res1))
-        //        qDebug() << "The current metric time stamp is: " << timeStamp << "ms\n";
-        //    adlx_int fpsData = 0;
-        //    res1 = oneFPS->FPS(&fpsData);
-        //    if (ADLX_SUCCEEDED(res1))
-        //        qDebug() << "The current metric FPS is: " << fpsData;
-        //    else if (res1 == ADLX_NOT_SUPPORTED)
-        //        qDebug() << "Don't support FPS";
-        //}
     }
 }
 
@@ -388,8 +419,6 @@ void AdlxHandler::GetTimeStamp(IADLXSystemMetricsPtr systemMetrics)
 {
     adlx_int64 timeStamp = 0;
     ADLX_RESULT res = systemMetrics->TimeStamp(&timeStamp);
-    //if (ADLX_SUCCEEDED(res))
-        //qDebug() << "The system time stamp is: " << timeStamp << "ms";
 }
 
 // Show CPU usage(in %)
@@ -400,8 +429,6 @@ void AdlxHandler::ShowCPUUsage(IADLXSystemMetricsSupportPtr systemMetricsSupport
     {
         adlx_double cpuUsage = 0;
         ADLX_RESULT res = systemMetrics->CPUUsage(&cpuUsage);
-        //if (ADLX_SUCCEEDED(res))
-            //qDebug() << "The CPU usage is: " << cpuUsage << "%";
     }
 }
 
@@ -413,8 +440,6 @@ void AdlxHandler::ShowSystemRAM(IADLXSystemMetricsSupportPtr systemMetricsSuppor
     {
         adlx_int systemRAM = 0;
         ADLX_RESULT res = systemMetrics->SystemRAM(&systemRAM);
-        //if (ADLX_SUCCEEDED(res))
-            //qDebug() << "The system RAM is: " << systemRAM << "MB";
     }
 }
 
@@ -426,8 +451,6 @@ void AdlxHandler::ShowSmartShift(IADLXSystemMetricsSupportPtr systemMetricsSuppo
     {
         adlx_int smartShift;
         ADLX_RESULT res = systemMetrics->SmartShift(&smartShift);
-        //if (ADLX_SUCCEEDED(res))
-            //qDebug() << "The SmartShift is: " << smartShift;
     }
 }
 
@@ -436,8 +459,6 @@ void AdlxHandler::GetTimeStamp(IADLXGPUMetricsPtr gpuMetrics)
 {
     adlx_int64 timeStamp = 0;
     ADLX_RESULT res = gpuMetrics->TimeStamp(&timeStamp);
-    //if (ADLX_SUCCEEDED(res))
-        //qDebug() << "The GPU time stamp is: " << timeStamp << "ms";
 }
 
 // Display GPU usage (in %)

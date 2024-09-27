@@ -86,7 +86,6 @@ public:
 #endif
 
         int64_t timestamp{0};
-        bool visited{false};
     };
 
     ProcessInfo();
@@ -111,6 +110,7 @@ private:
     void readDynamicInfo();
 
     void readCpuCount();
+    void readTotalRamSize();
 
     void updateRunningProcesses();
     void updateProcessesUsage();
@@ -139,6 +139,7 @@ private:
     QElapsedTimer* m_elapsedTimer{nullptr};
 
     uint32_t m_cpuCoreCount{0};
+    uint64_t m_totalPhysicalMemory{ 0 }; //in bytes
     uint32_t m_currentFrameIdx{0};
 
 #ifdef __linux__
